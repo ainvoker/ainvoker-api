@@ -11,3 +11,298 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id             String  @id // Neon Auth user ID
+  firstName      String?
+  lastName       String?
+  profilePicture String?
+
+  roleId Int
+  role   Role @relation(fields: [roleId], references: [id])
+
+  applications  Application[]
+  subscriptions Subscription[]
+  activityLogs  ActivityLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Role {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  users User[]
+}
+
+model Application {
+  id String @id @default(cuid())
+
+  userId String
+
+  name        String
+  description String?
+  environment String
+  status      String
+
+  user User @relation(fields: [userId], references: [id])
+
+  apiKeys        ApiKey[]
+  actions        Action[]
+  aiRequests     AIRequest[]
+  usageAnalytics UsageAnalytics[]
+  rateLimits     RateLimit[]
+  webhooks       Webhook[]
+
+  createdAt DateTime @default(now())
+}
+
+model ApiKey {
+  id String @id @default(cuid())
+
+  applicationId String
+
+  keyName     String
+  apiKey      String    @unique
+  permissions Json?
+  lastUsed    DateTime?
+  expiresAt   DateTime?
+  status      String
+
+  application Application @relation(fields: [applicationId], references: [id])
+
+  requests AIRequest[]
+
+  createdAt DateTime @default(now())
+}
+
+model AIProvider {
+  id Int @id @default(autoincrement())
+
+  name          String
+  baseUrl       String
+  documentation String?
+  status        String
+
+  models AIModel[]
+}
+
+model AIModel {
+  id Int @id @default(autoincrement())
+
+  providerId Int
+
+  name          String
+  type          String
+  contextWindow Int
+  inputPrice    Decimal
+  outputPrice   Decimal
+  status        String
+
+  provider AIProvider @relation(fields: [providerId], references: [id])
+
+  requests AIRequest[]
+}
+
+model AIService {
+  id Int @id @default(autoincrement())
+
+  name String @unique
+
+  requests AIRequest[]
+}
+
+model AIRequest {
+  id String @id @default(cuid())
+
+  applicationId String
+  apiKeyId      String
+  modelId       Int
+  serviceId     Int
+
+  prompt   String
+  response String?
+
+  inputTokens  Int
+  outputTokens Int
+  totalTokens  Int
+
+  latency Int
+
+  requestStatus String
+
+  requestCost Decimal
+
+  application Application @relation(fields: [applicationId], references: [id])
+
+  apiKey ApiKey @relation(fields: [apiKeyId], references: [id])
+
+  model AIModel @relation(fields: [modelId], references: [id])
+
+  service AIService @relation(fields: [serviceId], references: [id])
+
+  actionInvocations ActionInvocation[]
+
+  createdAt DateTime @default(now())
+}
+
+model Action {
+  id String @id @default(cuid())
+
+  applicationId String
+
+  name String
+
+  description String?
+
+  inputSchema Json
+
+  outputSchema Json?
+
+  application Application @relation(fields: [applicationId], references: [id])
+
+  invocations ActionInvocation[]
+}
+
+model ActionInvocation {
+  id String @id @default(cuid())
+
+  requestId String
+
+  actionId String
+
+  executionStatus String
+
+  executionResult Json?
+
+  request AIRequest @relation(fields: [requestId], references: [id])
+
+  action Action @relation(fields: [actionId], references: [id])
+
+  executedAt DateTime @default(now())
+}
+
+model UsageAnalytics {
+  id String @id @default(cuid())
+
+  applicationId String
+
+  totalRequests Int
+
+  successfulRequests Int
+
+  failedRequests Int
+
+  totalTokens Int
+
+  totalCost Decimal
+
+  month Int
+
+  year Int
+
+  application Application @relation(fields: [applicationId], references: [id])
+}
+
+model RateLimit {
+  id String @id @default(cuid())
+
+  applicationId String
+
+  requestLimit Int
+
+  requestsUsed Int
+
+  resetTime DateTime
+
+  application Application @relation(fields: [applicationId], references: [id])
+}
+
+model ActivityLog {
+  id String @id @default(cuid())
+
+  userId String
+
+  activity String
+
+  ipAddress String?
+
+  browser String?
+
+  device String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Plan {
+  id Int @id @default(autoincrement())
+
+  name String @unique
+
+  monthlyPrice Decimal
+
+  tokenLimit Int
+
+  requestLimit Int
+
+  description String?
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id String @id @default(cuid())
+
+  userId String
+
+  planId Int
+
+  status String
+
+  startedAt DateTime
+
+  expiresAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  plan Plan @relation(fields: [planId], references: [id])
+
+  transactions Transaction[]
+}
+
+model Transaction {
+  id String @id @default(cuid())
+
+  subscriptionId String
+
+  amount Decimal
+
+  paymentMethod String
+
+  referenceNumber String
+
+  paymentStatus String
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Webhook {
+  id String @id @default(cuid())
+
+  applicationId String
+
+  webhookUrl String
+
+  secret String
+
+  event String
+
+  status String
+
+  application Application @relation(fields: [applicationId], references: [id])
+}
