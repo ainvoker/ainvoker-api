@@ -1,7 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// AInvoker Prisma schema (final)
+// App rule on signup: create a default Organization (e.g. name "Personal") + owner OrganizationMember.
+// Rate/token limits are enforced in application code from Subscription → Plan (no RateLimit table).
 
 generator client {
   provider = "prisma-client"
@@ -12,80 +11,217 @@ datasource db {
   provider = "postgresql"
 }
 
+// ── Enums ───────────────────────────────────────────────────────────────────
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum ProjectEnvironment {
+  DEVELOPMENT
+  STAGING
+  PRODUCTION
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+  DISABLED
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum CatalogStatus {
+  ACTIVE
+  INACTIVE
+  DEPRECATED
+}
+
+enum AIModelType {
+  TEXT
+  IMAGE
+  AUDIO
+  MULTIMODAL
+  EMBEDDING
+  OTHER
+}
+
+enum AIServiceType {
+  TEXT
+  IMAGE
+  ACTION
+}
+
+enum AIRequestStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REJECTED
+}
+
+enum ActionInvocationStatus {
+  REQUESTED
+  REPORTED_SUCCESS
+  REPORTED_FAILURE
+}
+
+enum WebhookEvent {
+  REQUEST_FAILED
+  RATE_LIMIT_EXCEEDED
+  USAGE_ALERT
+}
+
+enum WebhookStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+// ── Auth profile ────────────────────────────────────────────────────────────
+
 model User {
   id             String  @id // Neon Auth user ID
   firstName      String?
   lastName       String?
   profilePicture String?
 
-  roleId Int
-  role   Role @relation(fields: [roleId], references: [id])
-
-  applications  Application[]
-  subscriptions Subscription[]
-  activityLogs  ActivityLog[]
+  memberships           OrganizationMember[]
+  createdOrganizations  Organization[]       @relation("OrganizationCreator")
+  activityLogs          ActivityLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+/// Membership roles: seed names `owner` | `admin` | `member`
 model Role {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  users User[]
+  members OrganizationMember[]
 }
 
-model Application {
+// ── Organization ────────────────────────────────────────────────────────────
+
+model Organization {
+  id     String             @id @default(cuid())
+  name   String
+  slug   String             @unique
+  status OrganizationStatus @default(ACTIVE)
+
+  createdByUserId String?
+  createdBy       User?   @relation("OrganizationCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  members       OrganizationMember[]
+  projects      Project[]
+  subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrganizationMember {
   id String @id @default(cuid())
 
-  userId String
+  organizationId String
+  userId         String
+  roleId         Int
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role         Role         @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+// ── Project ─────────────────────────────────────────────────────────────────
+
+model Project {
+  id String @id @default(cuid())
+
+  organizationId String
 
   name        String
   description String?
-  environment String
-  status      String
+  environment ProjectEnvironment
+  status      ProjectStatus      @default(ACTIVE)
 
-  user User @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   apiKeys        ApiKey[]
   actions        Action[]
   aiRequests     AIRequest[]
   usageAnalytics UsageAnalytics[]
-  rateLimits     RateLimit[]
   webhooks       Webhook[]
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
 }
+
+// ── API keys ────────────────────────────────────────────────────────────────
 
 model ApiKey {
   id String @id @default(cuid())
 
-  applicationId String
+  projectId String
 
-  keyName     String
-  apiKey      String    @unique
+  keyName    String
+  keyHash    String       @unique
+  keyPrefix  String
   permissions Json?
-  lastUsed    DateTime?
-  expiresAt   DateTime?
-  status      String
+  lastUsed   DateTime?
+  expiresAt  DateTime?
+  status     ApiKeyStatus @default(ACTIVE)
 
-  application Application @relation(fields: [applicationId], references: [id])
-
+  project  Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   requests AIRequest[]
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
 }
+
+// ── AI catalog ──────────────────────────────────────────────────────────────
 
 model AIProvider {
   id Int @id @default(autoincrement())
 
-  name          String
+  name          String        @unique
   baseUrl       String
   documentation String?
-  status        String
+  status        CatalogStatus @default(ACTIVE)
 
   models AIModel[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model AIModel {
@@ -94,183 +230,178 @@ model AIModel {
   providerId Int
 
   name          String
-  type          String
+  type          AIModelType
   contextWindow Int
-  inputPrice    Decimal
-  outputPrice   Decimal
-  status        String
+  inputPrice    Decimal       @db.Decimal(12, 6)
+  outputPrice   Decimal       @db.Decimal(12, 6)
+  status        CatalogStatus @default(ACTIVE)
 
-  provider AIProvider @relation(fields: [providerId], references: [id])
-
+  provider AIProvider  @relation(fields: [providerId], references: [id], onDelete: Restrict)
   requests AIRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([providerId, name])
+  @@index([providerId])
 }
 
-model AIService {
-  id Int @id @default(autoincrement())
-
-  name String @unique
-
-  requests AIRequest[]
-}
+// ── Requests & actions ──────────────────────────────────────────────────────
 
 model AIRequest {
   id String @id @default(cuid())
 
-  applicationId String
-  apiKeyId      String
-  modelId       Int
-  serviceId     Int
+  projectId String
+  apiKeyId  String
+  modelId   Int
 
-  prompt   String
-  response String?
+  serviceType AIServiceType
 
-  inputTokens  Int
-  outputTokens Int
-  totalTokens  Int
+  requestPayload  Json
+  responsePayload Json?
 
-  latency Int
+  inputTokens  Int?
+  outputTokens Int?
+  totalTokens  Int?
+  latency      Int?
+  requestCost  Decimal? @db.Decimal(12, 6)
 
-  requestStatus String
+  requestStatus AIRequestStatus @default(PENDING)
 
-  requestCost Decimal
-
-  application Application @relation(fields: [applicationId], references: [id])
-
-  apiKey ApiKey @relation(fields: [apiKeyId], references: [id])
-
-  model AIModel @relation(fields: [modelId], references: [id])
-
-  service AIService @relation(fields: [serviceId], references: [id])
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  apiKey  ApiKey  @relation(fields: [apiKeyId], references: [id], onDelete: Restrict)
+  model   AIModel @relation(fields: [modelId], references: [id], onDelete: Restrict)
 
   actionInvocations ActionInvocation[]
 
   createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([apiKeyId])
+  @@index([createdAt])
 }
 
+/// Registry-only action definition. Execution happens in the client/SDK.
 model Action {
   id String @id @default(cuid())
 
-  applicationId String
+  projectId String
 
-  name String
-
-  description String?
-
-  inputSchema Json
-
+  name         String
+  description  String?
+  inputSchema  Json
   outputSchema Json?
 
-  application Application @relation(fields: [applicationId], references: [id])
-
+  project     Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
   invocations ActionInvocation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, name])
+  @@index([projectId])
 }
 
+/// Audit of tool calls observed/reported during a gateway request (not server-side execution).
 model ActionInvocation {
   id String @id @default(cuid())
 
   requestId String
+  actionId  String
 
-  actionId String
-
-  executionStatus String
-
+  executionStatus ActionInvocationStatus
   executionResult Json?
 
-  request AIRequest @relation(fields: [requestId], references: [id])
-
-  action Action @relation(fields: [actionId], references: [id])
+  request AIRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  action  Action   @relation(fields: [actionId], references: [id], onDelete: Restrict)
 
   executedAt DateTime @default(now())
+
+  @@index([requestId])
+  @@index([actionId])
 }
+
+// ── Analytics ───────────────────────────────────────────────────────────────
 
 model UsageAnalytics {
   id String @id @default(cuid())
 
-  applicationId String
+  projectId String
 
-  totalRequests Int
-
-  successfulRequests Int
-
-  failedRequests Int
-
-  totalTokens Int
-
-  totalCost Decimal
+  totalRequests      Int     @default(0)
+  successfulRequests Int     @default(0)
+  failedRequests     Int     @default(0)
+  totalTokens        Int     @default(0)
+  totalCost          Decimal @default(0) @db.Decimal(12, 6)
 
   month Int
+  year  Int
 
-  year Int
-
-  application Application @relation(fields: [applicationId], references: [id])
-}
-
-model RateLimit {
-  id String @id @default(cuid())
-
-  applicationId String
-
-  requestLimit Int
-
-  requestsUsed Int
-
-  resetTime DateTime
-
-  application Application @relation(fields: [applicationId], references: [id])
-}
-
-model ActivityLog {
-  id String @id @default(cuid())
-
-  userId String
-
-  activity String
-
-  ipAddress String?
-
-  browser String?
-
-  device String?
-
-  user User @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, month, year])
+  @@index([projectId])
 }
+
+// ── Platform event webhooks (not Action execution) ──────────────────────────
+
+model Webhook {
+  id String @id @default(cuid())
+
+  projectId String
+
+  webhookUrl String
+  secret     String
+  event      WebhookEvent
+  status     WebhookStatus @default(ACTIVE)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+// ── Billing (per Organization) ──────────────────────────────────────────────
 
 model Plan {
   id Int @id @default(autoincrement())
 
-  name String @unique
-
-  monthlyPrice Decimal
-
-  tokenLimit Int
-
+  name         String  @unique
+  monthlyPrice Decimal @db.Decimal(12, 6)
+  tokenLimit   Int
   requestLimit Int
-
-  description String?
+  description  String?
 
   subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Subscription {
   id String @id @default(cuid())
 
-  userId String
+  organizationId String
+  planId         Int
 
-  planId Int
-
-  status String
-
+  status    SubscriptionStatus @default(ACTIVE)
   startedAt DateTime
-
   expiresAt DateTime?
 
-  user User @relation(fields: [userId], references: [id])
-
-  plan Plan @relation(fields: [planId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  plan         Plan         @relation(fields: [planId], references: [id], onDelete: Restrict)
 
   transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
 }
 
 model Transaction {
@@ -278,31 +409,35 @@ model Transaction {
 
   subscriptionId String
 
-  amount Decimal
+  amount          Decimal       @db.Decimal(12, 6)
+  paymentMethod   String
+  referenceNumber String        @unique
+  paymentStatus   PaymentStatus @default(PENDING)
 
-  paymentMethod String
-
-  referenceNumber String
-
-  paymentStatus String
-
-  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subscriptionId])
 }
 
-model Webhook {
+// ── User activity audit ─────────────────────────────────────────────────────
+
+model ActivityLog {
   id String @id @default(cuid())
 
-  applicationId String
+  userId String
 
-  webhookUrl String
+  activity  String
+  ipAddress String?
+  browser   String?
+  device    String?
 
-  secret String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  event String
+  createdAt DateTime @default(now())
 
-  status String
-
-  application Application @relation(fields: [applicationId], references: [id])
+  @@index([userId])
+  @@index([createdAt])
 }
