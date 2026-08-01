@@ -11,4 +11,4 @@ class PrismaService {
     }
 }
 
-export default new PrismaService();
+export default new PrismaService().client;

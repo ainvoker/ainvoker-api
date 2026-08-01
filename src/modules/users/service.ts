@@ -1,11 +1,11 @@
-import prismaService from "../../platform/prisma.js";
+import prismaClient from "../../platform/prisma.js";
 import organizationsService from "../organizations/service.js";
 
 class UserService {
     async getMe(userId: string) {
         const { user } = await organizationsService.ensureUserAndPersonalOrg(userId);
 
-        const memberships = await prismaService.client.organizationMember.findMany({
+        const memberships = await prismaClient.organizationMember.findMany({
             where: { userId: user.id },
             include: {
                 role: true,

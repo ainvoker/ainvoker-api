@@ -1,12 +1,12 @@
 import { Prisma } from "../../../generated/prisma/client.js";
 import { AppError } from "../../platform/errors.js";
-import prismaService from "../../platform/prisma.js";
+import prismaClient from "../../platform/prisma.js";
 import type { z } from "zod";
 import type { createProjectSchema, updateProjectSchema } from "./schemas.js";
 
 class ProjectService {
     private async assertOrgMember(organizationId: string, userId: string) {
-        const membership = await prismaService.client.organizationMember.findUnique({
+        const membership = await prismaClient.organizationMember.findUnique({
             where: {
                 organizationId_userId: { organizationId, userId },
             },
@@ -20,7 +20,7 @@ class ProjectService {
     }
 
     async getProjectForMember(projectId: string, userId: string) {
-        const project = await prismaService.client.project.findUnique({
+        const project = await prismaClient.project.findUnique({
             where: { id: projectId },
         });
 
@@ -57,7 +57,7 @@ class ProjectService {
     async listProjects(organizationId: string, userId: string) {
         await this.assertOrgMember(organizationId, userId);
 
-        const projects = await prismaService.client.project.findMany({
+        const projects = await prismaClient.project.findMany({
             where: { organizationId },
             orderBy: { createdAt: "desc" },
         });
@@ -73,7 +73,7 @@ class ProjectService {
         await this.assertOrgMember(organizationId, userId);
 
         try {
-            const project = await prismaService.client.project.create({
+            const project = await prismaClient.project.create({
                 data: {
                     organizationId,
                     name: input.name,
@@ -107,7 +107,7 @@ class ProjectService {
         await this.getProjectForMember(projectId, userId);
 
         try {
-            const project = await prismaService.client.project.update({
+            const project = await prismaClient.project.update({
                 where: { id: projectId },
                 data: {
                     ...(input.name !== undefined ? { name: input.name } : {}),
@@ -131,7 +131,7 @@ class ProjectService {
 
     async deleteProject(projectId: string, userId: string) {
         await this.getProjectForMember(projectId, userId);
-        await prismaService.client.project.delete({ where: { id: projectId } });
+        await prismaClient.project.delete({ where: { id: projectId } });
     }
 }
 

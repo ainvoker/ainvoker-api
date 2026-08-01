@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { AppError } from "../platform/errors.js";
-import prismaService from "../platform/prisma.js";
+import prismaClient from "../platform/prisma.js";
 
 class OrgMemberMiddleware {
     constructor() {
@@ -18,7 +18,7 @@ class OrgMemberMiddleware {
                 throw new AppError(400, "BAD_REQUEST", "Organization id is required");
             }
 
-            const membership = await prismaService.client.organizationMember.findUnique({
+            const membership = await prismaClient.organizationMember.findUnique({
                 where: {
                     organizationId_userId: {
                         organizationId: orgId,

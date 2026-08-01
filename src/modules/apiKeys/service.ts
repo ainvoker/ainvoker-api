@@ -1,7 +1,7 @@
 import type { Prisma } from "../../../generated/prisma/client.js";
 import { AppError } from "../../platform/errors.js";
 import apiKeyHasher from "../../platform/hash.js";
-import prismaService from "../../platform/prisma.js";
+import prismaClient from "../../platform/prisma.js";
 import projectsService from "../projects/service.js";
 import type { z } from "zod";
 import type { createApiKeySchema } from "./schemas.js";
@@ -36,7 +36,7 @@ class ApiKeyService {
     async listApiKeys(projectId: string, userId: string) {
         await projectsService.getProjectForMember(projectId, userId);
 
-        const keys = await prismaService.client.apiKey.findMany({
+        const keys = await prismaClient.apiKey.findMany({
             where: { projectId },
             orderBy: { createdAt: "desc" },
         });
@@ -53,7 +53,7 @@ class ApiKeyService {
 
         const { plaintext, keyHash, keyPrefix } = apiKeyHasher.generate();
 
-        const key = await prismaService.client.apiKey.create({
+        const key = await prismaClient.apiKey.create({
             data: {
                 projectId,
                 keyName: input.keyName,
@@ -75,7 +75,7 @@ class ApiKeyService {
     async revokeApiKey(projectId: string, keyId: string, userId: string) {
         await projectsService.getProjectForMember(projectId, userId);
 
-        const existing = await prismaService.client.apiKey.findFirst({
+        const existing = await prismaClient.apiKey.findFirst({
             where: { id: keyId, projectId },
         });
 
@@ -83,7 +83,7 @@ class ApiKeyService {
             throw new AppError(404, "NOT_FOUND", "API key not found");
         }
 
-        const key = await prismaService.client.apiKey.update({
+        const key = await prismaClient.apiKey.update({
             where: { id: keyId },
             data: { status: "REVOKED" },
         });
@@ -94,7 +94,7 @@ class ApiKeyService {
     async deleteApiKey(projectId: string, keyId: string, userId: string) {
         await projectsService.getProjectForMember(projectId, userId);
 
-        const existing = await prismaService.client.apiKey.findFirst({
+        const existing = await prismaClient.apiKey.findFirst({
             where: { id: keyId, projectId },
         });
 
@@ -102,7 +102,7 @@ class ApiKeyService {
             throw new AppError(404, "NOT_FOUND", "API key not found");
         }
 
-        await prismaService.client.apiKey.delete({ where: { id: keyId } });
+        await prismaClient.apiKey.delete({ where: { id: keyId } });
     }
 }
 
