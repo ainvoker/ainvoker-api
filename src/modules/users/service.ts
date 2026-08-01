@@ -1,0 +1,43 @@
+import prismaService from "../../platform/prisma.js";
+import organizationsService from "../organizations/service.js";
+
+class UserService {
+    async getMe(userId: string) {
+        const { user } = await organizationsService.ensureUserAndPersonalOrg(userId);
+
+        const memberships = await prismaService.client.organizationMember.findMany({
+            where: { userId: user.id },
+            include: {
+                role: true,
+                organization: true,
+            },
+            orderBy: { createdAt: "asc" },
+        });
+
+        return {
+            user: {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                profilePicture: user.profilePicture,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
+            },
+            memberships: memberships.map((m) => ({
+                id: m.id,
+                role: m.role.name,
+                organization: {
+                    id: m.organization.id,
+                    name: m.organization.name,
+                    slug: m.organization.slug,
+                    status: m.organization.status,
+                    createdAt: m.organization.createdAt,
+                    updatedAt: m.organization.updatedAt,
+                },
+                createdAt: m.createdAt,
+            })),
+        };
+    }
+}
+
+export default new UserService();

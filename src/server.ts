@@ -1,7 +1,12 @@
+import env from "./config/env.js";
 import app from "./app.js";
 
-const PORT = process.env.PORT || 3000;
+class Server {
+    start() {
+        app.express.listen(env.PORT, () => {
+            console.log(`AInvoker API running on port ${env.PORT}`);
+        });
+    }
+}
 
-app.listen(PORT, () => {
-    console.log(`Running on ${PORT}`);
-});
+new Server().start();
