@@ -1,20 +1,20 @@
-import type { OrganizationMember, Role } from "../../generated/prisma/client.js";
+import type { OrganizationMember, Role } from "../../generated/prisma/client.js"
 
 export type AuthContext = {
-    userId: string;
-};
+    userId: string
+}
 
 export type MembershipContext = OrganizationMember & {
-    role: Role;
-};
+    role: Role
+}
 
 declare global {
     namespace Express {
         interface Request {
-            auth?: AuthContext;
-            membership?: MembershipContext;
+            auth?: AuthContext
+            membership?: MembershipContext
         }
     }
 }
 
-export {};
+export {}

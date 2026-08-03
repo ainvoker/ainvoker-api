@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod"
 
 export const errorResponseSchema = z
     .object({
@@ -7,10 +7,10 @@ export const errorResponseSchema = z
             message: z.string(),
         }),
     })
-    .meta({ id: "ErrorResponse" });
+    .meta({ id: "ErrorResponse" })
 
 export function dataEnvelope<T extends z.ZodType>(schema: T) {
-    return z.object({ data: schema });
+    return z.object({ data: schema })
 }
 
 export const userSchema = z
@@ -22,7 +22,7 @@ export const userSchema = z
         createdAt: z.string(),
         updatedAt: z.string(),
     })
-    .meta({ id: "User" });
+    .meta({ id: "User" })
 
 export const organizationSchema = z
     .object({
@@ -33,7 +33,7 @@ export const organizationSchema = z
         createdAt: z.string(),
         updatedAt: z.string(),
     })
-    .meta({ id: "Organization" });
+    .meta({ id: "Organization" })
 
 export const membershipSchema = z
     .object({
@@ -42,14 +42,14 @@ export const membershipSchema = z
         organization: organizationSchema,
         createdAt: z.string(),
     })
-    .meta({ id: "Membership" });
+    .meta({ id: "Membership" })
 
 export const meResponseSchema = z
     .object({
         user: userSchema,
         memberships: z.array(membershipSchema),
     })
-    .meta({ id: "MeResponse" });
+    .meta({ id: "MeResponse" })
 
 export const organizationListItemSchema = z
     .object({
@@ -61,7 +61,7 @@ export const organizationListItemSchema = z
         createdAt: z.string(),
         updatedAt: z.string(),
     })
-    .meta({ id: "OrganizationListItem" });
+    .meta({ id: "OrganizationListItem" })
 
 export const projectSchema = z
     .object({
@@ -74,7 +74,7 @@ export const projectSchema = z
         createdAt: z.string(),
         updatedAt: z.string(),
     })
-    .meta({ id: "Project" });
+    .meta({ id: "Project" })
 
 export const apiKeySchema = z
     .object({
@@ -89,28 +89,28 @@ export const apiKeySchema = z
         createdAt: z.string(),
         updatedAt: z.string(),
     })
-    .meta({ id: "ApiKey" });
+    .meta({ id: "ApiKey" })
 
 export const createdApiKeySchema = apiKeySchema
     .extend({
         apiKey: z.string(),
     })
-    .meta({ id: "CreatedApiKey" });
+    .meta({ id: "CreatedApiKey" })
 
 export const deletedResponseSchema = z
     .object({
         deleted: z.literal(true),
     })
-    .meta({ id: "DeletedResponse" });
+    .meta({ id: "DeletedResponse" })
 
 export const rootMessageSchema = z
     .object({
         message: z.string(),
     })
-    .meta({ id: "RootMessage" });
+    .meta({ id: "RootMessage" })
 
 export const healthSchema = z
     .object({
         status: z.string(),
     })
-    .meta({ id: "Health" });
+    .meta({ id: "Health" })

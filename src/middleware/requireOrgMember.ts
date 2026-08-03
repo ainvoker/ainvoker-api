@@ -1,21 +1,21 @@
-import type { NextFunction, Request, Response } from "express";
-import { AppError } from "../platform/errors.js";
-import prismaClient from "../platform/prisma.js";
+import type { NextFunction, Request, Response } from "express"
+import { AppError } from "../platform/errors.js"
+import prismaClient from "../platform/prisma.js"
 
 class OrgMemberMiddleware {
     constructor() {
-        this.handle = this.handle.bind(this);
+        this.handle = this.handle.bind(this)
     }
 
     async handle(req: Request, _res: Response, next: NextFunction) {
         try {
             if (!req.auth) {
-                throw new AppError(401, "UNAUTHORIZED", "Authentication required");
+                throw new AppError(401, "UNAUTHORIZED", "Authentication required")
             }
 
-            const orgId = req.params.orgId;
+            const orgId = req.params.orgId
             if (!orgId || typeof orgId !== "string") {
-                throw new AppError(400, "BAD_REQUEST", "Organization id is required");
+                throw new AppError(400, "BAD_REQUEST", "Organization id is required")
             }
 
             const membership = await prismaClient.organizationMember.findUnique({
@@ -26,18 +26,18 @@ class OrgMemberMiddleware {
                     },
                 },
                 include: { role: true },
-            });
+            })
 
             if (!membership) {
-                throw new AppError(403, "FORBIDDEN", "You are not a member of this organization");
+                throw new AppError(403, "FORBIDDEN", "You are not a member of this organization")
             }
 
-            req.membership = membership;
-            next();
+            req.membership = membership
+            next()
         } catch (err) {
-            next(err);
+            next(err)
         }
     }
 }
 
-export default new OrgMemberMiddleware().handle;
+export default new OrgMemberMiddleware().handle

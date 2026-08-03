@@ -2,13 +2,13 @@ import {
     OpenAPIRegistry,
     OpenApiGeneratorV3,
     extendZodWithOpenApi,
-} from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
-import { registerApiPaths } from "./paths.js";
+} from "@asteasolutions/zod-to-openapi"
+import { z } from "zod"
+import { registerApiPaths } from "./paths.js"
 
-extendZodWithOpenApi(z);
+extendZodWithOpenApi(z)
 
-const registry = new OpenAPIRegistry();
+const registry = new OpenAPIRegistry()
 
 registry.registerComponent("securitySchemes", "bearerAuth", {
     type: "http",
@@ -16,12 +16,12 @@ registry.registerComponent("securitySchemes", "bearerAuth", {
     bearerFormat: "JWT",
     description:
         "Neon Auth / Better Auth session: send `Authorization: Bearer <token>` (JWT or opaque session token).",
-});
+})
 
-registerApiPaths(registry);
+registerApiPaths(registry)
 
 export function buildOpenApiDocument() {
-    const generator = new OpenApiGeneratorV3(registry.definitions);
+    const generator = new OpenApiGeneratorV3(registry.definitions)
 
     return generator.generateDocument({
         openapi: "3.0.3",
@@ -38,5 +38,5 @@ export function buildOpenApiDocument() {
             { name: "Projects", description: "Organization projects" },
             { name: "API Keys", description: "Project API keys" },
         ],
-    });
+    })
 }

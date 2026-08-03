@@ -1,5 +1,5 @@
-import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
+import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi"
+import { z } from "zod"
 import {
     apiKeyParamsSchema,
     createApiKeySchema,
@@ -10,7 +10,7 @@ import {
     updateProjectSchema,
     bootstrapProfileSchema, 
     updateProfileSchema
-} from "./schemas.js";
+} from "./schemas.js"
 import {
     apiKeySchema,
     createdApiKeySchema,
@@ -23,9 +23,9 @@ import {
     projectSchema,
     rootMessageSchema,
     userSchema,
-} from "./responses.js";
+} from "./responses.js"
 
-const bearerAuth = [{ bearerAuth: [] }];
+const bearerAuth = [{ bearerAuth: [] }]
 
 const errorResponses = {
     400: {
@@ -48,7 +48,7 @@ const errorResponses = {
         description: "Conflict",
         content: { "application/json": { schema: errorResponseSchema } },
     },
-};
+}
 
 export function registerApiPaths(registry: OpenAPIRegistry) {
     registry.registerPath({
@@ -62,7 +62,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
                 content: { "application/json": { schema: rootMessageSchema } },
             },
         },
-    });
+    })
 
     registry.registerPath({
         method: "get",
@@ -75,7 +75,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
                 content: { "application/json": { schema: healthSchema } },
             },
         },
-    });
+    })
 
     registry.registerPath({
         method: "get",
@@ -91,7 +91,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             },
             ...errorResponses,
         },
-    });
+    })
 
     registry.registerPath({
         method: "post",
@@ -114,7 +114,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             },
             ...errorResponses,
         },
-    });
+    })
 
     registry.registerPath({
         method: "patch",
@@ -137,7 +137,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             },
             ...errorResponses,
         },
-    });
+    })
 
     registry.registerPath({
         method: "get",
@@ -156,7 +156,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             },
             ...errorResponses,
         },
-    });
+    })
 
     registry.registerPath({
         method: "get",
@@ -176,7 +176,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             },
             ...errorResponses,
         },
-    });
+    })
 
     registry.registerPath({
         method: "post",
@@ -200,7 +200,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             },
             ...errorResponses,
         },
-    });
+    })
 
     registry.registerPath({
         method: "get",
@@ -218,7 +218,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             },
             ...errorResponses,
         },
-    });
+    })
 
     registry.registerPath({
         method: "patch",
@@ -242,7 +242,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             },
             ...errorResponses,
         },
-    });
+    })
 
     registry.registerPath({
         method: "delete",
@@ -260,7 +260,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             },
             ...errorResponses,
         },
-    });
+    })
 
     registry.registerPath({
         method: "get",
@@ -280,7 +280,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             },
             ...errorResponses,
         },
-    });
+    })
 
     registry.registerPath({
         method: "post",
@@ -305,7 +305,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             },
             ...errorResponses,
         },
-    });
+    })
 
     registry.registerPath({
         method: "post",
@@ -323,7 +323,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             },
             ...errorResponses,
         },
-    });
+    })
 
     registry.registerPath({
         method: "delete",
@@ -341,5 +341,5 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             },
             ...errorResponses,
         },
-    });
+    })
 }

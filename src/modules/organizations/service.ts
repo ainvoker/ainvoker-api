@@ -1,12 +1,12 @@
-import { Prisma } from "../../../generated/prisma/client.js";
-import prismaClient from "../../platform/prisma.js";
-import type { ProfileFields } from "../users/schemas.js";
+import { Prisma } from "../../../generated/prisma/client.js"
+import prismaClient from "../../platform/prisma.js"
+import type { ProfileFields } from "../users/schemas.js"
 
-const ROLE_NAMES = ["owner", "admin", "member"] as const;
+const ROLE_NAMES = ["owner", "admin", "member"] as const
 
 function personalOrgSlug(userId: string) {
-    const sanitized = userId.replace(/[^a-zA-Z0-9_-]/g, "");
-    return `personal-${sanitized || "user"}`;
+    const sanitized = userId.replace(/[^a-zA-Z0-9_-]/g, "")
+    return `personal-${sanitized || "user"}`
 }
 
 class OrganizationService {
@@ -19,11 +19,11 @@ class OrganizationService {
                     update: {},
                 }),
             ),
-        );
+        )
     }
 
     async ensureUserAndPersonalOrg(userId: string, profile?: ProfileFields) {
-        await this.ensureRoles();
+        await this.ensureRoles()
 
         let user = await prismaClient.user.upsert({
             where: { id: userId },
@@ -34,7 +34,7 @@ class OrganizationService {
                 profilePicture: profile?.profilePicture ?? null,
             },
             update: {},
-        });
+        })
 
         // Fill empty profile fields once (e.g. if GET /me created the row before bootstrap).
         if (profile) {
@@ -48,48 +48,48 @@ class OrganizationService {
                 ...(user.profilePicture == null && profile.profilePicture !== undefined
                     ? { profilePicture: profile.profilePicture }
                     : {}),
-            };
+            }
 
             if (Object.keys(data).length > 0) {
                 user = await prismaClient.user.update({
                     where: { id: userId },
                     data,
-                });
+                })
             }
         }
 
         const alreadyMember = await prismaClient.organizationMember.findFirst({
             where: { userId },
             select: { id: true },
-        });
+        })
 
         if (!alreadyMember) {
-            await this.createPersonalOrgIfNeeded(userId);
+            await this.createPersonalOrgIfNeeded(userId)
         }
 
-        return { user };
+        return { user }
     }
 
     /** Idempotent under concurrent bootstrap (React Strict Mode, double refresh, etc.). */
     private async createPersonalOrgIfNeeded(userId: string) {
         const ownerRole = await prismaClient.role.findUniqueOrThrow({
             where: { name: "owner" },
-        });
-        const slug = personalOrgSlug(userId);
+        })
+        const slug = personalOrgSlug(userId)
 
         try {
             await prismaClient.$transaction(async (tx) => {
                 const existingMembership = await tx.organizationMember.findFirst({
                     where: { userId },
                     select: { id: true },
-                });
+                })
                 if (existingMembership) {
-                    return;
+                    return
                 }
 
                 const existingOrg = await tx.organization.findUnique({
                     where: { slug },
-                });
+                })
 
                 if (existingOrg) {
                     await tx.organizationMember.upsert({
@@ -105,8 +105,8 @@ class OrganizationService {
                             roleId: ownerRole.id,
                         },
                         update: {},
-                    });
-                    return;
+                    })
+                    return
                 }
 
                 const organization = await tx.organization.create({
@@ -115,7 +115,7 @@ class OrganizationService {
                         slug,
                         createdByUserId: userId,
                     },
-                });
+                })
 
                 await tx.organizationMember.create({
                     data: {
@@ -123,20 +123,20 @@ class OrganizationService {
                         userId,
                         roleId: ownerRole.id,
                     },
-                });
-            });
+                })
+            })
         } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
                 // Concurrent request created the org/membership first — treat as success.
                 const membership = await prismaClient.organizationMember.findFirst({
                     where: { userId },
                     select: { id: true },
-                });
+                })
                 if (membership) {
-                    return;
+                    return
                 }
 
-                const org = await prismaClient.organization.findUnique({ where: { slug } });
+                const org = await prismaClient.organization.findUnique({ where: { slug } })
                 if (org) {
                     await prismaClient.organizationMember.upsert({
                         where: {
@@ -151,16 +151,16 @@ class OrganizationService {
                             roleId: ownerRole.id,
                         },
                         update: {},
-                    });
-                    return;
+                    })
+                    return
                 }
             }
-            throw err;
+            throw err
         }
     }
 
     async listMyOrganizations(userId: string) {
-        await this.ensureUserAndPersonalOrg(userId);
+        await this.ensureUserAndPersonalOrg(userId)
 
         const memberships = await prismaClient.organizationMember.findMany({
             where: { userId },
@@ -169,7 +169,7 @@ class OrganizationService {
                 organization: true,
             },
             orderBy: { createdAt: "asc" },
-        });
+        })
 
         return memberships.map((m) => ({
             id: m.organization.id,
@@ -179,8 +179,8 @@ class OrganizationService {
             role: m.role.name,
             createdAt: m.organization.createdAt,
             updatedAt: m.organization.updatedAt,
-        }));
+        }))
     }
 }
 
-export default new OrganizationService();
+export default new OrganizationService()

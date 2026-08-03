@@ -1,5 +1,5 @@
-import { afterAll, beforeAll } from "vitest";
-import { cleanupAllTestUsers } from "../helpers/db.js";
+import { afterAll, beforeAll } from "vitest"
+import { cleanupAllTestUsers } from "../helpers/db.js"
 
 /**
  * Sweeps leftover vitest-* users before/after the suite
@@ -8,11 +8,11 @@ import { cleanupAllTestUsers } from "../helpers/db.js";
  */
 async function safeSweep() {
     try {
-        await cleanupAllTestUsers();
+        await cleanupAllTestUsers()
     } catch (err) {
-        console.warn("[test cleanup] sweep skipped:", err);
+        console.warn("[test cleanup] sweep skipped:", err)
     }
 }
 
-beforeAll(safeSweep);
-afterAll(safeSweep);
+beforeAll(safeSweep)
+afterAll(safeSweep)

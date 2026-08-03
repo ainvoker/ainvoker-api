@@ -1,5 +1,5 @@
-import { config } from "dotenv";
-import { resolve } from "node:path";
+import { config } from "dotenv"
+import { resolve } from "node:path"
 
-config({ path: resolve(process.cwd(), ".env.test") });
-process.env.NODE_ENV = "test";
+config({ path: resolve(process.cwd(), ".env.test") })
+process.env.NODE_ENV = "test"

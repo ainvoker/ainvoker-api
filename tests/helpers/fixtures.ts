@@ -1,12 +1,12 @@
-import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach } from "vitest"
 import {
     cleanupAllTestUsers,
     cleanupTestUser,
     seedUserWithPersonalOrg,
     testUserId,
     type SeededAuthUser,
-} from "./db.js";
-import { authHeader } from "./auth.js";
+} from "./db.js"
+import { authHeader } from "./auth.js"
 
 /**
  * Seeds a User + Personal org before each test and deletes them after —
@@ -16,36 +16,36 @@ import { authHeader } from "./auth.js";
  */
 export function useTestAuthUser(options?: {
     profile?: {
-        firstName?: string | null;
-        lastName?: string | null;
-        profilePicture?: string | null;
-    };
+        firstName?: string | null
+        lastName?: string | null
+        profilePicture?: string | null
+    }
 }) {
-    let current: SeededAuthUser | null = null;
+    let current: SeededAuthUser | null = null
 
     beforeEach(async () => {
-        current = await seedUserWithPersonalOrg(testUserId(), options?.profile);
-    });
+        current = await seedUserWithPersonalOrg(testUserId(), options?.profile)
+    })
 
     afterEach(async () => {
         if (current) {
-            await cleanupTestUser(current.userId);
-            current = null;
+            await cleanupTestUser(current.userId)
+            current = null
         }
-    });
+    })
 
     return {
         /** Current seeded auth context (valid inside a test body). */
         get auth(): SeededAuthUser {
             if (!current) {
-                throw new Error("Test auth user is not ready (call only inside a test)");
+                throw new Error("Test auth user is not ready (call only inside a test)")
             }
-            return current;
+            return current
         },
         headers() {
-            return authHeader(this.auth.userId);
+            return authHeader(this.auth.userId)
         },
-    };
+    }
 }
 
 /**
@@ -54,30 +54,30 @@ export function useTestAuthUser(options?: {
  * Always cleans up afterward (pass or fail).
  */
 export function useEphemeralAuthId() {
-    let userId = "";
+    let userId = ""
 
     beforeEach(() => {
-        userId = testUserId();
-    });
+        userId = testUserId()
+    })
 
     afterEach(async () => {
         if (userId) {
-            await cleanupTestUser(userId);
-            userId = "";
+            await cleanupTestUser(userId)
+            userId = ""
         }
-    });
+    })
 
     return {
         get userId() {
             if (!userId) {
-                throw new Error("Ephemeral auth id is not ready (call only inside a test)");
+                throw new Error("Ephemeral auth id is not ready (call only inside a test)")
             }
-            return userId;
+            return userId
         },
         headers() {
-            return authHeader(this.userId);
+            return authHeader(this.userId)
         },
-    };
+    }
 }
 
 /**
@@ -86,10 +86,10 @@ export function useEphemeralAuthId() {
  */
 export function useTestUserSweep() {
     beforeAll(async () => {
-        await cleanupAllTestUsers();
-    });
+        await cleanupAllTestUsers()
+    })
 
     afterAll(async () => {
-        await cleanupAllTestUsers();
-    });
+        await cleanupAllTestUsers()
+    })
 }
