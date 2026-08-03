@@ -3,7 +3,7 @@ import type { Request, Response } from "express"
 import requireSession from "../../middleware/requireSession.js"
 import { BaseRoutes } from "../../platform/BaseRoutes.js"
 import http from "../../platform/http.js"
-import organizationsService from "./service.js"
+import OrganizationsService from "./service.js"
 
 class OrganizationsRoutes extends BaseRoutes {
     readonly router = Router()
@@ -16,7 +16,7 @@ class OrganizationsRoutes extends BaseRoutes {
 
     private async list(req: Request, res: Response) {
         const auth = this.requireAuth(req)
-        const data = await organizationsService.listMyOrganizations(auth.userId)
+        const data = await OrganizationsService.listMyOrganizations(auth.userId)
         http.ok(res, data)
     }
 }

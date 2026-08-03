@@ -4,7 +4,7 @@ import requireSession from "../../middleware/requireSession.js"
 import { BaseRoutes } from "../../platform/BaseRoutes.js"
 import http from "../../platform/http.js"
 import { apiKeyParamsSchema, createApiKeySchema, projectIdParamsSchema } from "./schemas.js"
-import apiKeysService from "./service.js"
+import ApiKeysService from "./service.js"
 
 class ApiKeysRoutes extends BaseRoutes {
     readonly router = Router()
@@ -21,7 +21,7 @@ class ApiKeysRoutes extends BaseRoutes {
     private async list(req: Request, res: Response) {
         const auth = this.requireAuth(req)
         const { projectId } = projectIdParamsSchema.parse(req.params)
-        const data = await apiKeysService.listApiKeys(projectId, auth.userId)
+        const data = await ApiKeysService.listApiKeys(projectId, auth.userId)
 
         http.ok(res, data)
     }
@@ -30,7 +30,7 @@ class ApiKeysRoutes extends BaseRoutes {
         const auth = this.requireAuth(req)
         const { projectId } = projectIdParamsSchema.parse(req.params)
         const body = createApiKeySchema.parse(req.body)
-        const data = await apiKeysService.createApiKey(projectId, auth.userId, body)
+        const data = await ApiKeysService.createApiKey(projectId, auth.userId, body)
 
         http.ok(res, data, 201)
     }
@@ -38,7 +38,7 @@ class ApiKeysRoutes extends BaseRoutes {
     private async revoke(req: Request, res: Response) {
         const auth = this.requireAuth(req)
         const { projectId, keyId } = apiKeyParamsSchema.parse(req.params)
-        const data = await apiKeysService.revokeApiKey(projectId, keyId, auth.userId)
+        const data = await ApiKeysService.revokeApiKey(projectId, keyId, auth.userId)
 
         http.ok(res, data)
     }
@@ -46,8 +46,8 @@ class ApiKeysRoutes extends BaseRoutes {
     private async remove(req: Request, res: Response) {
         const auth = this.requireAuth(req)
         const { projectId, keyId } = apiKeyParamsSchema.parse(req.params)
-        await apiKeysService.deleteApiKey(projectId, keyId, auth.userId)
-        
+        await ApiKeysService.deleteApiKey(projectId, keyId, auth.userId)
+
         http.ok(res, { deleted: true })
     }
 }
