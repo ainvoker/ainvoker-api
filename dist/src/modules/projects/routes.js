@@ -1,51 +1,52 @@
 import { Router } from "express";
-import { requireOrgMember } from "../../middleware/requireOrgMember.js";
-import { requireSession } from "../../middleware/requireSession.js";
-import { AppError } from "../../platform/errors.js";
-import { asyncHandler, ok } from "../../platform/http.js";
+import requireOrgMember from "../../middleware/requireOrgMember.js";
+import requireSession from "../../middleware/requireSession.js";
+import { BaseRoutes } from "../../platform/BaseRoutes.js";
+import http from "../../platform/http.js";
 import { createProjectSchema, projectIdParamsSchema, updateProjectSchema } from "./schemas.js";
-import * as projectsService from "./service.js";
-export const projectsRouter = Router();
-projectsRouter.get("/organizations/:orgId/projects", requireSession, requireOrgMember, asyncHandler(async (req, res) => {
-    if (!req.auth) {
-        throw new AppError(401, "UNAUTHORIZED", "Authentication required");
+import projectsService from "./service.js";
+class ProjectsRoutes extends BaseRoutes {
+    router = Router();
+    constructor() {
+        super();
+        this.router.get("/organizations/:orgId/projects", requireSession, requireOrgMember, this.bind(this.list));
+        this.router.post("/organizations/:orgId/projects", requireSession, requireOrgMember, this.bind(this.create));
+        this.router.get("/projects/:projectId", requireSession, this.bind(this.getOne));
+        this.router.patch("/projects/:projectId", requireSession, this.bind(this.update));
+        this.router.delete("/projects/:projectId", requireSession, this.bind(this.remove));
     }
-    const orgId = req.params.orgId;
-    const data = await projectsService.listProjects(orgId, req.auth.userId);
-    ok(res, data);
-}));
-projectsRouter.post("/organizations/:orgId/projects", requireSession, requireOrgMember, asyncHandler(async (req, res) => {
-    if (!req.auth) {
-        throw new AppError(401, "UNAUTHORIZED", "Authentication required");
+    async list(req, res) {
+        const auth = this.requireAuth(req);
+        const orgId = req.params.orgId;
+        const data = await projectsService.listProjects(orgId, auth.userId);
+        http.ok(res, data);
     }
-    const orgId = req.params.orgId;
-    const body = createProjectSchema.parse(req.body);
-    const data = await projectsService.createProject(orgId, req.auth.userId, body);
-    ok(res, data, 201);
-}));
-projectsRouter.get("/projects/:projectId", requireSession, asyncHandler(async (req, res) => {
-    if (!req.auth) {
-        throw new AppError(401, "UNAUTHORIZED", "Authentication required");
+    async create(req, res) {
+        const auth = this.requireAuth(req);
+        const orgId = req.params.orgId;
+        const body = createProjectSchema.parse(req.body);
+        const data = await projectsService.createProject(orgId, auth.userId, body);
+        http.ok(res, data, 201);
     }
-    const { projectId } = projectIdParamsSchema.parse(req.params);
-    const data = await projectsService.getProject(projectId, req.auth.userId);
-    ok(res, data);
-}));
-projectsRouter.patch("/projects/:projectId", requireSession, asyncHandler(async (req, res) => {
-    if (!req.auth) {
-        throw new AppError(401, "UNAUTHORIZED", "Authentication required");
+    async getOne(req, res) {
+        const auth = this.requireAuth(req);
+        const { projectId } = projectIdParamsSchema.parse(req.params);
+        const data = await projectsService.getProject(projectId, auth.userId);
+        http.ok(res, data);
     }
-    const { projectId } = projectIdParamsSchema.parse(req.params);
-    const body = updateProjectSchema.parse(req.body);
-    const data = await projectsService.updateProject(projectId, req.auth.userId, body);
-    ok(res, data);
-}));
-projectsRouter.delete("/projects/:projectId", requireSession, asyncHandler(async (req, res) => {
-    if (!req.auth) {
-        throw new AppError(401, "UNAUTHORIZED", "Authentication required");
+    async update(req, res) {
+        const auth = this.requireAuth(req);
+        const { projectId } = projectIdParamsSchema.parse(req.params);
+        const body = updateProjectSchema.parse(req.body);
+        const data = await projectsService.updateProject(projectId, auth.userId, body);
+        http.ok(res, data);
     }
-    const { projectId } = projectIdParamsSchema.parse(req.params);
-    await projectsService.deleteProject(projectId, req.auth.userId);
-    ok(res, { deleted: true });
-}));
+    async remove(req, res) {
+        const auth = this.requireAuth(req);
+        const { projectId } = projectIdParamsSchema.parse(req.params);
+        await projectsService.deleteProject(projectId, auth.userId);
+        http.ok(res, { deleted: true });
+    }
+}
+export default new ProjectsRoutes();
 //# sourceMappingURL=routes.js.map

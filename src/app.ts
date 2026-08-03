@@ -3,6 +3,7 @@ import express from "express";
 import type { Express } from "express";
 import env from "./config/env.js";
 import errorHandler from "./platform/errors.js";
+import { mountSwagger } from "./platform/swagger.js";
 import apiV1Routes from "./routes/v1.js";
 
 class App {
@@ -26,6 +27,11 @@ class App {
         });
 
         this.express.use("/api/v1", apiV1Routes.router);
+
+        if (env.NODE_ENV !== "production") {
+            mountSwagger(this.express);
+        }
+
         this.express.use(errorHandler);
     }
 }

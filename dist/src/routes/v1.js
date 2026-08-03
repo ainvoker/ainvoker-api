@@ -1,11 +1,16 @@
 import { Router } from "express";
-import { apiKeysRouter } from "../modules/apiKeys/routes.js";
-import { organizationsRouter } from "../modules/organizations/routes.js";
-import { projectsRouter } from "../modules/projects/routes.js";
-import { usersRouter } from "../modules/users/routes.js";
-export const apiV1Router = Router();
-apiV1Router.use(usersRouter);
-apiV1Router.use("/organizations", organizationsRouter);
-apiV1Router.use(projectsRouter);
-apiV1Router.use(apiKeysRouter);
+import apiKeysRoutes from "../modules/apiKeys/routes.js";
+import organizationsRoutes from "../modules/organizations/routes.js";
+import projectsRoutes from "../modules/projects/routes.js";
+import usersRoutes from "../modules/users/routes.js";
+class ApiV1Routes {
+    router = Router();
+    constructor() {
+        this.router.use(usersRoutes.router);
+        this.router.use("/organizations", organizationsRoutes.router);
+        this.router.use(projectsRoutes.router);
+        this.router.use(apiKeysRoutes.router);
+    }
+}
+export default new ApiV1Routes();
 //# sourceMappingURL=v1.js.map

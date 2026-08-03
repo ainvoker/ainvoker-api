@@ -1,71 +1,74 @@
 import { AppError } from "../../platform/errors.js";
-import { generateApiKey } from "../../platform/hash.js";
-import { prisma } from "../../platform/prisma.js";
-import { getProjectForMember } from "../projects/service.js";
-function serializeApiKey(key) {
-    return {
-        id: key.id,
-        projectId: key.projectId,
-        keyName: key.keyName,
-        keyPrefix: key.keyPrefix,
-        permissions: key.permissions,
-        lastUsed: key.lastUsed,
-        expiresAt: key.expiresAt,
-        status: key.status,
-        createdAt: key.createdAt,
-        updatedAt: key.updatedAt,
-    };
-}
-export async function listApiKeys(projectId, userId) {
-    await getProjectForMember(projectId, userId);
-    const keys = await prisma.apiKey.findMany({
-        where: { projectId },
-        orderBy: { createdAt: "desc" },
-    });
-    return keys.map(serializeApiKey);
-}
-export async function createApiKey(projectId, userId, input) {
-    await getProjectForMember(projectId, userId);
-    const { plaintext, keyHash, keyPrefix } = generateApiKey();
-    const key = await prisma.apiKey.create({
-        data: {
-            projectId,
-            keyName: input.keyName,
-            keyHash,
-            keyPrefix,
-            expiresAt: input.expiresAt ?? null,
-            ...(input.permissions !== undefined
-                ? { permissions: input.permissions }
-                : {}),
-        },
-    });
-    return {
-        ...serializeApiKey(key),
-        apiKey: plaintext,
-    };
-}
-export async function revokeApiKey(projectId, keyId, userId) {
-    await getProjectForMember(projectId, userId);
-    const existing = await prisma.apiKey.findFirst({
-        where: { id: keyId, projectId },
-    });
-    if (!existing) {
-        throw new AppError(404, "NOT_FOUND", "API key not found");
+import apiKeyHasher from "../../platform/hash.js";
+import prismaClient from "../../platform/prisma.js";
+import projectsService from "../projects/service.js";
+class ApiKeyService {
+    serializeApiKey(key) {
+        return {
+            id: key.id,
+            projectId: key.projectId,
+            keyName: key.keyName,
+            keyPrefix: key.keyPrefix,
+            permissions: key.permissions,
+            lastUsed: key.lastUsed,
+            expiresAt: key.expiresAt,
+            status: key.status,
+            createdAt: key.createdAt,
+            updatedAt: key.updatedAt,
+        };
     }
-    const key = await prisma.apiKey.update({
-        where: { id: keyId },
-        data: { status: "REVOKED" },
-    });
-    return serializeApiKey(key);
-}
-export async function deleteApiKey(projectId, keyId, userId) {
-    await getProjectForMember(projectId, userId);
-    const existing = await prisma.apiKey.findFirst({
-        where: { id: keyId, projectId },
-    });
-    if (!existing) {
-        throw new AppError(404, "NOT_FOUND", "API key not found");
+    async listApiKeys(projectId, userId) {
+        await projectsService.getProjectForMember(projectId, userId);
+        const keys = await prismaClient.apiKey.findMany({
+            where: { projectId },
+            orderBy: { createdAt: "desc" },
+        });
+        return keys.map((key) => this.serializeApiKey(key));
     }
-    await prisma.apiKey.delete({ where: { id: keyId } });
+    async createApiKey(projectId, userId, input) {
+        await projectsService.getProjectForMember(projectId, userId);
+        const { plaintext, keyHash, keyPrefix } = apiKeyHasher.generate();
+        const key = await prismaClient.apiKey.create({
+            data: {
+                projectId,
+                keyName: input.keyName,
+                keyHash,
+                keyPrefix,
+                expiresAt: input.expiresAt ?? null,
+                ...(input.permissions !== undefined
+                    ? { permissions: input.permissions }
+                    : {}),
+            },
+        });
+        return {
+            ...this.serializeApiKey(key),
+            apiKey: plaintext,
+        };
+    }
+    async revokeApiKey(projectId, keyId, userId) {
+        await projectsService.getProjectForMember(projectId, userId);
+        const existing = await prismaClient.apiKey.findFirst({
+            where: { id: keyId, projectId },
+        });
+        if (!existing) {
+            throw new AppError(404, "NOT_FOUND", "API key not found");
+        }
+        const key = await prismaClient.apiKey.update({
+            where: { id: keyId },
+            data: { status: "REVOKED" },
+        });
+        return this.serializeApiKey(key);
+    }
+    async deleteApiKey(projectId, keyId, userId) {
+        await projectsService.getProjectForMember(projectId, userId);
+        const existing = await prismaClient.apiKey.findFirst({
+            where: { id: keyId, projectId },
+        });
+        if (!existing) {
+            throw new AppError(404, "NOT_FOUND", "API key not found");
+        }
+        await prismaClient.apiKey.delete({ where: { id: keyId } });
+    }
 }
+export default new ApiKeyService();
 //# sourceMappingURL=service.js.map

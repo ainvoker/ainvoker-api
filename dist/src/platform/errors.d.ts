@@ -4,5 +4,6 @@ export declare class AppError extends Error {
     readonly code: string;
     constructor(status: number, code: string, message: string);
 }
-export declare function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void;
+declare const _default: (err: unknown, _req: Request, res: Response, _next: NextFunction) => void;
+export default _default;
 //# sourceMappingURL=errors.d.ts.map

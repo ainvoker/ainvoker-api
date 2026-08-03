@@ -1,9 +1,12 @@
 import "dotenv/config";
-export declare const env: {
-    NODE_ENV: "development" | "test" | "production";
-    PORT: number;
-    DATABASE_URL: string;
-    NEON_AUTH_URL: string;
-    CORS_ORIGIN: string;
-};
+declare class EnvConfig {
+    readonly NODE_ENV: "development" | "test" | "production";
+    readonly PORT: number;
+    readonly DATABASE_URL: string;
+    readonly NEON_AUTH_URL: string;
+    readonly CORS_ORIGIN: string;
+    constructor();
+}
+declare const _default: EnvConfig;
+export default _default;
 //# sourceMappingURL=env.d.ts.map

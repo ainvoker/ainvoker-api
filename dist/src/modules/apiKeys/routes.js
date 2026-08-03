@@ -1,41 +1,43 @@
 import { Router } from "express";
-import { requireSession } from "../../middleware/requireSession.js";
-import { AppError } from "../../platform/errors.js";
-import { asyncHandler, ok } from "../../platform/http.js";
+import requireSession from "../../middleware/requireSession.js";
+import { BaseRoutes } from "../../platform/BaseRoutes.js";
+import http from "../../platform/http.js";
 import { apiKeyParamsSchema, createApiKeySchema, projectIdParamsSchema } from "./schemas.js";
-import * as apiKeysService from "./service.js";
-export const apiKeysRouter = Router();
-apiKeysRouter.get("/projects/:projectId/api-keys", requireSession, asyncHandler(async (req, res) => {
-    if (!req.auth) {
-        throw new AppError(401, "UNAUTHORIZED", "Authentication required");
+import apiKeysService from "./service.js";
+class ApiKeysRoutes extends BaseRoutes {
+    router = Router();
+    constructor() {
+        super();
+        this.router.get("/projects/:projectId/api-keys", requireSession, this.bind(this.list));
+        this.router.post("/projects/:projectId/api-keys", requireSession, this.bind(this.create));
+        this.router.post("/projects/:projectId/api-keys/:keyId/revoke", requireSession, this.bind(this.revoke));
+        this.router.delete("/projects/:projectId/api-keys/:keyId", requireSession, this.bind(this.remove));
     }
-    const { projectId } = projectIdParamsSchema.parse(req.params);
-    const data = await apiKeysService.listApiKeys(projectId, req.auth.userId);
-    ok(res, data);
-}));
-apiKeysRouter.post("/projects/:projectId/api-keys", requireSession, asyncHandler(async (req, res) => {
-    if (!req.auth) {
-        throw new AppError(401, "UNAUTHORIZED", "Authentication required");
+    async list(req, res) {
+        const auth = this.requireAuth(req);
+        const { projectId } = projectIdParamsSchema.parse(req.params);
+        const data = await apiKeysService.listApiKeys(projectId, auth.userId);
+        http.ok(res, data);
     }
-    const { projectId } = projectIdParamsSchema.parse(req.params);
-    const body = createApiKeySchema.parse(req.body);
-    const data = await apiKeysService.createApiKey(projectId, req.auth.userId, body);
-    ok(res, data, 201);
-}));
-apiKeysRouter.post("/projects/:projectId/api-keys/:keyId/revoke", requireSession, asyncHandler(async (req, res) => {
-    if (!req.auth) {
-        throw new AppError(401, "UNAUTHORIZED", "Authentication required");
+    async create(req, res) {
+        const auth = this.requireAuth(req);
+        const { projectId } = projectIdParamsSchema.parse(req.params);
+        const body = createApiKeySchema.parse(req.body);
+        const data = await apiKeysService.createApiKey(projectId, auth.userId, body);
+        http.ok(res, data, 201);
     }
-    const { projectId, keyId } = apiKeyParamsSchema.parse(req.params);
-    const data = await apiKeysService.revokeApiKey(projectId, keyId, req.auth.userId);
-    ok(res, data);
-}));
-apiKeysRouter.delete("/projects/:projectId/api-keys/:keyId", requireSession, asyncHandler(async (req, res) => {
-    if (!req.auth) {
-        throw new AppError(401, "UNAUTHORIZED", "Authentication required");
+    async revoke(req, res) {
+        const auth = this.requireAuth(req);
+        const { projectId, keyId } = apiKeyParamsSchema.parse(req.params);
+        const data = await apiKeysService.revokeApiKey(projectId, keyId, auth.userId);
+        http.ok(res, data);
     }
-    const { projectId, keyId } = apiKeyParamsSchema.parse(req.params);
-    await apiKeysService.deleteApiKey(projectId, keyId, req.auth.userId);
-    ok(res, { deleted: true });
-}));
+    async remove(req, res) {
+        const auth = this.requireAuth(req);
+        const { projectId, keyId } = apiKeyParamsSchema.parse(req.params);
+        await apiKeysService.deleteApiKey(projectId, keyId, auth.userId);
+        http.ok(res, { deleted: true });
+    }
+}
+export default new ApiKeysRoutes();
 //# sourceMappingURL=routes.js.map

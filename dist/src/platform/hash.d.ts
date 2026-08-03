@@ -1,7 +1,12 @@
-export declare function generateApiKey(): {
-    plaintext: string;
-    keyHash: string;
-    keyPrefix: string;
-};
-export declare function hashApiKey(plaintext: string): string;
+declare class ApiKeyHasher {
+    private readonly keyPrefixLength;
+    generate(): {
+        plaintext: string;
+        keyHash: string;
+        keyPrefix: string;
+    };
+    hash(plaintext: string): string;
+}
+declare const _default: ApiKeyHasher;
+export default _default;
 //# sourceMappingURL=hash.d.ts.map

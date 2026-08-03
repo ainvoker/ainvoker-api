@@ -1,14 +1,19 @@
 import { Router } from "express";
-import { requireSession } from "../../middleware/requireSession.js";
-import { AppError } from "../../platform/errors.js";
-import { asyncHandler, ok } from "../../platform/http.js";
-import * as organizationsService from "./service.js";
-export const organizationsRouter = Router();
-organizationsRouter.get("/", requireSession, asyncHandler(async (req, res) => {
-    if (!req.auth) {
-        throw new AppError(401, "UNAUTHORIZED", "Authentication required");
+import requireSession from "../../middleware/requireSession.js";
+import { BaseRoutes } from "../../platform/BaseRoutes.js";
+import http from "../../platform/http.js";
+import organizationsService from "./service.js";
+class OrganizationsRoutes extends BaseRoutes {
+    router = Router();
+    constructor() {
+        super();
+        this.router.get("/", requireSession, this.bind(this.list));
     }
-    const data = await organizationsService.listMyOrganizations(req.auth.userId);
-    ok(res, data);
-}));
+    async list(req, res) {
+        const auth = this.requireAuth(req);
+        const data = await organizationsService.listMyOrganizations(auth.userId);
+        http.ok(res, data);
+    }
+}
+export default new OrganizationsRoutes();
 //# sourceMappingURL=routes.js.map
