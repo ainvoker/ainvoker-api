@@ -1,9 +1,29 @@
+import type { z } from "zod";
 import prismaClient from "../../platform/prisma.js";
 import organizationsService from "../organizations/service.js";
+import type { ProfileFields, updateProfileSchema } from "./schemas.js";
 
 class UserService {
-    async getMe(userId: string) {
-        const { user } = await organizationsService.ensureUserAndPersonalOrg(userId);
+    private serializeUser(user: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        profilePicture: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }) {
+        return {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            profilePicture: user.profilePicture,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+        };
+    }
+
+    async getMe(userId: string, profile?: ProfileFields) {
+        const { user } = await organizationsService.ensureUserAndPersonalOrg(userId, profile);
 
         const memberships = await prismaClient.organizationMember.findMany({
             where: { userId: user.id },
@@ -15,14 +35,7 @@ class UserService {
         });
 
         return {
-            user: {
-                id: user.id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                profilePicture: user.profilePicture,
-                createdAt: user.createdAt,
-                updatedAt: user.updatedAt,
-            },
+            user: this.serializeUser(user),
             memberships: memberships.map((m) => ({
                 id: m.id,
                 role: m.role.name,
@@ -37,6 +50,23 @@ class UserService {
                 createdAt: m.createdAt,
             })),
         };
+    }
+
+    async updateProfile(userId: string, input: z.infer<typeof updateProfileSchema>) {
+        await organizationsService.ensureUserAndPersonalOrg(userId);
+
+        const user = await prismaClient.user.update({
+            where: { id: userId },
+            data: {
+                ...(input.firstName !== undefined ? { firstName: input.firstName } : {}),
+                ...(input.lastName !== undefined ? { lastName: input.lastName } : {}),
+                ...(input.profilePicture !== undefined
+                    ? { profilePicture: input.profilePicture }
+                    : {}),
+            },
+        });
+
+        return this.serializeUser(user);
     }
 }
 

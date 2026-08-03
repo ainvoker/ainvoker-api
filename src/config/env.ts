@@ -21,6 +21,9 @@ class EnvConfig {
 
         if (!parsed.success) {
             console.error("Invalid environment variables:", parsed.error.flatten().fieldErrors);
+            if (process.env.NODE_ENV === "test") {
+                throw new Error("Invalid environment variables for tests");
+            }
             process.exit(1);
         }
 

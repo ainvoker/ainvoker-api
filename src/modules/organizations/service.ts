@@ -1,6 +1,13 @@
+import { Prisma } from "../../../generated/prisma/client.js";
 import prismaClient from "../../platform/prisma.js";
+import type { ProfileFields } from "../users/schemas.js";
 
 const ROLE_NAMES = ["owner", "admin", "member"] as const;
+
+function personalOrgSlug(userId: string) {
+    const sanitized = userId.replace(/[^a-zA-Z0-9_-]/g, "");
+    return `personal-${sanitized || "user"}`;
+}
 
 class OrganizationService {
     async ensureRoles() {
@@ -15,29 +22,90 @@ class OrganizationService {
         );
     }
 
-    async ensureUserAndPersonalOrg(userId: string) {
+    async ensureUserAndPersonalOrg(userId: string, profile?: ProfileFields) {
         await this.ensureRoles();
 
-        const user = await prismaClient.user.upsert({
+        let user = await prismaClient.user.upsert({
             where: { id: userId },
-            create: { id: userId },
+            create: {
+                id: userId,
+                firstName: profile?.firstName ?? null,
+                lastName: profile?.lastName ?? null,
+                profilePicture: profile?.profilePicture ?? null,
+            },
             update: {},
         });
 
-        const membershipCount = await prismaClient.organizationMember.count({
+        // Fill empty profile fields once (e.g. if GET /me created the row before bootstrap).
+        if (profile) {
+            const data = {
+                ...(user.firstName == null && profile.firstName !== undefined
+                    ? { firstName: profile.firstName }
+                    : {}),
+                ...(user.lastName == null && profile.lastName !== undefined
+                    ? { lastName: profile.lastName }
+                    : {}),
+                ...(user.profilePicture == null && profile.profilePicture !== undefined
+                    ? { profilePicture: profile.profilePicture }
+                    : {}),
+            };
+
+            if (Object.keys(data).length > 0) {
+                user = await prismaClient.user.update({
+                    where: { id: userId },
+                    data,
+                });
+            }
+        }
+
+        const alreadyMember = await prismaClient.organizationMember.findFirst({
             where: { userId },
+            select: { id: true },
         });
 
-        if (membershipCount === 0) {
-            const ownerRole = await prismaClient.role.findUniqueOrThrow({
-                where: { name: "owner" },
-            });
+        if (!alreadyMember) {
+            await this.createPersonalOrgIfNeeded(userId);
+        }
 
-            const slug = `personal-${userId.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 24) || "user"}`;
+        return { user };
+    }
 
+    /** Idempotent under concurrent bootstrap (React Strict Mode, double refresh, etc.). */
+    private async createPersonalOrgIfNeeded(userId: string) {
+        const ownerRole = await prismaClient.role.findUniqueOrThrow({
+            where: { name: "owner" },
+        });
+        const slug = personalOrgSlug(userId);
+
+        try {
             await prismaClient.$transaction(async (tx) => {
-                const existing = await tx.organizationMember.count({ where: { userId } });
-                if (existing > 0) {
+                const existingMembership = await tx.organizationMember.findFirst({
+                    where: { userId },
+                    select: { id: true },
+                });
+                if (existingMembership) {
+                    return;
+                }
+
+                const existingOrg = await tx.organization.findUnique({
+                    where: { slug },
+                });
+
+                if (existingOrg) {
+                    await tx.organizationMember.upsert({
+                        where: {
+                            organizationId_userId: {
+                                organizationId: existingOrg.id,
+                                userId,
+                            },
+                        },
+                        create: {
+                            organizationId: existingOrg.id,
+                            userId,
+                            roleId: ownerRole.id,
+                        },
+                        update: {},
+                    });
                     return;
                 }
 
@@ -57,9 +125,38 @@ class OrganizationService {
                     },
                 });
             });
-        }
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+                // Concurrent request created the org/membership first — treat as success.
+                const membership = await prismaClient.organizationMember.findFirst({
+                    where: { userId },
+                    select: { id: true },
+                });
+                if (membership) {
+                    return;
+                }
 
-        return { user };
+                const org = await prismaClient.organization.findUnique({ where: { slug } });
+                if (org) {
+                    await prismaClient.organizationMember.upsert({
+                        where: {
+                            organizationId_userId: {
+                                organizationId: org.id,
+                                userId,
+                            },
+                        },
+                        create: {
+                            organizationId: org.id,
+                            userId,
+                            roleId: ownerRole.id,
+                        },
+                        update: {},
+                    });
+                    return;
+                }
+            }
+            throw err;
+        }
     }
 
     async listMyOrganizations(userId: string) {
