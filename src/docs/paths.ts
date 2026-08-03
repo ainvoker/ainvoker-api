@@ -4,14 +4,13 @@ import {
     apiKeyParamsSchema,
     createApiKeySchema,
     projectIdParamsSchema,
-} from "../modules/apiKeys/schemas.js";
-import { orgIdParamsSchema } from "../modules/organizations/schemas.js";
-import {
+    orgIdParamsSchema,
     createProjectSchema,
-    projectIdParamsSchema as projectParamsSchema,
+    projectParamsSchema,
     updateProjectSchema,
-} from "../modules/projects/schemas.js";
-import { bootstrapProfileSchema, updateProfileSchema } from "../modules/users/schemas.js";
+    bootstrapProfileSchema, 
+    updateProfileSchema
+} from "./schemas.js";
 import {
     apiKeySchema,
     createdApiKeySchema,
