@@ -106,6 +106,7 @@ enum ThemePreference {
 
 model User {
   id              String           @id // Neon Auth user ID
+  email           String?          @unique
   firstName       String?
   lastName        String?
   profilePicture  String?

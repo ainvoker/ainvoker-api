@@ -44,6 +44,7 @@ class OrganizationService {
             where: { id: userId },
             create: {
                 id: userId,
+                email: profile?.email ?? null,
                 firstName: profile?.firstName ?? null,
                 lastName: profile?.lastName ?? null,
                 profilePicture: profile?.profilePicture ?? null,
@@ -54,6 +55,9 @@ class OrganizationService {
         // Fill empty profile fields once (e.g. if GET /me created the row before bootstrap).
         if (profile) {
             const data = {
+                ...(user.email == null && profile.email !== undefined
+                    ? { email: profile.email }
+                    : {}),
                 ...(user.firstName == null && profile.firstName !== undefined
                     ? { firstName: profile.firstName }
                     : {}),

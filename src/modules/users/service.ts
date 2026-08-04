@@ -6,6 +6,7 @@ import type { ProfileFields, updateProfileSchema } from "./schemas.js"
 class UserService {
     private serializeUser(user: {
         id: string
+        email: string | null
         firstName: string | null
         lastName: string | null
         profilePicture: string | null
@@ -15,6 +16,7 @@ class UserService {
     }) {
         return {
             id: user.id,
+            email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
             profilePicture: user.profilePicture,
@@ -60,6 +62,7 @@ class UserService {
         const user = await prismaClient.user.update({
             where: { id: userId },
             data: {
+                ...(input.email !== undefined ? { email: input.email } : {}),
                 ...(input.firstName !== undefined ? { firstName: input.firstName } : {}),
                 ...(input.lastName !== undefined ? { lastName: input.lastName } : {}),
                 ...(input.profilePicture !== undefined

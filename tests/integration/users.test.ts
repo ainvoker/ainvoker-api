@@ -15,6 +15,7 @@ describe("user creation (signup bootstrap)", () => {
             .post("/api/v1/me/bootstrap")
             .set(ephemeral.headers())
             .send({
+                email: "ada@example.com",
                 firstName: "Ada",
                 lastName: "Lovelace",
             })
@@ -22,6 +23,7 @@ describe("user creation (signup bootstrap)", () => {
         expect(res.status).toBe(200)
         expect(res.body.data.user).toMatchObject({
             id: ephemeral.userId,
+            email: "ada@example.com",
             firstName: "Ada",
             lastName: "Lovelace",
         })
@@ -35,6 +37,7 @@ describe("user creation (signup bootstrap)", () => {
             where: { id: ephemeral.userId },
         })
         expect(user.firstName).toBe("Ada")
+        expect(user.email).toBe("ada@example.com")
 
         const memberships = await prismaClient.organizationMember.findMany({
             where: { userId: ephemeral.userId },
@@ -51,6 +54,7 @@ describe("user creation (signup bootstrap)", () => {
         expect(res.status).toBe(200)
         expect(res.body.data.user).toMatchObject({
             id: ephemeral.userId,
+            email: null,
             firstName: null,
             lastName: null,
             profilePicture: null,
@@ -65,15 +69,16 @@ describe("user creation (signup bootstrap)", () => {
         await request(app.express)
             .post("/api/v1/me/bootstrap")
             .set(ephemeral.headers())
-            .send({ firstName: "Ada", lastName: "Lovelace" })
+            .send({ email: "ada@example.com", firstName: "Ada", lastName: "Lovelace" })
 
         const res = await request(app.express)
             .post("/api/v1/me/bootstrap")
             .set(ephemeral.headers())
-            .send({ firstName: "Grace", lastName: "Hopper" })
+            .send({ email: "grace@example.com", firstName: "Grace", lastName: "Hopper" })
 
         expect(res.status).toBe(200)
         expect(res.body.data.user).toMatchObject({
+            email: "ada@example.com",
             firstName: "Ada",
             lastName: "Lovelace",
         })
@@ -85,10 +90,11 @@ describe("user creation (signup bootstrap)", () => {
         const res = await request(app.express)
             .post("/api/v1/me/bootstrap")
             .set(ephemeral.headers())
-            .send({ firstName: "Ada", lastName: "Lovelace" })
+            .send({ email: "ada@example.com", firstName: "Ada", lastName: "Lovelace" })
 
         expect(res.status).toBe(200)
         expect(res.body.data.user).toMatchObject({
+            email: "ada@example.com",
             firstName: "Ada",
             lastName: "Lovelace",
         })
@@ -97,7 +103,7 @@ describe("user creation (signup bootstrap)", () => {
 
 describe("users /me with existing auth user", () => {
     const authUser = useTestAuthUser({
-        profile: { firstName: "Seeded", lastName: "User" },
+        profile: { email: "seeded@example.com", firstName: "Seeded", lastName: "User" },
     })
 
     it("GET /api/v1/me returns the seeded user and Personal org", async () => {
@@ -106,6 +112,7 @@ describe("users /me with existing auth user", () => {
         expect(res.status).toBe(200)
         expect(res.body.data.user).toMatchObject({
             id: authUser.auth.userId,
+            email: "seeded@example.com",
             firstName: "Seeded",
             lastName: "User",
         })
@@ -118,6 +125,7 @@ describe("users /me with existing auth user", () => {
             .patch("/api/v1/me")
             .set(authUser.headers())
             .send({
+                email: "ada@example.com",
                 firstName: "Ada",
                 lastName: "Lovelace",
                 profilePicture: "https://example.com/ada.png",
@@ -126,6 +134,7 @@ describe("users /me with existing auth user", () => {
         expect(patchRes.status).toBe(200)
         expect(patchRes.body.data).toMatchObject({
             id: authUser.auth.userId,
+            email: "ada@example.com",
             firstName: "Ada",
             lastName: "Lovelace",
             profilePicture: "https://example.com/ada.png",
@@ -133,6 +142,7 @@ describe("users /me with existing auth user", () => {
 
         const getRes = await request(app.express).get("/api/v1/me").set(authUser.headers())
         expect(getRes.body.data.user).toMatchObject({
+            email: "ada@example.com",
             firstName: "Ada",
             lastName: "Lovelace",
             profilePicture: "https://example.com/ada.png",

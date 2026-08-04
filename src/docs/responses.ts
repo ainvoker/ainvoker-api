@@ -16,9 +16,11 @@ export function dataEnvelope<T extends z.ZodType>(schema: T) {
 export const userSchema = z
     .object({
         id: z.string(),
+        email: z.string().nullable(),
         firstName: z.string().nullable(),
         lastName: z.string().nullable(),
         profilePicture: z.string().nullable(),
+        themePreference: z.enum(["LIGHT", "DARK", "DEVICE"]),
         createdAt: z.string(),
         updatedAt: z.string(),
     })

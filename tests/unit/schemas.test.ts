@@ -67,6 +67,15 @@ describe("updateProfileSchema", () => {
         expect(parsed.firstName).toBe("Ada")
     })
 
+    it("accepts email", () => {
+        const parsed = updateProfileSchema.parse({ email: " ada@example.com " })
+        expect(parsed.email).toBe("ada@example.com")
+    })
+
+    it("rejects invalid email", () => {
+        expect(() => updateProfileSchema.parse({ email: "not-an-email" })).toThrow()
+    })
+
     it("allows clearing fields with null", () => {
         const parsed = updateProfileSchema.parse({ profilePicture: null })
         expect(parsed.profilePicture).toBeNull()

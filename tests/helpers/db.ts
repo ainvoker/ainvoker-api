@@ -14,6 +14,7 @@ export type SeededAuthUser = Awaited<ReturnType<typeof seedUserWithPersonalOrg>>
 export async function seedUserWithPersonalOrg(
     userId = testUserId(),
     profile?: {
+        email?: string | null
         firstName?: string | null
         lastName?: string | null
         profilePicture?: string | null
