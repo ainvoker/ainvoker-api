@@ -54,6 +54,7 @@ describe("user creation (signup bootstrap)", () => {
             firstName: null,
             lastName: null,
             profilePicture: null,
+            themePreference: "DEVICE",
         })
         expect(res.body.data.memberships.length).toBeGreaterThanOrEqual(1)
         expect(res.body.data.memberships[0].organization.name).toBe("Personal")
@@ -136,6 +137,22 @@ describe("users /me with existing auth user", () => {
             lastName: "Lovelace",
             profilePicture: "https://example.com/ada.png",
         })
+    })
+
+    it("PATCH /api/v1/me updates themePreference", async () => {
+        const patchRes = await request(app.express)
+            .patch("/api/v1/me")
+            .set(authUser.headers())
+            .send({ themePreference: "DARK" })
+
+        expect(patchRes.status).toBe(200)
+        expect(patchRes.body.data).toMatchObject({
+            id: authUser.auth.userId,
+            themePreference: "DARK",
+        })
+
+        const getRes = await request(app.express).get("/api/v1/me").set(authUser.headers())
+        expect(getRes.body.data.user.themePreference).toBe("DARK")
     })
 
     it("PATCH /api/v1/me returns 401 without Authorization", async () => {

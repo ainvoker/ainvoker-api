@@ -5,6 +5,7 @@ import {
     createApiKeySchema,
     projectIdParamsSchema,
     orgIdParamsSchema,
+    createOrganizationSchema,
     createProjectSchema,
     projectParamsSchema,
     updateProjectSchema,
@@ -152,6 +153,31 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
                     "application/json": {
                         schema: dataEnvelope(z.array(organizationListItemSchema)),
                     },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/organizations",
+        tags: ["Organizations"],
+        summary: "Create an organization",
+        security: bearerAuth,
+        request: {
+            body: {
+                required: true,
+                content: {
+                    "application/json": { schema: createOrganizationSchema },
+                },
+            },
+        },
+        responses: {
+            201: {
+                description: "Created organization (caller is owner)",
+                content: {
+                    "application/json": { schema: dataEnvelope(organizationListItemSchema) },
                 },
             },
             ...errorResponses,

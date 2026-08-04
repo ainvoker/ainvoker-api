@@ -9,6 +9,7 @@ class UserService {
         firstName: string | null
         lastName: string | null
         profilePicture: string | null
+        themePreference: "LIGHT" | "DARK" | "DEVICE"
         createdAt: Date
         updatedAt: Date
     }) {
@@ -17,6 +18,7 @@ class UserService {
             firstName: user.firstName,
             lastName: user.lastName,
             profilePicture: user.profilePicture,
+            themePreference: user.themePreference,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
         }
@@ -62,6 +64,9 @@ class UserService {
                 ...(input.lastName !== undefined ? { lastName: input.lastName } : {}),
                 ...(input.profilePicture !== undefined
                     ? { profilePicture: input.profilePicture }
+                    : {}),
+                ...(input.themePreference !== undefined
+                    ? { themePreference: input.themePreference }
                     : {}),
             },
         })

@@ -1,12 +1,27 @@
 import { Prisma } from "../../../generated/prisma/client.js"
+import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
 import type { ProfileFields } from "../users/schemas.js"
+import type { createOrganizationSchema } from "./schemas.js"
+import type { z } from "zod"
 
 const ROLE_NAMES = ["owner", "admin", "member"] as const
 
 function personalOrgSlug(userId: string) {
     const sanitized = userId.replace(/[^a-zA-Z0-9_-]/g, "")
     return `personal-${sanitized || "user"}`
+}
+
+/** Lowercase slug from a display name; falls back to "workspace". */
+export function slugifyOrganizationName(name: string) {
+    const slug = name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 64)
+
+    return slug || "workspace"
 }
 
 class OrganizationService {
@@ -154,6 +169,80 @@ class OrganizationService {
                     })
                     return
                 }
+            }
+            throw err
+        }
+    }
+
+    private async allocateUniqueSlug(baseSlug: string) {
+        const existing = await prismaClient.organization.findUnique({
+            where: { slug: baseSlug },
+            select: { id: true },
+        })
+        if (!existing) return baseSlug
+
+        for (let attempt = 0; attempt < 8; attempt++) {
+            const suffix = Math.random().toString(36).slice(2, 6)
+            const candidate = `${baseSlug.slice(0, 59)}-${suffix}`
+            const taken = await prismaClient.organization.findUnique({
+                where: { slug: candidate },
+                select: { id: true },
+            })
+            if (!taken) return candidate
+        }
+
+        throw new AppError(409, "CONFLICT", "Could not allocate a unique workspace slug")
+    }
+
+    async createOrganization(
+        userId: string,
+        input: z.infer<typeof createOrganizationSchema>,
+    ) {
+        await this.ensureUserAndPersonalOrg(userId)
+
+        const ownerRole = await prismaClient.role.findUniqueOrThrow({
+            where: { name: "owner" },
+        })
+
+        const baseSlug = input.slug ?? slugifyOrganizationName(input.name)
+        // Explicit slug must be free; auto-generated slugs get a suffix if taken.
+        const slug = input.slug
+            ? baseSlug
+            : await this.allocateUniqueSlug(baseSlug)
+
+        try {
+            const organization = await prismaClient.$transaction(async (tx) => {
+                const org = await tx.organization.create({
+                    data: {
+                        name: input.name,
+                        slug,
+                        createdByUserId: userId,
+                    },
+                })
+
+                await tx.organizationMember.create({
+                    data: {
+                        organizationId: org.id,
+                        userId,
+                        roleId: ownerRole.id,
+                    },
+                })
+
+                return org
+            })
+
+            return {
+                id: organization.id,
+                name: organization.name,
+                slug: organization.slug,
+                status: organization.status,
+                role: "owner" as const,
+                createdAt: organization.createdAt,
+                updatedAt: organization.updatedAt,
+            }
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+                throw new AppError(409, "CONFLICT", "An organization with this slug already exists")
             }
             throw err
         }
