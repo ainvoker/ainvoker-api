@@ -116,3 +116,27 @@ export const healthSchema = z
         status: z.string(),
     })
     .meta({ id: "Health" })
+
+export const chatMessageSchema = z
+    .object({
+        role: z.enum(["system", "user", "assistant"]),
+        content: z.string(),
+    })
+    .meta({ id: "ChatMessage" })
+
+export const chatUsageSchema = z
+    .object({
+        inputTokens: z.number().int(),
+        outputTokens: z.number().int(),
+        totalTokens: z.number().int(),
+    })
+    .meta({ id: "ChatUsage" })
+
+export const textChatResponseSchema = z
+    .object({
+        id: z.string(),
+        model: z.string(),
+        message: chatMessageSchema,
+        usage: chatUsageSchema.nullable(),
+    })
+    .meta({ id: "TextChatResponse" })

@@ -9,8 +9,9 @@ import {
     createProjectSchema,
     projectParamsSchema,
     updateProjectSchema,
-    bootstrapProfileSchema, 
-    updateProfileSchema
+    bootstrapProfileSchema,
+    updateProfileSchema,
+    textChatSchema,
 } from "./schemas.js"
 import {
     apiKeySchema,
@@ -23,10 +24,12 @@ import {
     organizationListItemSchema,
     projectSchema,
     rootMessageSchema,
+    textChatResponseSchema,
     userSchema,
 } from "./responses.js"
 
 const bearerAuth = [{ bearerAuth: [] }]
+const apiKeyAuth = [{ apiKeyAuth: [] }]
 
 const errorResponses = {
     400: {
@@ -364,6 +367,36 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             200: {
                 description: "API key deleted",
                 content: { "application/json": { schema: dataEnvelope(deletedResponseSchema) } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/v1/text/chat",
+        tags: ["Gateway"],
+        summary: "Text chat completion",
+        description:
+            "Invoke a text chat model via the data plane. Authenticate with a project API key (`Authorization: Bearer ain_…`). Model must be a `provider/model` slug (e.g. `openai/gpt-4o-mini`).",
+        security: apiKeyAuth,
+        request: {
+            body: {
+                content: {
+                    "application/json": { schema: textChatSchema },
+                },
+            },
+        },
+        responses: {
+            200: {
+                description: "Assistant message",
+                content: {
+                    "application/json": { schema: dataEnvelope(textChatResponseSchema) },
+                },
+            },
+            501: {
+                description: "Provider adapter not implemented",
+                content: { "application/json": { schema: errorResponseSchema } },
             },
             ...errorResponses,
         },

@@ -58,6 +58,17 @@ export async function cleanupTestUser(userId: string) {
             const projectIds = projects.map((p) => p.id)
 
             if (projectIds.length > 0) {
+                await prismaClient.actionInvocation.deleteMany({
+                    where: { request: { projectId: { in: projectIds } } },
+                })
+                await prismaClient.aIRequest.deleteMany({
+                    where: { projectId: { in: projectIds } },
+                })
+                await prismaClient.action.deleteMany({ where: { projectId: { in: projectIds } } })
+                await prismaClient.usageAnalytics.deleteMany({
+                    where: { projectId: { in: projectIds } },
+                })
+                await prismaClient.webhook.deleteMany({ where: { projectId: { in: projectIds } } })
                 await prismaClient.apiKey.deleteMany({ where: { projectId: { in: projectIds } } })
                 await prismaClient.project.deleteMany({ where: { id: { in: projectIds } } })
             }
