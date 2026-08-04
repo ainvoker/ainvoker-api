@@ -117,6 +117,41 @@ export const healthSchema = z
     })
     .meta({ id: "Health" })
 
+export const aiRequestSummarySchema = z
+    .object({
+        id: z.string(),
+        projectId: z.string(),
+        apiKeyId: z.string(),
+        apiKeyName: z.string(),
+        apiKeyPrefix: z.string(),
+        model: z.string(),
+        serviceType: z.string(),
+        requestStatus: z.string(),
+        inputTokens: z.number().int().nullable(),
+        outputTokens: z.number().int().nullable(),
+        totalTokens: z.number().int().nullable(),
+        latency: z.number().int().nullable(),
+        requestCost: z.string().nullable(),
+        createdAt: z.string(),
+    })
+    .meta({ id: "AiRequestSummary" })
+
+export const aiRequestListSchema = z
+    .object({
+        items: z.array(aiRequestSummarySchema),
+        total: z.number().int(),
+        limit: z.number().int(),
+        offset: z.number().int(),
+    })
+    .meta({ id: "AiRequestList" })
+
+export const aiRequestDetailSchema = aiRequestSummarySchema
+    .extend({
+        requestPayload: z.unknown(),
+        responsePayload: z.unknown().nullable(),
+    })
+    .meta({ id: "AiRequestDetail" })
+
 export const chatMessageSchema = z
     .object({
         role: z.enum(["system", "user", "assistant"]),

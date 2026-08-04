@@ -1,24 +1,15 @@
 import "dotenv/config"
 import { z } from "zod"
 
-const envSchema = z
-    .object({
-        NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-        PORT: z.coerce.number().int().positive().default(3000),
-        DATABASE_URL: z.string().min(1),
-        NEON_AUTH_URL: z.string().url(),
-        CORS_ORIGIN: z.string().min(1).default("http://localhost:5173"),
-        OPENAI_API_KEY: z.string().min(1).optional(),
-    })
-    .superRefine((data, ctx) => {
-        if (data.NODE_ENV !== "test" && !data.OPENAI_API_KEY) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["OPENAI_API_KEY"],
-                message: "OPENAI_API_KEY is required",
-            })
-        }
-    })
+const envSchema = z.object({
+    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    PORT: z.coerce.number().int().positive().default(3000),
+    DATABASE_URL: z.string().min(1),
+    NEON_AUTH_URL: z.string().url(),
+    CORS_ORIGIN: z.string().min(1).default("http://localhost:5173"),
+    OPENAI_API_KEY: z.string().min(1).optional(),
+    GEMINI_API_KEY: z.string().min(1).optional(),
+})
 
 class EnvConfig {
     readonly NODE_ENV: "development" | "test" | "production"
@@ -26,7 +17,9 @@ class EnvConfig {
     readonly DATABASE_URL: string
     readonly NEON_AUTH_URL: string
     readonly CORS_ORIGIN: string
-    readonly OPENAI_API_KEY: string
+    /** Present when set; adapters must check before calling upstream. */
+    readonly OPENAI_API_KEY: string | undefined
+    readonly GEMINI_API_KEY: string | undefined
 
     constructor() {
         const parsed = envSchema.safeParse(process.env)
@@ -44,7 +37,8 @@ class EnvConfig {
         this.DATABASE_URL = parsed.data.DATABASE_URL
         this.NEON_AUTH_URL = parsed.data.NEON_AUTH_URL
         this.CORS_ORIGIN = parsed.data.CORS_ORIGIN
-        this.OPENAI_API_KEY = parsed.data.OPENAI_API_KEY ?? "test-openai-key"
+        this.OPENAI_API_KEY = parsed.data.OPENAI_API_KEY
+        this.GEMINI_API_KEY = parsed.data.GEMINI_API_KEY
     }
 }
 

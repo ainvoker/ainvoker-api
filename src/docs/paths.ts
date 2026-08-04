@@ -12,9 +12,13 @@ import {
     bootstrapProfileSchema,
     updateProfileSchema,
     textChatSchema,
+    aiRequestParamsSchema,
+    listAiRequestsQuerySchema,
 } from "./schemas.js"
 import {
     apiKeySchema,
+    aiRequestDetailSchema,
+    aiRequestListSchema,
     createdApiKeySchema,
     dataEnvelope,
     deletedResponseSchema,
@@ -373,12 +377,56 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
     })
 
     registry.registerPath({
+        method: "get",
+        path: "/api/v1/projects/{projectId}/ai-requests",
+        tags: ["AI Requests"],
+        summary: "List AI requests for a project",
+        description:
+            "Returns paginated request summaries (newest first). Use `status`, `limit`, and `offset` query params. Full payloads are available on the detail endpoint.",
+        security: bearerAuth,
+        request: {
+            params: projectIdParamsSchema,
+            query: listAiRequestsQuerySchema,
+        },
+        responses: {
+            200: {
+                description: "Paginated AI request summaries",
+                content: {
+                    "application/json": { schema: dataEnvelope(aiRequestListSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/projects/{projectId}/ai-requests/{requestId}",
+        tags: ["AI Requests"],
+        summary: "Get an AI request",
+        description: "Returns full request and response payloads for a single AI request.",
+        security: bearerAuth,
+        request: {
+            params: aiRequestParamsSchema,
+        },
+        responses: {
+            200: {
+                description: "AI request detail",
+                content: {
+                    "application/json": { schema: dataEnvelope(aiRequestDetailSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
         method: "post",
         path: "/v1/text/chat",
         tags: ["Gateway"],
         summary: "Text chat completion",
         description:
-            "Invoke a text chat model via the data plane. Authenticate with a project API key (`Authorization: Bearer ain_…`). Model must be a `provider/model` slug (e.g. `openai/gpt-4o-mini`).",
+            "Invoke a text chat model via the data plane. Authenticate with a project API key (`Authorization: Bearer ain_…`). Model must be a `provider/model` slug (e.g. `openai/gpt-4o-mini` or `gemini/gemini-2.5-flash`).",
         security: apiKeyAuth,
         request: {
             body: {

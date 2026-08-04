@@ -37,8 +37,30 @@ describe("POST /v1/text/chat", () => {
             },
         })
 
-        fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(
+        fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            const url = String(input)
+            if (url.includes(":generateContent")) {
+                return new Response(
+                    JSON.stringify({
+                        candidates: [
+                            {
+                                content: {
+                                    role: "model",
+                                    parts: [{ text: "Hello from Gemini mock" }],
+                                },
+                            },
+                        ],
+                        usageMetadata: {
+                            promptTokenCount: 8,
+                            candidatesTokenCount: 4,
+                            totalTokenCount: 12,
+                        },
+                    }),
+                    { status: 200, headers: { "Content-Type": "application/json" } },
+                )
+            }
+
+            return new Response(
                 JSON.stringify({
                     choices: [{ message: { role: "assistant", content: "Hello from mock" } }],
                     usage: {
@@ -48,8 +70,8 @@ describe("POST /v1/text/chat", () => {
                     },
                 }),
                 { status: 200, headers: { "Content-Type": "application/json" } },
-            ),
-        )
+            )
+        })
     })
 
     afterEach(async () => {
@@ -77,7 +99,7 @@ describe("POST /v1/text/chat", () => {
         expect(res.status).toBe(401)
     })
 
-    it("completes a chat and writes an AIRequest", async () => {
+    it("completes an OpenAI chat and writes an AIRequest", async () => {
         const res = await request(app.express)
             .post("/v1/text/chat")
             .set({ Authorization: `Bearer ${plaintextKey}` })
@@ -112,6 +134,55 @@ describe("POST /v1/text/chat", () => {
         expect(stored.inputTokens).toBe(10)
         expect(stored.outputTokens).toBe(5)
         expect(stored.totalTokens).toBe(15)
+    })
+
+    it("completes a Gemini chat and writes an AIRequest", async () => {
+        const res = await request(app.express)
+            .post("/v1/text/chat")
+            .set({ Authorization: `Bearer ${plaintextKey}` })
+            .send({
+                model: "gemini/gemini-2.5-flash",
+                messages: [
+                    { role: "system", content: "Be brief" },
+                    { role: "user", content: "Say hello" },
+                ],
+            })
+
+        expect(res.status).toBe(200)
+        expect(res.body.data).toMatchObject({
+            model: "gemini/gemini-2.5-flash",
+            message: { role: "assistant", content: "Hello from Gemini mock" },
+            usage: {
+                inputTokens: 8,
+                outputTokens: 4,
+                totalTokens: 12,
+            },
+        })
+        expect(typeof res.body.data.id).toBe("string")
+
+        expect(fetchSpy).toHaveBeenCalled()
+        const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit]
+        expect(url).toContain("/models/gemini-2.5-flash:generateContent")
+        expect(init.method).toBe("POST")
+        const headers = init.headers as Record<string, string>
+        expect(headers["x-goog-api-key"]).toBeTruthy()
+
+        const body = JSON.parse(String(init.body)) as {
+            systemInstruction?: { parts: Array<{ text: string }> }
+            contents: Array<{ role: string }>
+        }
+        expect(body.systemInstruction?.parts[0]?.text).toBe("Be brief")
+        expect(body.contents[0]?.role).toBe("user")
+
+        const stored = await prismaClient.aIRequest.findUniqueOrThrow({
+            where: { id: res.body.data.id as string },
+        })
+        expect(stored.requestStatus).toBe("SUCCESS")
+        expect(stored.serviceType).toBe("TEXT")
+        expect(stored.projectId).toBe(projectId)
+        expect(stored.inputTokens).toBe(8)
+        expect(stored.outputTokens).toBe(4)
+        expect(stored.totalTokens).toBe(12)
     })
 
     it("rejects invalid body", async () => {

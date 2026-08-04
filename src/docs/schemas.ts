@@ -7,3 +7,7 @@ export {
 } from "../modules/projects/schemas.js"
 export * from "../modules/users/schemas.js"
 export { textChatSchema } from "../modules/text/schemas.js"
+export {
+    aiRequestParamsSchema,
+    listAiRequestsQuerySchema,
+} from "../modules/aiRequests/schemas.js"

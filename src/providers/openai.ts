@@ -25,6 +25,14 @@ type OpenAIChatResponse = {
 
 class OpenAIChatProvider implements ChatProvider {
     async complete(input: ChatCompletionInput): Promise<ChatCompletionResult> {
+        if (!env.OPENAI_API_KEY) {
+            throw new AppError(
+                503,
+                "PROVIDER_MISCONFIGURED",
+                "OPENAI_API_KEY is not configured",
+            )
+        }
+
         const baseUrl = input.baseUrl.replace(/\/$/, "")
         const url = `${baseUrl}/chat/completions`
 

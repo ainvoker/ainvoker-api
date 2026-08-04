@@ -52,4 +52,10 @@ describe("chatProviderRegistry", () => {
             expect((err as AppError).status).toBe(501)
         }
     })
+
+    it("has openai and gemini registered after providers/index import", async () => {
+        await import("../../src/providers/index.js")
+        expect(chatProviderRegistry.has("openai")).toBe(true)
+        expect(chatProviderRegistry.has("gemini")).toBe(true)
+    })
 })

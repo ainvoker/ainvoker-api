@@ -2,12 +2,14 @@ import { Prisma } from "../../../generated/prisma/client.js"
 import prismaClient from "../../platform/prisma.js"
 
 const OPENAI_PROVIDER = "openai"
-const DEFAULT_MODEL = "gpt-4o-mini"
+const OPENAI_MODEL = "gpt-4o-mini"
+const GEMINI_PROVIDER = "gemini"
+const GEMINI_MODEL = "gemini-3.6-flash"
 
 let ensurePromise: Promise<void> | null = null
 
 /**
- * Idempotent seed for the MVP text catalog (openai / gpt-4o-mini).
+ * Idempotent seed for the MVP text catalog (openai + gemini Flash).
  * Safe to call on every chat request; runs the upsert work at most once per process.
  */
 export async function ensureTextCatalog(): Promise<void> {
@@ -21,7 +23,7 @@ export async function ensureTextCatalog(): Promise<void> {
 }
 
 async function seedTextCatalog(): Promise<void> {
-    const provider = await prismaClient.aIProvider.upsert({
+    const openai = await prismaClient.aIProvider.upsert({
         where: { name: OPENAI_PROVIDER },
         create: {
             name: OPENAI_PROVIDER,
@@ -38,13 +40,13 @@ async function seedTextCatalog(): Promise<void> {
     await prismaClient.aIModel.upsert({
         where: {
             providerId_name: {
-                providerId: provider.id,
-                name: DEFAULT_MODEL,
+                providerId: openai.id,
+                name: OPENAI_MODEL,
             },
         },
         create: {
-            providerId: provider.id,
-            name: DEFAULT_MODEL,
+            providerId: openai.id,
+            name: OPENAI_MODEL,
             type: "TEXT",
             contextWindow: 128000,
             inputPrice: new Prisma.Decimal("0.000150"),
@@ -57,10 +59,50 @@ async function seedTextCatalog(): Promise<void> {
             contextWindow: 128000,
         },
     })
+
+    const gemini = await prismaClient.aIProvider.upsert({
+        where: { name: GEMINI_PROVIDER },
+        create: {
+            name: GEMINI_PROVIDER,
+            baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+            documentation: "https://ai.google.dev/gemini-api/docs",
+            status: "ACTIVE",
+        },
+        update: {
+            baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+            status: "ACTIVE",
+        },
+    })
+
+    await prismaClient.aIModel.upsert({
+        where: {
+            providerId_name: {
+                providerId: gemini.id,
+                name: GEMINI_MODEL,
+            },
+        },
+        create: {
+            providerId: gemini.id,
+            name: GEMINI_MODEL,
+            type: "TEXT",
+            contextWindow: 1048576,
+            inputPrice: new Prisma.Decimal("0"),
+            outputPrice: new Prisma.Decimal("0"),
+            status: "ACTIVE",
+        },
+        update: {
+            type: "TEXT",
+            status: "ACTIVE",
+            contextWindow: 1048576,
+            inputPrice: new Prisma.Decimal("0"),
+            outputPrice: new Prisma.Decimal("0"),
+        },
+    })
 }
 
 export const textCatalogDefaults = {
     providerName: OPENAI_PROVIDER,
-    modelName: DEFAULT_MODEL,
-    modelSlug: `${OPENAI_PROVIDER}/${DEFAULT_MODEL}`,
+    modelName: OPENAI_MODEL,
+    modelSlug: `${OPENAI_PROVIDER}/${OPENAI_MODEL}`,
+    geminiModelSlug: `${GEMINI_PROVIDER}/${GEMINI_MODEL}`,
 } as const
