@@ -11,7 +11,7 @@ declare class OrganizationService {
             firstName: string | null;
             lastName: string | null;
             profilePicture: string | null;
-            themePreference: import("../../../generated/prisma/enums.js").ThemePreference;
+            themePreference: import("../../generated/prisma/enums.js").ThemePreference;
             id: string;
             createdAt: Date;
             updatedAt: Date;
@@ -29,7 +29,7 @@ declare class OrganizationService {
         id: string;
         name: string;
         slug: string;
-        status: import("../../../generated/prisma/enums.js").OrganizationStatus;
+        status: import("../../generated/prisma/enums.js").OrganizationStatus;
         role: "owner";
         createdAt: Date;
         updatedAt: Date;
@@ -38,7 +38,7 @@ declare class OrganizationService {
         id: string;
         name: string;
         slug: string;
-        status: import("../../../generated/prisma/enums.js").OrganizationStatus;
+        status: import("../../generated/prisma/enums.js").OrganizationStatus;
         role: string;
         createdAt: Date;
         updatedAt: Date;

@@ -10,7 +10,7 @@ export type PlanName = (typeof PLAN_NAMES)[keyof typeof PLAN_NAMES];
  */
 export declare function ensureBillingCatalog(): Promise<void>;
 export declare function getPlanByName(name: PlanName): Promise<{
-    billingMode: import("../../../generated/prisma/enums.js").PlanBillingMode;
+    billingMode: import("../../generated/prisma/enums.js").PlanBillingMode;
     tokenLimit: number;
     requestLimit: number;
     name: string;

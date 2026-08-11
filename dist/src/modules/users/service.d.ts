@@ -20,7 +20,7 @@ declare class UserService {
                 id: string;
                 name: string;
                 slug: string;
-                status: import("../../../generated/prisma/enums.js").OrganizationStatus;
+                status: import("../../generated/prisma/enums.js").OrganizationStatus;
                 createdAt: Date;
                 updatedAt: Date;
             };

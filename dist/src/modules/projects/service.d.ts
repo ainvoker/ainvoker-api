@@ -3,9 +3,9 @@ import type { createProjectSchema, updateProjectSchema } from "./schemas.js";
 declare class ProjectService {
     private assertOrgMember;
     getProjectForMember(projectId: string, userId: string): Promise<{
-        status: import("../../../generated/prisma/enums.js").ProjectStatus;
+        status: import("../../generated/prisma/enums.js").ProjectStatus;
         name: string;
-        environment: import("../../../generated/prisma/enums.js").ProjectEnvironment;
+        environment: import("../../generated/prisma/enums.js").ProjectEnvironment;
         description: string | null;
         id: string;
         createdAt: Date;

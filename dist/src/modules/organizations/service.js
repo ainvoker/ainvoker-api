@@ -1,4 +1,4 @@
-import { Prisma } from "../../../generated/prisma/client.js";
+import { Prisma } from "../../generated/prisma/client.js";
 import { AppError } from "../../platform/errors.js";
 import prismaClient from "../../platform/prisma.js";
 import { ensureBillingCatalog, getPlanByName, PLAN_NAMES, } from "../billing/catalog.js";

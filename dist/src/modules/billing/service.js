@@ -1,4 +1,3 @@
-import { Prisma } from "../../../generated/prisma/client.js";
 import env from "../../config/env.js";
 import { AppError } from "../../platform/errors.js";
 import prismaClient from "../../platform/prisma.js";

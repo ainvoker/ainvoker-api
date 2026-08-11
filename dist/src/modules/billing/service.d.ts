@@ -1,8 +1,8 @@
 declare class BillingService {
     getOrganizationSubscription(organizationId: string): Promise<{
         planName: string;
-        status: import("../../../generated/prisma/enums.js").SubscriptionStatus;
-        billingMode: import("../../../generated/prisma/enums.js").PlanBillingMode;
+        status: import("../../generated/prisma/enums.js").SubscriptionStatus;
+        billingMode: import("../../generated/prisma/enums.js").PlanBillingMode;
         tokenLimit: number;
         requestLimit: number;
         pendingPlanName: string | null;

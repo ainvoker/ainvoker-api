@@ -1,4 +1,4 @@
-import { Prisma } from "../../../generated/prisma/client.js";
+import { Prisma } from "../../generated/prisma/client.js";
 import { assertModelAllowedForPlan, assertWithinPlanLimits, getActiveSubscriptionWithPlan, } from "../billing/limits.js";
 import { AppError } from "../../platform/errors.js";
 import prismaClient from "../../platform/prisma.js";
