@@ -5,9 +5,11 @@ declare class UserService {
     getMe(userId: string, profile?: ProfileFields): Promise<{
         user: {
             id: string;
+            email: string | null;
             firstName: string | null;
             lastName: string | null;
             profilePicture: string | null;
+            themePreference: "LIGHT" | "DARK" | "DEVICE";
             createdAt: Date;
             updatedAt: Date;
         };
@@ -27,9 +29,11 @@ declare class UserService {
     }>;
     updateProfile(userId: string, input: z.infer<typeof updateProfileSchema>): Promise<{
         id: string;
+        email: string | null;
         firstName: string | null;
         lastName: string | null;
         profilePicture: string | null;
+        themePreference: "LIGHT" | "DARK" | "DEVICE";
         createdAt: Date;
         updatedAt: Date;
     }>;

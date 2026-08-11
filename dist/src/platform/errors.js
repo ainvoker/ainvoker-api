@@ -24,7 +24,7 @@ class ErrorHandler {
             res.status(400).json({
                 error: {
                     code: "VALIDATION_ERROR",
-                    message: err.issues.map((issue) => issue.message).join("; "),
+                    message: err.issues.map((issue) => issue.message).join(" "),
                 },
             });
             return;

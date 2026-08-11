@@ -97,9 +97,11 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 });
 export const UserScalarFieldEnum = {
     id: 'id',
+    email: 'email',
     firstName: 'firstName',
     lastName: 'lastName',
     profilePicture: 'profilePicture',
+    themePreference: 'themePreference',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
 };
@@ -113,6 +115,8 @@ export const OrganizationScalarFieldEnum = {
     slug: 'slug',
     status: 'status',
     createdByUserId: 'createdByUserId',
+    xenditCustomerReference: 'xenditCustomerReference',
+    xenditPaymentTokenId: 'xenditPaymentTokenId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
 };
@@ -165,6 +169,7 @@ export const AIModelScalarFieldEnum = {
     inputPrice: 'inputPrice',
     outputPrice: 'outputPrice',
     status: 'status',
+    freeEligible: 'freeEligible',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
 };
@@ -231,6 +236,7 @@ export const PlanScalarFieldEnum = {
     monthlyPrice: 'monthlyPrice',
     tokenLimit: 'tokenLimit',
     requestLimit: 'requestLimit',
+    billingMode: 'billingMode',
     description: 'description',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -242,6 +248,7 @@ export const SubscriptionScalarFieldEnum = {
     status: 'status',
     startedAt: 'startedAt',
     expiresAt: 'expiresAt',
+    xenditSessionId: 'xenditSessionId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
 };

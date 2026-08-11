@@ -68,12 +68,18 @@ export declare const WebhookStatus: {
 };
 export type WebhookStatus = (typeof WebhookStatus)[keyof typeof WebhookStatus];
 export declare const SubscriptionStatus: {
+    readonly PENDING: "PENDING";
     readonly ACTIVE: "ACTIVE";
     readonly PAST_DUE: "PAST_DUE";
     readonly CANCELED: "CANCELED";
     readonly EXPIRED: "EXPIRED";
 };
 export type SubscriptionStatus = (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus];
+export declare const PlanBillingMode: {
+    readonly FIXED_MONTHLY: "FIXED_MONTHLY";
+    readonly METERED: "METERED";
+};
+export type PlanBillingMode = (typeof PlanBillingMode)[keyof typeof PlanBillingMode];
 export declare const PaymentStatus: {
     readonly PENDING: "PENDING";
     readonly SUCCEEDED: "SUCCEEDED";
@@ -81,4 +87,10 @@ export declare const PaymentStatus: {
     readonly REFUNDED: "REFUNDED";
 };
 export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
+export declare const ThemePreference: {
+    readonly LIGHT: "LIGHT";
+    readonly DARK: "DARK";
+    readonly DEVICE: "DEVICE";
+};
+export type ThemePreference = (typeof ThemePreference)[keyof typeof ThemePreference];
 //# sourceMappingURL=enums.d.ts.map

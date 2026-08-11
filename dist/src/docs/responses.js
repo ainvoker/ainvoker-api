@@ -13,9 +13,11 @@ export function dataEnvelope(schema) {
 export const userSchema = z
     .object({
     id: z.string(),
+    email: z.string().nullable(),
     firstName: z.string().nullable(),
     lastName: z.string().nullable(),
     profilePicture: z.string().nullable(),
+    themePreference: z.enum(["LIGHT", "DARK", "DEVICE"]),
     createdAt: z.string(),
     updatedAt: z.string(),
 })
@@ -101,4 +103,57 @@ export const healthSchema = z
     status: z.string(),
 })
     .meta({ id: "Health" });
+export const aiRequestSummarySchema = z
+    .object({
+    id: z.string(),
+    projectId: z.string(),
+    apiKeyId: z.string(),
+    apiKeyName: z.string(),
+    apiKeyPrefix: z.string(),
+    model: z.string(),
+    serviceType: z.string(),
+    requestStatus: z.string(),
+    inputTokens: z.number().int().nullable(),
+    outputTokens: z.number().int().nullable(),
+    totalTokens: z.number().int().nullable(),
+    latency: z.number().int().nullable(),
+    requestCost: z.string().nullable(),
+    createdAt: z.string(),
+})
+    .meta({ id: "AiRequestSummary" });
+export const aiRequestListSchema = z
+    .object({
+    items: z.array(aiRequestSummarySchema),
+    total: z.number().int(),
+    limit: z.number().int(),
+    offset: z.number().int(),
+})
+    .meta({ id: "AiRequestList" });
+export const aiRequestDetailSchema = aiRequestSummarySchema
+    .extend({
+    requestPayload: z.unknown(),
+    responsePayload: z.unknown().nullable(),
+})
+    .meta({ id: "AiRequestDetail" });
+export const chatMessageSchema = z
+    .object({
+    role: z.enum(["system", "user", "assistant"]),
+    content: z.string(),
+})
+    .meta({ id: "ChatMessage" });
+export const chatUsageSchema = z
+    .object({
+    inputTokens: z.number().int(),
+    outputTokens: z.number().int(),
+    totalTokens: z.number().int(),
+})
+    .meta({ id: "ChatUsage" });
+export const textChatResponseSchema = z
+    .object({
+    id: z.string(),
+    model: z.string(),
+    message: chatMessageSchema,
+    usage: chatUsageSchema.nullable(),
+})
+    .meta({ id: "TextChatResponse" });
 //# sourceMappingURL=responses.js.map

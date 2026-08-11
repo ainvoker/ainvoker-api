@@ -36,6 +36,7 @@ export type AIModelMinAggregateOutputType = {
     inputPrice: runtime.Decimal | null;
     outputPrice: runtime.Decimal | null;
     status: $Enums.CatalogStatus | null;
+    freeEligible: boolean | null;
     createdAt: Date | null;
     updatedAt: Date | null;
 };
@@ -48,6 +49,7 @@ export type AIModelMaxAggregateOutputType = {
     inputPrice: runtime.Decimal | null;
     outputPrice: runtime.Decimal | null;
     status: $Enums.CatalogStatus | null;
+    freeEligible: boolean | null;
     createdAt: Date | null;
     updatedAt: Date | null;
 };
@@ -60,6 +62,7 @@ export type AIModelCountAggregateOutputType = {
     inputPrice: number;
     outputPrice: number;
     status: number;
+    freeEligible: number;
     createdAt: number;
     updatedAt: number;
     _all: number;
@@ -87,6 +90,7 @@ export type AIModelMinAggregateInputType = {
     inputPrice?: true;
     outputPrice?: true;
     status?: true;
+    freeEligible?: true;
     createdAt?: true;
     updatedAt?: true;
 };
@@ -99,6 +103,7 @@ export type AIModelMaxAggregateInputType = {
     inputPrice?: true;
     outputPrice?: true;
     status?: true;
+    freeEligible?: true;
     createdAt?: true;
     updatedAt?: true;
 };
@@ -111,6 +116,7 @@ export type AIModelCountAggregateInputType = {
     inputPrice?: true;
     outputPrice?: true;
     status?: true;
+    freeEligible?: true;
     createdAt?: true;
     updatedAt?: true;
     _all?: true;
@@ -200,6 +206,7 @@ export type AIModelGroupByOutputType = {
     inputPrice: runtime.Decimal;
     outputPrice: runtime.Decimal;
     status: $Enums.CatalogStatus;
+    freeEligible: boolean;
     createdAt: Date;
     updatedAt: Date;
     _count: AIModelCountAggregateOutputType | null;
@@ -223,6 +230,7 @@ export type AIModelWhereInput = {
     inputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumCatalogStatusFilter<"AIModel"> | $Enums.CatalogStatus;
+    freeEligible?: Prisma.BoolFilter<"AIModel"> | boolean;
     createdAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string;
     provider?: Prisma.XOR<Prisma.AIProviderScalarRelationFilter, Prisma.AIProviderWhereInput>;
@@ -237,6 +245,7 @@ export type AIModelOrderByWithRelationInput = {
     inputPrice?: Prisma.SortOrder;
     outputPrice?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
+    freeEligible?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
     provider?: Prisma.AIProviderOrderByWithRelationInput;
@@ -255,6 +264,7 @@ export type AIModelWhereUniqueInput = Prisma.AtLeast<{
     inputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumCatalogStatusFilter<"AIModel"> | $Enums.CatalogStatus;
+    freeEligible?: Prisma.BoolFilter<"AIModel"> | boolean;
     createdAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string;
     provider?: Prisma.XOR<Prisma.AIProviderScalarRelationFilter, Prisma.AIProviderWhereInput>;
@@ -269,6 +279,7 @@ export type AIModelOrderByWithAggregationInput = {
     inputPrice?: Prisma.SortOrder;
     outputPrice?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
+    freeEligible?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
     _count?: Prisma.AIModelCountOrderByAggregateInput;
@@ -289,6 +300,7 @@ export type AIModelScalarWhereWithAggregatesInput = {
     inputPrice?: Prisma.DecimalWithAggregatesFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice?: Prisma.DecimalWithAggregatesFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumCatalogStatusWithAggregatesFilter<"AIModel"> | $Enums.CatalogStatus;
+    freeEligible?: Prisma.BoolWithAggregatesFilter<"AIModel"> | boolean;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"AIModel"> | Date | string;
     updatedAt?: Prisma.DateTimeWithAggregatesFilter<"AIModel"> | Date | string;
 };
@@ -299,6 +311,7 @@ export type AIModelCreateInput = {
     inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: $Enums.CatalogStatus;
+    freeEligible?: boolean;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     provider: Prisma.AIProviderCreateNestedOneWithoutModelsInput;
@@ -313,6 +326,7 @@ export type AIModelUncheckedCreateInput = {
     inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: $Enums.CatalogStatus;
+    freeEligible?: boolean;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     requests?: Prisma.AIRequestUncheckedCreateNestedManyWithoutModelInput;
@@ -324,6 +338,7 @@ export type AIModelUpdateInput = {
     inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus;
+    freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     provider?: Prisma.AIProviderUpdateOneRequiredWithoutModelsNestedInput;
@@ -338,6 +353,7 @@ export type AIModelUncheckedUpdateInput = {
     inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus;
+    freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     requests?: Prisma.AIRequestUncheckedUpdateManyWithoutModelNestedInput;
@@ -351,6 +367,7 @@ export type AIModelCreateManyInput = {
     inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: $Enums.CatalogStatus;
+    freeEligible?: boolean;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
@@ -361,6 +378,7 @@ export type AIModelUpdateManyMutationInput = {
     inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus;
+    freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -373,6 +391,7 @@ export type AIModelUncheckedUpdateManyInput = {
     inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus;
+    freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -397,6 +416,7 @@ export type AIModelCountOrderByAggregateInput = {
     inputPrice?: Prisma.SortOrder;
     outputPrice?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
+    freeEligible?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
@@ -416,6 +436,7 @@ export type AIModelMaxOrderByAggregateInput = {
     inputPrice?: Prisma.SortOrder;
     outputPrice?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
+    freeEligible?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
@@ -428,6 +449,7 @@ export type AIModelMinOrderByAggregateInput = {
     inputPrice?: Prisma.SortOrder;
     outputPrice?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
+    freeEligible?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
@@ -490,6 +512,9 @@ export type DecimalFieldUpdateOperationsInput = {
     multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     divide?: runtime.Decimal | runtime.DecimalJsLike | number | string;
 };
+export type BoolFieldUpdateOperationsInput = {
+    set?: boolean;
+};
 export type AIModelCreateNestedOneWithoutRequestsInput = {
     create?: Prisma.XOR<Prisma.AIModelCreateWithoutRequestsInput, Prisma.AIModelUncheckedCreateWithoutRequestsInput>;
     connectOrCreate?: Prisma.AIModelCreateOrConnectWithoutRequestsInput;
@@ -509,6 +534,7 @@ export type AIModelCreateWithoutProviderInput = {
     inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: $Enums.CatalogStatus;
+    freeEligible?: boolean;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     requests?: Prisma.AIRequestCreateNestedManyWithoutModelInput;
@@ -521,6 +547,7 @@ export type AIModelUncheckedCreateWithoutProviderInput = {
     inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: $Enums.CatalogStatus;
+    freeEligible?: boolean;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     requests?: Prisma.AIRequestUncheckedCreateNestedManyWithoutModelInput;
@@ -558,6 +585,7 @@ export type AIModelScalarWhereInput = {
     inputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumCatalogStatusFilter<"AIModel"> | $Enums.CatalogStatus;
+    freeEligible?: Prisma.BoolFilter<"AIModel"> | boolean;
     createdAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string;
 };
@@ -568,6 +596,7 @@ export type AIModelCreateWithoutRequestsInput = {
     inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: $Enums.CatalogStatus;
+    freeEligible?: boolean;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     provider: Prisma.AIProviderCreateNestedOneWithoutModelsInput;
@@ -581,6 +610,7 @@ export type AIModelUncheckedCreateWithoutRequestsInput = {
     inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: $Enums.CatalogStatus;
+    freeEligible?: boolean;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
@@ -604,6 +634,7 @@ export type AIModelUpdateWithoutRequestsInput = {
     inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus;
+    freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     provider?: Prisma.AIProviderUpdateOneRequiredWithoutModelsNestedInput;
@@ -617,6 +648,7 @@ export type AIModelUncheckedUpdateWithoutRequestsInput = {
     inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus;
+    freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -628,6 +660,7 @@ export type AIModelCreateManyProviderInput = {
     inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: $Enums.CatalogStatus;
+    freeEligible?: boolean;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
@@ -638,6 +671,7 @@ export type AIModelUpdateWithoutProviderInput = {
     inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus;
+    freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     requests?: Prisma.AIRequestUpdateManyWithoutModelNestedInput;
@@ -650,6 +684,7 @@ export type AIModelUncheckedUpdateWithoutProviderInput = {
     inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus;
+    freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     requests?: Prisma.AIRequestUncheckedUpdateManyWithoutModelNestedInput;
@@ -662,6 +697,7 @@ export type AIModelUncheckedUpdateManyWithoutProviderInput = {
     inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus;
+    freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -698,6 +734,7 @@ export type AIModelSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     inputPrice?: boolean;
     outputPrice?: boolean;
     status?: boolean;
+    freeEligible?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
     provider?: boolean | Prisma.AIProviderDefaultArgs<ExtArgs>;
@@ -713,6 +750,7 @@ export type AIModelSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
     inputPrice?: boolean;
     outputPrice?: boolean;
     status?: boolean;
+    freeEligible?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
     provider?: boolean | Prisma.AIProviderDefaultArgs<ExtArgs>;
@@ -726,6 +764,7 @@ export type AIModelSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
     inputPrice?: boolean;
     outputPrice?: boolean;
     status?: boolean;
+    freeEligible?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
     provider?: boolean | Prisma.AIProviderDefaultArgs<ExtArgs>;
@@ -739,10 +778,11 @@ export type AIModelSelectScalar = {
     inputPrice?: boolean;
     outputPrice?: boolean;
     status?: boolean;
+    freeEligible?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
 };
-export type AIModelOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "providerId" | "name" | "type" | "contextWindow" | "inputPrice" | "outputPrice" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["aIModel"]>;
+export type AIModelOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "providerId" | "name" | "type" | "contextWindow" | "inputPrice" | "outputPrice" | "status" | "freeEligible" | "createdAt" | "updatedAt", ExtArgs["result"]["aIModel"]>;
 export type AIModelInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     provider?: boolean | Prisma.AIProviderDefaultArgs<ExtArgs>;
     requests?: boolean | Prisma.AIModel$requestsArgs<ExtArgs>;
@@ -769,6 +809,10 @@ export type $AIModelPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
         inputPrice: runtime.Decimal;
         outputPrice: runtime.Decimal;
         status: $Enums.CatalogStatus;
+        /**
+         * When true, orgs on the Free plan may call this model.
+         */
+        freeEligible: boolean;
         createdAt: Date;
         updatedAt: Date;
     }, ExtArgs["result"]["aIModel"]>;
@@ -1135,6 +1179,7 @@ export interface AIModelFieldRefs {
     readonly inputPrice: Prisma.FieldRef<"AIModel", 'Decimal'>;
     readonly outputPrice: Prisma.FieldRef<"AIModel", 'Decimal'>;
     readonly status: Prisma.FieldRef<"AIModel", 'CatalogStatus'>;
+    readonly freeEligible: Prisma.FieldRef<"AIModel", 'Boolean'>;
     readonly createdAt: Prisma.FieldRef<"AIModel", 'DateTime'>;
     readonly updatedAt: Prisma.FieldRef<"AIModel", 'DateTime'>;
 }

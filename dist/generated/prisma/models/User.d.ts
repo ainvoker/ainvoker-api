@@ -1,4 +1,5 @@
 import type * as runtime from "@prisma/client/runtime/client";
+import type * as $Enums from "../enums.js";
 import type * as Prisma from "../internal/prismaNamespace.js";
 /**
  * Model User
@@ -12,50 +13,62 @@ export type AggregateUser = {
 };
 export type UserMinAggregateOutputType = {
     id: string | null;
+    email: string | null;
     firstName: string | null;
     lastName: string | null;
     profilePicture: string | null;
+    themePreference: $Enums.ThemePreference | null;
     createdAt: Date | null;
     updatedAt: Date | null;
 };
 export type UserMaxAggregateOutputType = {
     id: string | null;
+    email: string | null;
     firstName: string | null;
     lastName: string | null;
     profilePicture: string | null;
+    themePreference: $Enums.ThemePreference | null;
     createdAt: Date | null;
     updatedAt: Date | null;
 };
 export type UserCountAggregateOutputType = {
     id: number;
+    email: number;
     firstName: number;
     lastName: number;
     profilePicture: number;
+    themePreference: number;
     createdAt: number;
     updatedAt: number;
     _all: number;
 };
 export type UserMinAggregateInputType = {
     id?: true;
+    email?: true;
     firstName?: true;
     lastName?: true;
     profilePicture?: true;
+    themePreference?: true;
     createdAt?: true;
     updatedAt?: true;
 };
 export type UserMaxAggregateInputType = {
     id?: true;
+    email?: true;
     firstName?: true;
     lastName?: true;
     profilePicture?: true;
+    themePreference?: true;
     createdAt?: true;
     updatedAt?: true;
 };
 export type UserCountAggregateInputType = {
     id?: true;
+    email?: true;
     firstName?: true;
     lastName?: true;
     profilePicture?: true;
+    themePreference?: true;
     createdAt?: true;
     updatedAt?: true;
     _all?: true;
@@ -124,9 +137,11 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 };
 export type UserGroupByOutputType = {
     id: string;
+    email: string | null;
     firstName: string | null;
     lastName: string | null;
     profilePicture: string | null;
+    themePreference: $Enums.ThemePreference;
     createdAt: Date;
     updatedAt: Date;
     _count: UserCountAggregateOutputType | null;
@@ -141,9 +156,11 @@ export type UserWhereInput = {
     OR?: Prisma.UserWhereInput[];
     NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[];
     id?: Prisma.StringFilter<"User"> | string;
+    email?: Prisma.StringNullableFilter<"User"> | string | null;
     firstName?: Prisma.StringNullableFilter<"User"> | string | null;
     lastName?: Prisma.StringNullableFilter<"User"> | string | null;
     profilePicture?: Prisma.StringNullableFilter<"User"> | string | null;
+    themePreference?: Prisma.EnumThemePreferenceFilter<"User"> | $Enums.ThemePreference;
     createdAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     memberships?: Prisma.OrganizationMemberListRelationFilter;
@@ -152,9 +169,11 @@ export type UserWhereInput = {
 };
 export type UserOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
+    email?: Prisma.SortOrderInput | Prisma.SortOrder;
     firstName?: Prisma.SortOrderInput | Prisma.SortOrder;
     lastName?: Prisma.SortOrderInput | Prisma.SortOrder;
     profilePicture?: Prisma.SortOrderInput | Prisma.SortOrder;
+    themePreference?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
     memberships?: Prisma.OrganizationMemberOrderByRelationAggregateInput;
@@ -163,23 +182,27 @@ export type UserOrderByWithRelationInput = {
 };
 export type UserWhereUniqueInput = Prisma.AtLeast<{
     id?: string;
+    email?: string;
     AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[];
     OR?: Prisma.UserWhereInput[];
     NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[];
     firstName?: Prisma.StringNullableFilter<"User"> | string | null;
     lastName?: Prisma.StringNullableFilter<"User"> | string | null;
     profilePicture?: Prisma.StringNullableFilter<"User"> | string | null;
+    themePreference?: Prisma.EnumThemePreferenceFilter<"User"> | $Enums.ThemePreference;
     createdAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     memberships?: Prisma.OrganizationMemberListRelationFilter;
     createdOrganizations?: Prisma.OrganizationListRelationFilter;
     activityLogs?: Prisma.ActivityLogListRelationFilter;
-}, "id">;
+}, "id" | "email">;
 export type UserOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
+    email?: Prisma.SortOrderInput | Prisma.SortOrder;
     firstName?: Prisma.SortOrderInput | Prisma.SortOrder;
     lastName?: Prisma.SortOrderInput | Prisma.SortOrder;
     profilePicture?: Prisma.SortOrderInput | Prisma.SortOrder;
+    themePreference?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
     _count?: Prisma.UserCountOrderByAggregateInput;
@@ -191,17 +214,21 @@ export type UserScalarWhereWithAggregatesInput = {
     OR?: Prisma.UserScalarWhereWithAggregatesInput[];
     NOT?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[];
     id?: Prisma.StringWithAggregatesFilter<"User"> | string;
+    email?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
     firstName?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
     lastName?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
     profilePicture?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
+    themePreference?: Prisma.EnumThemePreferenceWithAggregatesFilter<"User"> | $Enums.ThemePreference;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string;
 };
 export type UserCreateInput = {
     id: string;
+    email?: string | null;
     firstName?: string | null;
     lastName?: string | null;
     profilePicture?: string | null;
+    themePreference?: $Enums.ThemePreference;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput;
@@ -210,9 +237,11 @@ export type UserCreateInput = {
 };
 export type UserUncheckedCreateInput = {
     id: string;
+    email?: string | null;
     firstName?: string | null;
     lastName?: string | null;
     profilePicture?: string | null;
+    themePreference?: $Enums.ThemePreference;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput;
@@ -221,9 +250,11 @@ export type UserUncheckedCreateInput = {
 };
 export type UserUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput;
@@ -232,9 +263,11 @@ export type UserUpdateInput = {
 };
 export type UserUncheckedUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput;
@@ -243,49 +276,61 @@ export type UserUncheckedUpdateInput = {
 };
 export type UserCreateManyInput = {
     id: string;
+    email?: string | null;
     firstName?: string | null;
     lastName?: string | null;
     profilePicture?: string | null;
+    themePreference?: $Enums.ThemePreference;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
 export type UserUpdateManyMutationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type UserUncheckedUpdateManyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type UserCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
+    email?: Prisma.SortOrder;
     firstName?: Prisma.SortOrder;
     lastName?: Prisma.SortOrder;
     profilePicture?: Prisma.SortOrder;
+    themePreference?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
 export type UserMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
+    email?: Prisma.SortOrder;
     firstName?: Prisma.SortOrder;
     lastName?: Prisma.SortOrder;
     profilePicture?: Prisma.SortOrder;
+    themePreference?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
 export type UserMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
+    email?: Prisma.SortOrder;
     firstName?: Prisma.SortOrder;
     lastName?: Prisma.SortOrder;
     profilePicture?: Prisma.SortOrder;
+    themePreference?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
@@ -302,6 +347,9 @@ export type StringFieldUpdateOperationsInput = {
 };
 export type NullableStringFieldUpdateOperationsInput = {
     set?: string | null;
+};
+export type EnumThemePreferenceFieldUpdateOperationsInput = {
+    set?: $Enums.ThemePreference;
 };
 export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string;
@@ -346,9 +394,11 @@ export type UserUpdateOneRequiredWithoutActivityLogsNestedInput = {
 };
 export type UserCreateWithoutCreatedOrganizationsInput = {
     id: string;
+    email?: string | null;
     firstName?: string | null;
     lastName?: string | null;
     profilePicture?: string | null;
+    themePreference?: $Enums.ThemePreference;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput;
@@ -356,9 +406,11 @@ export type UserCreateWithoutCreatedOrganizationsInput = {
 };
 export type UserUncheckedCreateWithoutCreatedOrganizationsInput = {
     id: string;
+    email?: string | null;
     firstName?: string | null;
     lastName?: string | null;
     profilePicture?: string | null;
+    themePreference?: $Enums.ThemePreference;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput;
@@ -379,9 +431,11 @@ export type UserUpdateToOneWithWhereWithoutCreatedOrganizationsInput = {
 };
 export type UserUpdateWithoutCreatedOrganizationsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput;
@@ -389,9 +443,11 @@ export type UserUpdateWithoutCreatedOrganizationsInput = {
 };
 export type UserUncheckedUpdateWithoutCreatedOrganizationsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput;
@@ -399,9 +455,11 @@ export type UserUncheckedUpdateWithoutCreatedOrganizationsInput = {
 };
 export type UserCreateWithoutMembershipsInput = {
     id: string;
+    email?: string | null;
     firstName?: string | null;
     lastName?: string | null;
     profilePicture?: string | null;
+    themePreference?: $Enums.ThemePreference;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     createdOrganizations?: Prisma.OrganizationCreateNestedManyWithoutCreatedByInput;
@@ -409,9 +467,11 @@ export type UserCreateWithoutMembershipsInput = {
 };
 export type UserUncheckedCreateWithoutMembershipsInput = {
     id: string;
+    email?: string | null;
     firstName?: string | null;
     lastName?: string | null;
     profilePicture?: string | null;
+    themePreference?: $Enums.ThemePreference;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     createdOrganizations?: Prisma.OrganizationUncheckedCreateNestedManyWithoutCreatedByInput;
@@ -432,9 +492,11 @@ export type UserUpdateToOneWithWhereWithoutMembershipsInput = {
 };
 export type UserUpdateWithoutMembershipsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     createdOrganizations?: Prisma.OrganizationUpdateManyWithoutCreatedByNestedInput;
@@ -442,9 +504,11 @@ export type UserUpdateWithoutMembershipsInput = {
 };
 export type UserUncheckedUpdateWithoutMembershipsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     createdOrganizations?: Prisma.OrganizationUncheckedUpdateManyWithoutCreatedByNestedInput;
@@ -452,9 +516,11 @@ export type UserUncheckedUpdateWithoutMembershipsInput = {
 };
 export type UserCreateWithoutActivityLogsInput = {
     id: string;
+    email?: string | null;
     firstName?: string | null;
     lastName?: string | null;
     profilePicture?: string | null;
+    themePreference?: $Enums.ThemePreference;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput;
@@ -462,9 +528,11 @@ export type UserCreateWithoutActivityLogsInput = {
 };
 export type UserUncheckedCreateWithoutActivityLogsInput = {
     id: string;
+    email?: string | null;
     firstName?: string | null;
     lastName?: string | null;
     profilePicture?: string | null;
+    themePreference?: $Enums.ThemePreference;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput;
@@ -485,9 +553,11 @@ export type UserUpdateToOneWithWhereWithoutActivityLogsInput = {
 };
 export type UserUpdateWithoutActivityLogsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput;
@@ -495,9 +565,11 @@ export type UserUpdateWithoutActivityLogsInput = {
 };
 export type UserUncheckedUpdateWithoutActivityLogsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput;
@@ -545,9 +617,11 @@ export type UserCountOutputTypeCountActivityLogsArgs<ExtArgs extends runtime.Typ
 };
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
+    email?: boolean;
     firstName?: boolean;
     lastName?: boolean;
     profilePicture?: boolean;
+    themePreference?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
     memberships?: boolean | Prisma.User$membershipsArgs<ExtArgs>;
@@ -557,29 +631,35 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 }, ExtArgs["result"]["user"]>;
 export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
+    email?: boolean;
     firstName?: boolean;
     lastName?: boolean;
     profilePicture?: boolean;
+    themePreference?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
 }, ExtArgs["result"]["user"]>;
 export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
+    email?: boolean;
     firstName?: boolean;
     lastName?: boolean;
     profilePicture?: boolean;
+    themePreference?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
 }, ExtArgs["result"]["user"]>;
 export type UserSelectScalar = {
     id?: boolean;
+    email?: boolean;
     firstName?: boolean;
     lastName?: boolean;
     profilePicture?: boolean;
+    themePreference?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
 };
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "firstName" | "lastName" | "profilePicture" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>;
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "firstName" | "lastName" | "profilePicture" | "themePreference" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>;
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     memberships?: boolean | Prisma.User$membershipsArgs<ExtArgs>;
     createdOrganizations?: boolean | Prisma.User$createdOrganizationsArgs<ExtArgs>;
@@ -597,9 +677,11 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: string;
+        email: string | null;
         firstName: string | null;
         lastName: string | null;
         profilePicture: string | null;
+        themePreference: $Enums.ThemePreference;
         createdAt: Date;
         updatedAt: Date;
     }, ExtArgs["result"]["user"]>;
@@ -960,9 +1042,11 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
  */
 export interface UserFieldRefs {
     readonly id: Prisma.FieldRef<"User", 'String'>;
+    readonly email: Prisma.FieldRef<"User", 'String'>;
     readonly firstName: Prisma.FieldRef<"User", 'String'>;
     readonly lastName: Prisma.FieldRef<"User", 'String'>;
     readonly profilePicture: Prisma.FieldRef<"User", 'String'>;
+    readonly themePreference: Prisma.FieldRef<"User", 'ThemePreference'>;
     readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>;
     readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>;
 }

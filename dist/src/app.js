@@ -3,6 +3,7 @@ import express from "express";
 import env from "./config/env.js";
 import errorHandler from "./platform/errors.js";
 import { mountSwagger } from "./platform/swagger.js";
+import gatewayRoutes from "./routes/gateway.js";
 import apiV1Routes from "./routes/v1.js";
 class App {
     express;
@@ -20,6 +21,7 @@ class App {
             res.json({ status: "ok" });
         });
         this.express.use("/api/v1", apiV1Routes.router);
+        this.express.use("/v1", gatewayRoutes.router);
         if (env.NODE_ENV !== "production") {
             mountSwagger(this.express);
         }

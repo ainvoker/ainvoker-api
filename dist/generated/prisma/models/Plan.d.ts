@@ -1,4 +1,5 @@
 import type * as runtime from "@prisma/client/runtime/client";
+import type * as $Enums from "../enums.js";
 import type * as Prisma from "../internal/prismaNamespace.js";
 /**
  * Model Plan
@@ -30,6 +31,7 @@ export type PlanMinAggregateOutputType = {
     monthlyPrice: runtime.Decimal | null;
     tokenLimit: number | null;
     requestLimit: number | null;
+    billingMode: $Enums.PlanBillingMode | null;
     description: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
@@ -40,6 +42,7 @@ export type PlanMaxAggregateOutputType = {
     monthlyPrice: runtime.Decimal | null;
     tokenLimit: number | null;
     requestLimit: number | null;
+    billingMode: $Enums.PlanBillingMode | null;
     description: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
@@ -50,6 +53,7 @@ export type PlanCountAggregateOutputType = {
     monthlyPrice: number;
     tokenLimit: number;
     requestLimit: number;
+    billingMode: number;
     description: number;
     createdAt: number;
     updatedAt: number;
@@ -73,6 +77,7 @@ export type PlanMinAggregateInputType = {
     monthlyPrice?: true;
     tokenLimit?: true;
     requestLimit?: true;
+    billingMode?: true;
     description?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -83,6 +88,7 @@ export type PlanMaxAggregateInputType = {
     monthlyPrice?: true;
     tokenLimit?: true;
     requestLimit?: true;
+    billingMode?: true;
     description?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -93,6 +99,7 @@ export type PlanCountAggregateInputType = {
     monthlyPrice?: true;
     tokenLimit?: true;
     requestLimit?: true;
+    billingMode?: true;
     description?: true;
     createdAt?: true;
     updatedAt?: true;
@@ -180,6 +187,7 @@ export type PlanGroupByOutputType = {
     monthlyPrice: runtime.Decimal;
     tokenLimit: number;
     requestLimit: number;
+    billingMode: $Enums.PlanBillingMode;
     description: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -201,6 +209,7 @@ export type PlanWhereInput = {
     monthlyPrice?: Prisma.DecimalFilter<"Plan"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit?: Prisma.IntFilter<"Plan"> | number;
     requestLimit?: Prisma.IntFilter<"Plan"> | number;
+    billingMode?: Prisma.EnumPlanBillingModeFilter<"Plan"> | $Enums.PlanBillingMode;
     description?: Prisma.StringNullableFilter<"Plan"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"Plan"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"Plan"> | Date | string;
@@ -212,6 +221,7 @@ export type PlanOrderByWithRelationInput = {
     monthlyPrice?: Prisma.SortOrder;
     tokenLimit?: Prisma.SortOrder;
     requestLimit?: Prisma.SortOrder;
+    billingMode?: Prisma.SortOrder;
     description?: Prisma.SortOrderInput | Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -226,6 +236,7 @@ export type PlanWhereUniqueInput = Prisma.AtLeast<{
     monthlyPrice?: Prisma.DecimalFilter<"Plan"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit?: Prisma.IntFilter<"Plan"> | number;
     requestLimit?: Prisma.IntFilter<"Plan"> | number;
+    billingMode?: Prisma.EnumPlanBillingModeFilter<"Plan"> | $Enums.PlanBillingMode;
     description?: Prisma.StringNullableFilter<"Plan"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"Plan"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"Plan"> | Date | string;
@@ -237,6 +248,7 @@ export type PlanOrderByWithAggregationInput = {
     monthlyPrice?: Prisma.SortOrder;
     tokenLimit?: Prisma.SortOrder;
     requestLimit?: Prisma.SortOrder;
+    billingMode?: Prisma.SortOrder;
     description?: Prisma.SortOrderInput | Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -255,6 +267,7 @@ export type PlanScalarWhereWithAggregatesInput = {
     monthlyPrice?: Prisma.DecimalWithAggregatesFilter<"Plan"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit?: Prisma.IntWithAggregatesFilter<"Plan"> | number;
     requestLimit?: Prisma.IntWithAggregatesFilter<"Plan"> | number;
+    billingMode?: Prisma.EnumPlanBillingModeWithAggregatesFilter<"Plan"> | $Enums.PlanBillingMode;
     description?: Prisma.StringNullableWithAggregatesFilter<"Plan"> | string | null;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"Plan"> | Date | string;
     updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Plan"> | Date | string;
@@ -264,6 +277,7 @@ export type PlanCreateInput = {
     monthlyPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit: number;
     requestLimit: number;
+    billingMode: $Enums.PlanBillingMode;
     description?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -275,6 +289,7 @@ export type PlanUncheckedCreateInput = {
     monthlyPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit: number;
     requestLimit: number;
+    billingMode: $Enums.PlanBillingMode;
     description?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -285,6 +300,7 @@ export type PlanUpdateInput = {
     monthlyPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit?: Prisma.IntFieldUpdateOperationsInput | number;
     requestLimit?: Prisma.IntFieldUpdateOperationsInput | number;
+    billingMode?: Prisma.EnumPlanBillingModeFieldUpdateOperationsInput | $Enums.PlanBillingMode;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -296,6 +312,7 @@ export type PlanUncheckedUpdateInput = {
     monthlyPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit?: Prisma.IntFieldUpdateOperationsInput | number;
     requestLimit?: Prisma.IntFieldUpdateOperationsInput | number;
+    billingMode?: Prisma.EnumPlanBillingModeFieldUpdateOperationsInput | $Enums.PlanBillingMode;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -307,6 +324,7 @@ export type PlanCreateManyInput = {
     monthlyPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit: number;
     requestLimit: number;
+    billingMode: $Enums.PlanBillingMode;
     description?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -316,6 +334,7 @@ export type PlanUpdateManyMutationInput = {
     monthlyPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit?: Prisma.IntFieldUpdateOperationsInput | number;
     requestLimit?: Prisma.IntFieldUpdateOperationsInput | number;
+    billingMode?: Prisma.EnumPlanBillingModeFieldUpdateOperationsInput | $Enums.PlanBillingMode;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -326,6 +345,7 @@ export type PlanUncheckedUpdateManyInput = {
     monthlyPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit?: Prisma.IntFieldUpdateOperationsInput | number;
     requestLimit?: Prisma.IntFieldUpdateOperationsInput | number;
+    billingMode?: Prisma.EnumPlanBillingModeFieldUpdateOperationsInput | $Enums.PlanBillingMode;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -336,6 +356,7 @@ export type PlanCountOrderByAggregateInput = {
     monthlyPrice?: Prisma.SortOrder;
     tokenLimit?: Prisma.SortOrder;
     requestLimit?: Prisma.SortOrder;
+    billingMode?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -352,6 +373,7 @@ export type PlanMaxOrderByAggregateInput = {
     monthlyPrice?: Prisma.SortOrder;
     tokenLimit?: Prisma.SortOrder;
     requestLimit?: Prisma.SortOrder;
+    billingMode?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -362,6 +384,7 @@ export type PlanMinOrderByAggregateInput = {
     monthlyPrice?: Prisma.SortOrder;
     tokenLimit?: Prisma.SortOrder;
     requestLimit?: Prisma.SortOrder;
+    billingMode?: Prisma.SortOrder;
     description?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
@@ -375,6 +398,9 @@ export type PlanSumOrderByAggregateInput = {
 export type PlanScalarRelationFilter = {
     is?: Prisma.PlanWhereInput;
     isNot?: Prisma.PlanWhereInput;
+};
+export type EnumPlanBillingModeFieldUpdateOperationsInput = {
+    set?: $Enums.PlanBillingMode;
 };
 export type PlanCreateNestedOneWithoutSubscriptionsInput = {
     create?: Prisma.XOR<Prisma.PlanCreateWithoutSubscriptionsInput, Prisma.PlanUncheckedCreateWithoutSubscriptionsInput>;
@@ -393,6 +419,7 @@ export type PlanCreateWithoutSubscriptionsInput = {
     monthlyPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit: number;
     requestLimit: number;
+    billingMode: $Enums.PlanBillingMode;
     description?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -403,6 +430,7 @@ export type PlanUncheckedCreateWithoutSubscriptionsInput = {
     monthlyPrice: runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit: number;
     requestLimit: number;
+    billingMode: $Enums.PlanBillingMode;
     description?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -425,6 +453,7 @@ export type PlanUpdateWithoutSubscriptionsInput = {
     monthlyPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit?: Prisma.IntFieldUpdateOperationsInput | number;
     requestLimit?: Prisma.IntFieldUpdateOperationsInput | number;
+    billingMode?: Prisma.EnumPlanBillingModeFieldUpdateOperationsInput | $Enums.PlanBillingMode;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -435,6 +464,7 @@ export type PlanUncheckedUpdateWithoutSubscriptionsInput = {
     monthlyPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
     tokenLimit?: Prisma.IntFieldUpdateOperationsInput | number;
     requestLimit?: Prisma.IntFieldUpdateOperationsInput | number;
+    billingMode?: Prisma.EnumPlanBillingModeFieldUpdateOperationsInput | $Enums.PlanBillingMode;
     description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -469,6 +499,7 @@ export type PlanSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
     monthlyPrice?: boolean;
     tokenLimit?: boolean;
     requestLimit?: boolean;
+    billingMode?: boolean;
     description?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -481,6 +512,7 @@ export type PlanSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
     monthlyPrice?: boolean;
     tokenLimit?: boolean;
     requestLimit?: boolean;
+    billingMode?: boolean;
     description?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -491,6 +523,7 @@ export type PlanSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
     monthlyPrice?: boolean;
     tokenLimit?: boolean;
     requestLimit?: boolean;
+    billingMode?: boolean;
     description?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
@@ -501,11 +534,12 @@ export type PlanSelectScalar = {
     monthlyPrice?: boolean;
     tokenLimit?: boolean;
     requestLimit?: boolean;
+    billingMode?: boolean;
     description?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
 };
-export type PlanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "monthlyPrice" | "tokenLimit" | "requestLimit" | "description" | "createdAt" | "updatedAt", ExtArgs["result"]["plan"]>;
+export type PlanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "monthlyPrice" | "tokenLimit" | "requestLimit" | "billingMode" | "description" | "createdAt" | "updatedAt", ExtArgs["result"]["plan"]>;
 export type PlanInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     subscriptions?: boolean | Prisma.Plan$subscriptionsArgs<ExtArgs>;
     _count?: boolean | Prisma.PlanCountOutputTypeDefaultArgs<ExtArgs>;
@@ -523,6 +557,7 @@ export type $PlanPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
         monthlyPrice: runtime.Decimal;
         tokenLimit: number;
         requestLimit: number;
+        billingMode: $Enums.PlanBillingMode;
         description: string | null;
         createdAt: Date;
         updatedAt: Date;
@@ -886,6 +921,7 @@ export interface PlanFieldRefs {
     readonly monthlyPrice: Prisma.FieldRef<"Plan", 'Decimal'>;
     readonly tokenLimit: Prisma.FieldRef<"Plan", 'Int'>;
     readonly requestLimit: Prisma.FieldRef<"Plan", 'Int'>;
+    readonly billingMode: Prisma.FieldRef<"Plan", 'PlanBillingMode'>;
     readonly description: Prisma.FieldRef<"Plan", 'String'>;
     readonly createdAt: Prisma.FieldRef<"Plan", 'DateTime'>;
     readonly updatedAt: Prisma.FieldRef<"Plan", 'DateTime'>;

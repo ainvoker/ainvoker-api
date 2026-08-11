@@ -26,6 +26,7 @@ export type SubscriptionMinAggregateOutputType = {
     status: $Enums.SubscriptionStatus | null;
     startedAt: Date | null;
     expiresAt: Date | null;
+    xenditSessionId: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
 };
@@ -36,6 +37,7 @@ export type SubscriptionMaxAggregateOutputType = {
     status: $Enums.SubscriptionStatus | null;
     startedAt: Date | null;
     expiresAt: Date | null;
+    xenditSessionId: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
 };
@@ -46,6 +48,7 @@ export type SubscriptionCountAggregateOutputType = {
     status: number;
     startedAt: number;
     expiresAt: number;
+    xenditSessionId: number;
     createdAt: number;
     updatedAt: number;
     _all: number;
@@ -63,6 +66,7 @@ export type SubscriptionMinAggregateInputType = {
     status?: true;
     startedAt?: true;
     expiresAt?: true;
+    xenditSessionId?: true;
     createdAt?: true;
     updatedAt?: true;
 };
@@ -73,6 +77,7 @@ export type SubscriptionMaxAggregateInputType = {
     status?: true;
     startedAt?: true;
     expiresAt?: true;
+    xenditSessionId?: true;
     createdAt?: true;
     updatedAt?: true;
 };
@@ -83,6 +88,7 @@ export type SubscriptionCountAggregateInputType = {
     status?: true;
     startedAt?: true;
     expiresAt?: true;
+    xenditSessionId?: true;
     createdAt?: true;
     updatedAt?: true;
     _all?: true;
@@ -170,6 +176,7 @@ export type SubscriptionGroupByOutputType = {
     status: $Enums.SubscriptionStatus;
     startedAt: Date;
     expiresAt: Date | null;
+    xenditSessionId: string | null;
     createdAt: Date;
     updatedAt: Date;
     _count: SubscriptionCountAggregateOutputType | null;
@@ -191,6 +198,7 @@ export type SubscriptionWhereInput = {
     status?: Prisma.EnumSubscriptionStatusFilter<"Subscription"> | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFilter<"Subscription"> | Date | string;
     expiresAt?: Prisma.DateTimeNullableFilter<"Subscription"> | Date | string | null;
+    xenditSessionId?: Prisma.StringNullableFilter<"Subscription"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"Subscription"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"Subscription"> | Date | string;
     organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>;
@@ -204,6 +212,7 @@ export type SubscriptionOrderByWithRelationInput = {
     status?: Prisma.SortOrder;
     startedAt?: Prisma.SortOrder;
     expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+    xenditSessionId?: Prisma.SortOrderInput | Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
     organization?: Prisma.OrganizationOrderByWithRelationInput;
@@ -220,6 +229,7 @@ export type SubscriptionWhereUniqueInput = Prisma.AtLeast<{
     status?: Prisma.EnumSubscriptionStatusFilter<"Subscription"> | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFilter<"Subscription"> | Date | string;
     expiresAt?: Prisma.DateTimeNullableFilter<"Subscription"> | Date | string | null;
+    xenditSessionId?: Prisma.StringNullableFilter<"Subscription"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"Subscription"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"Subscription"> | Date | string;
     organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>;
@@ -233,6 +243,7 @@ export type SubscriptionOrderByWithAggregationInput = {
     status?: Prisma.SortOrder;
     startedAt?: Prisma.SortOrder;
     expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder;
+    xenditSessionId?: Prisma.SortOrderInput | Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
     _count?: Prisma.SubscriptionCountOrderByAggregateInput;
@@ -251,6 +262,7 @@ export type SubscriptionScalarWhereWithAggregatesInput = {
     status?: Prisma.EnumSubscriptionStatusWithAggregatesFilter<"Subscription"> | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeWithAggregatesFilter<"Subscription"> | Date | string;
     expiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Subscription"> | Date | string | null;
+    xenditSessionId?: Prisma.StringNullableWithAggregatesFilter<"Subscription"> | string | null;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"Subscription"> | Date | string;
     updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Subscription"> | Date | string;
 };
@@ -259,6 +271,7 @@ export type SubscriptionCreateInput = {
     status?: $Enums.SubscriptionStatus;
     startedAt: Date | string;
     expiresAt?: Date | string | null;
+    xenditSessionId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     organization: Prisma.OrganizationCreateNestedOneWithoutSubscriptionsInput;
@@ -272,6 +285,7 @@ export type SubscriptionUncheckedCreateInput = {
     status?: $Enums.SubscriptionStatus;
     startedAt: Date | string;
     expiresAt?: Date | string | null;
+    xenditSessionId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     transactions?: Prisma.TransactionUncheckedCreateNestedManyWithoutSubscriptionInput;
@@ -281,6 +295,7 @@ export type SubscriptionUpdateInput = {
     status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    xenditSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutSubscriptionsNestedInput;
@@ -294,6 +309,7 @@ export type SubscriptionUncheckedUpdateInput = {
     status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    xenditSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     transactions?: Prisma.TransactionUncheckedUpdateManyWithoutSubscriptionNestedInput;
@@ -305,6 +321,7 @@ export type SubscriptionCreateManyInput = {
     status?: $Enums.SubscriptionStatus;
     startedAt: Date | string;
     expiresAt?: Date | string | null;
+    xenditSessionId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
@@ -313,6 +330,7 @@ export type SubscriptionUpdateManyMutationInput = {
     status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    xenditSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -323,6 +341,7 @@ export type SubscriptionUncheckedUpdateManyInput = {
     status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    xenditSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -341,6 +360,7 @@ export type SubscriptionCountOrderByAggregateInput = {
     status?: Prisma.SortOrder;
     startedAt?: Prisma.SortOrder;
     expiresAt?: Prisma.SortOrder;
+    xenditSessionId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
@@ -354,6 +374,7 @@ export type SubscriptionMaxOrderByAggregateInput = {
     status?: Prisma.SortOrder;
     startedAt?: Prisma.SortOrder;
     expiresAt?: Prisma.SortOrder;
+    xenditSessionId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
@@ -364,6 +385,7 @@ export type SubscriptionMinOrderByAggregateInput = {
     status?: Prisma.SortOrder;
     startedAt?: Prisma.SortOrder;
     expiresAt?: Prisma.SortOrder;
+    xenditSessionId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
@@ -470,6 +492,7 @@ export type SubscriptionCreateWithoutOrganizationInput = {
     status?: $Enums.SubscriptionStatus;
     startedAt: Date | string;
     expiresAt?: Date | string | null;
+    xenditSessionId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     plan: Prisma.PlanCreateNestedOneWithoutSubscriptionsInput;
@@ -481,6 +504,7 @@ export type SubscriptionUncheckedCreateWithoutOrganizationInput = {
     status?: $Enums.SubscriptionStatus;
     startedAt: Date | string;
     expiresAt?: Date | string | null;
+    xenditSessionId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     transactions?: Prisma.TransactionUncheckedCreateNestedManyWithoutSubscriptionInput;
@@ -516,6 +540,7 @@ export type SubscriptionScalarWhereInput = {
     status?: Prisma.EnumSubscriptionStatusFilter<"Subscription"> | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFilter<"Subscription"> | Date | string;
     expiresAt?: Prisma.DateTimeNullableFilter<"Subscription"> | Date | string | null;
+    xenditSessionId?: Prisma.StringNullableFilter<"Subscription"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"Subscription"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"Subscription"> | Date | string;
 };
@@ -524,6 +549,7 @@ export type SubscriptionCreateWithoutPlanInput = {
     status?: $Enums.SubscriptionStatus;
     startedAt: Date | string;
     expiresAt?: Date | string | null;
+    xenditSessionId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     organization: Prisma.OrganizationCreateNestedOneWithoutSubscriptionsInput;
@@ -535,6 +561,7 @@ export type SubscriptionUncheckedCreateWithoutPlanInput = {
     status?: $Enums.SubscriptionStatus;
     startedAt: Date | string;
     expiresAt?: Date | string | null;
+    xenditSessionId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     transactions?: Prisma.TransactionUncheckedCreateNestedManyWithoutSubscriptionInput;
@@ -565,6 +592,7 @@ export type SubscriptionCreateWithoutTransactionsInput = {
     status?: $Enums.SubscriptionStatus;
     startedAt: Date | string;
     expiresAt?: Date | string | null;
+    xenditSessionId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     organization: Prisma.OrganizationCreateNestedOneWithoutSubscriptionsInput;
@@ -577,6 +605,7 @@ export type SubscriptionUncheckedCreateWithoutTransactionsInput = {
     status?: $Enums.SubscriptionStatus;
     startedAt: Date | string;
     expiresAt?: Date | string | null;
+    xenditSessionId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
@@ -598,6 +627,7 @@ export type SubscriptionUpdateWithoutTransactionsInput = {
     status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    xenditSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutSubscriptionsNestedInput;
@@ -610,6 +640,7 @@ export type SubscriptionUncheckedUpdateWithoutTransactionsInput = {
     status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    xenditSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -619,6 +650,7 @@ export type SubscriptionCreateManyOrganizationInput = {
     status?: $Enums.SubscriptionStatus;
     startedAt: Date | string;
     expiresAt?: Date | string | null;
+    xenditSessionId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
@@ -627,6 +659,7 @@ export type SubscriptionUpdateWithoutOrganizationInput = {
     status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    xenditSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     plan?: Prisma.PlanUpdateOneRequiredWithoutSubscriptionsNestedInput;
@@ -638,6 +671,7 @@ export type SubscriptionUncheckedUpdateWithoutOrganizationInput = {
     status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    xenditSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     transactions?: Prisma.TransactionUncheckedUpdateManyWithoutSubscriptionNestedInput;
@@ -648,6 +682,7 @@ export type SubscriptionUncheckedUpdateManyWithoutOrganizationInput = {
     status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    xenditSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -657,6 +692,7 @@ export type SubscriptionCreateManyPlanInput = {
     status?: $Enums.SubscriptionStatus;
     startedAt: Date | string;
     expiresAt?: Date | string | null;
+    xenditSessionId?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
@@ -665,6 +701,7 @@ export type SubscriptionUpdateWithoutPlanInput = {
     status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    xenditSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     organization?: Prisma.OrganizationUpdateOneRequiredWithoutSubscriptionsNestedInput;
@@ -676,6 +713,7 @@ export type SubscriptionUncheckedUpdateWithoutPlanInput = {
     status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    xenditSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     transactions?: Prisma.TransactionUncheckedUpdateManyWithoutSubscriptionNestedInput;
@@ -686,6 +724,7 @@ export type SubscriptionUncheckedUpdateManyWithoutPlanInput = {
     status?: Prisma.EnumSubscriptionStatusFieldUpdateOperationsInput | $Enums.SubscriptionStatus;
     startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    xenditSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -720,6 +759,7 @@ export type SubscriptionSelect<ExtArgs extends runtime.Types.Extensions.Internal
     status?: boolean;
     startedAt?: boolean;
     expiresAt?: boolean;
+    xenditSessionId?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
@@ -734,6 +774,7 @@ export type SubscriptionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
     status?: boolean;
     startedAt?: boolean;
     expiresAt?: boolean;
+    xenditSessionId?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
@@ -746,6 +787,7 @@ export type SubscriptionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
     status?: boolean;
     startedAt?: boolean;
     expiresAt?: boolean;
+    xenditSessionId?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
@@ -758,10 +800,11 @@ export type SubscriptionSelectScalar = {
     status?: boolean;
     startedAt?: boolean;
     expiresAt?: boolean;
+    xenditSessionId?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
 };
-export type SubscriptionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "organizationId" | "planId" | "status" | "startedAt" | "expiresAt" | "createdAt" | "updatedAt", ExtArgs["result"]["subscription"]>;
+export type SubscriptionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "organizationId" | "planId" | "status" | "startedAt" | "expiresAt" | "xenditSessionId" | "createdAt" | "updatedAt", ExtArgs["result"]["subscription"]>;
 export type SubscriptionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>;
     plan?: boolean | Prisma.PlanDefaultArgs<ExtArgs>;
@@ -790,6 +833,7 @@ export type $SubscriptionPayload<ExtArgs extends runtime.Types.Extensions.Intern
         status: $Enums.SubscriptionStatus;
         startedAt: Date;
         expiresAt: Date | null;
+        xenditSessionId: string | null;
         createdAt: Date;
         updatedAt: Date;
     }, ExtArgs["result"]["subscription"]>;
@@ -1155,6 +1199,7 @@ export interface SubscriptionFieldRefs {
     readonly status: Prisma.FieldRef<"Subscription", 'SubscriptionStatus'>;
     readonly startedAt: Prisma.FieldRef<"Subscription", 'DateTime'>;
     readonly expiresAt: Prisma.FieldRef<"Subscription", 'DateTime'>;
+    readonly xenditSessionId: Prisma.FieldRef<"Subscription", 'String'>;
     readonly createdAt: Prisma.FieldRef<"Subscription", 'DateTime'>;
     readonly updatedAt: Prisma.FieldRef<"Subscription", 'DateTime'>;
 }

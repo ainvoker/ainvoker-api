@@ -4,9 +4,11 @@ class UserService {
     serializeUser(user) {
         return {
             id: user.id,
+            email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
             profilePicture: user.profilePicture,
+            themePreference: user.themePreference,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
         };
@@ -43,10 +45,14 @@ class UserService {
         const user = await prismaClient.user.update({
             where: { id: userId },
             data: {
+                ...(input.email !== undefined ? { email: input.email } : {}),
                 ...(input.firstName !== undefined ? { firstName: input.firstName } : {}),
                 ...(input.lastName !== undefined ? { lastName: input.lastName } : {}),
                 ...(input.profilePicture !== undefined
                     ? { profilePicture: input.profilePicture }
+                    : {}),
+                ...(input.themePreference !== undefined
+                    ? { themePreference: input.themePreference }
                     : {}),
             },
         });

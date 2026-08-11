@@ -3,7 +3,7 @@ import requireSession from "../../middleware/requireSession.js";
 import { BaseRoutes } from "../../platform/BaseRoutes.js";
 import http from "../../platform/http.js";
 import { apiKeyParamsSchema, createApiKeySchema, projectIdParamsSchema } from "./schemas.js";
-import apiKeysService from "./service.js";
+import ApiKeysService from "./service.js";
 class ApiKeysRoutes extends BaseRoutes {
     router = Router();
     constructor() {
@@ -16,26 +16,26 @@ class ApiKeysRoutes extends BaseRoutes {
     async list(req, res) {
         const auth = this.requireAuth(req);
         const { projectId } = projectIdParamsSchema.parse(req.params);
-        const data = await apiKeysService.listApiKeys(projectId, auth.userId);
+        const data = await ApiKeysService.listApiKeys(projectId, auth.userId);
         http.ok(res, data);
     }
     async create(req, res) {
         const auth = this.requireAuth(req);
         const { projectId } = projectIdParamsSchema.parse(req.params);
         const body = createApiKeySchema.parse(req.body);
-        const data = await apiKeysService.createApiKey(projectId, auth.userId, body);
+        const data = await ApiKeysService.createApiKey(projectId, auth.userId, body);
         http.ok(res, data, 201);
     }
     async revoke(req, res) {
         const auth = this.requireAuth(req);
         const { projectId, keyId } = apiKeyParamsSchema.parse(req.params);
-        const data = await apiKeysService.revokeApiKey(projectId, keyId, auth.userId);
+        const data = await ApiKeysService.revokeApiKey(projectId, keyId, auth.userId);
         http.ok(res, data);
     }
     async remove(req, res) {
         const auth = this.requireAuth(req);
         const { projectId, keyId } = apiKeyParamsSchema.parse(req.params);
-        await apiKeysService.deleteApiKey(projectId, keyId, auth.userId);
+        await ApiKeysService.deleteApiKey(projectId, keyId, auth.userId);
         http.ok(res, { deleted: true });
     }
 }

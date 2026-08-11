@@ -1,16 +1,9 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import env from "../config/env.js";
 import { AppError } from "../platform/errors.js";
-function looksLikeJwt(token) {
-    return token.split(".").length === 3;
-}
-/** Join under NEON_AUTH_URL without dropping `/neondb/auth` (absolute `/...` paths would). */
-function neonAuthUrl(path) {
-    const base = env.NEON_AUTH_URL.endsWith("/") ? env.NEON_AUTH_URL : `${env.NEON_AUTH_URL}/`;
-    return new URL(path.replace(/^\//, ""), base);
-}
+import MiddlewareHelpers from "../helpers/middleware.js";
 class SessionMiddleware {
-    jwks = createRemoteJWKSet(neonAuthUrl(".well-known/jwks.json"));
+    jwks = createRemoteJWKSet(MiddlewareHelpers.neonAuthUrl(".well-known/jwks.json"));
     issuer = new URL(env.NEON_AUTH_URL).origin;
     constructor() {
         this.handle = this.handle.bind(this);
@@ -30,7 +23,7 @@ class SessionMiddleware {
     /** Validate Better Auth / Neon opaque session token via get-session (Bearer). */
     async verifySessionToken(token) {
         try {
-            const res = await fetch(neonAuthUrl("get-session"), {
+            const res = await fetch(MiddlewareHelpers.neonAuthUrl("get-session"), {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     Accept: "application/json",
@@ -62,7 +55,7 @@ class SessionMiddleware {
             if (!token) {
                 throw new AppError(401, "UNAUTHORIZED", "Missing bearer token");
             }
-            const userId = looksLikeJwt(token)
+            const userId = MiddlewareHelpers.looksLikeJwt(token)
                 ? await this.verifyJwt(token)
                 : await this.verifySessionToken(token);
             if (!userId) {

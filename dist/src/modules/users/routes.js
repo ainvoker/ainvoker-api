@@ -3,7 +3,7 @@ import requireSession from "../../middleware/requireSession.js";
 import { BaseRoutes } from "../../platform/BaseRoutes.js";
 import http from "../../platform/http.js";
 import { bootstrapProfileSchema, updateProfileSchema } from "./schemas.js";
-import usersService from "./service.js";
+import UsersService from "./service.js";
 class UsersRoutes extends BaseRoutes {
     router = Router();
     constructor() {
@@ -14,20 +14,20 @@ class UsersRoutes extends BaseRoutes {
     }
     async getMe(req, res) {
         const auth = this.requireAuth(req);
-        const data = await usersService.getMe(auth.userId);
+        const data = await UsersService.getMe(auth.userId);
         http.ok(res, data);
     }
     /** Create app User + default Personal org (idempotent). Seeds profile on first create. */
     async bootstrapMe(req, res) {
         const auth = this.requireAuth(req);
         const body = bootstrapProfileSchema.parse(req.body ?? {});
-        const data = await usersService.getMe(auth.userId, body);
+        const data = await UsersService.getMe(auth.userId, body);
         http.ok(res, data);
     }
     async updateMe(req, res) {
         const auth = this.requireAuth(req);
         const body = updateProfileSchema.parse(req.body);
-        const data = await usersService.updateProfile(auth.userId, body);
+        const data = await UsersService.updateProfile(auth.userId, body);
         http.ok(res, data);
     }
 }

@@ -1,10 +1,8 @@
 import { z } from "zod";
-import { apiKeyParamsSchema, createApiKeySchema, projectIdParamsSchema, } from "../modules/apiKeys/schemas.js";
-import { orgIdParamsSchema } from "../modules/organizations/schemas.js";
-import { createProjectSchema, projectIdParamsSchema as projectParamsSchema, updateProjectSchema, } from "../modules/projects/schemas.js";
-import { bootstrapProfileSchema, updateProfileSchema } from "../modules/users/schemas.js";
-import { apiKeySchema, createdApiKeySchema, dataEnvelope, deletedResponseSchema, errorResponseSchema, healthSchema, meResponseSchema, organizationListItemSchema, projectSchema, rootMessageSchema, userSchema, } from "./responses.js";
+import { apiKeyParamsSchema, createApiKeySchema, projectIdParamsSchema, orgIdParamsSchema, createOrganizationSchema, createCheckoutSessionSchema, orgSubscriptionResponseSchema, createProjectSchema, projectParamsSchema, updateProjectSchema, bootstrapProfileSchema, updateProfileSchema, textChatSchema, aiRequestParamsSchema, listAiRequestsQuerySchema, } from "./schemas.js";
+import { apiKeySchema, aiRequestDetailSchema, aiRequestListSchema, createdApiKeySchema, dataEnvelope, deletedResponseSchema, errorResponseSchema, healthSchema, meResponseSchema, organizationListItemSchema, projectSchema, rootMessageSchema, textChatResponseSchema, userSchema, } from "./responses.js";
 const bearerAuth = [{ bearerAuth: [] }];
+const apiKeyAuth = [{ apiKeyAuth: [] }];
 const errorResponses = {
     400: {
         description: "Validation error",
@@ -127,6 +125,103 @@ export function registerApiPaths(registry) {
                 },
             },
             ...errorResponses,
+        },
+    });
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/organizations",
+        tags: ["Organizations"],
+        summary: "Create an organization",
+        description: "Create an additional organization with Pro (`plan: pro`). Pro subscription starts PENDING until Xendit checkout completes. Scale requires contact sales.",
+        security: bearerAuth,
+        request: {
+            body: {
+                required: true,
+                content: {
+                    "application/json": { schema: createOrganizationSchema },
+                },
+            },
+        },
+        responses: {
+            201: {
+                description: "Created organization (caller is owner)",
+                content: {
+                    "application/json": { schema: dataEnvelope(organizationListItemSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    });
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/organizations/{orgId}/subscription",
+        tags: ["Billing"],
+        summary: "Get organization subscription",
+        security: bearerAuth,
+        request: { params: orgIdParamsSchema },
+        responses: {
+            200: {
+                description: "Current subscription for the organization",
+                content: {
+                    "application/json": { schema: dataEnvelope(orgSubscriptionResponseSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    });
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/organizations/{orgId}/checkout-sessions",
+        tags: ["Billing"],
+        summary: "Create Xendit Components checkout session (Pro)",
+        description: "Returns `componentsSdkKey` for embedded Xendit Components checkout. Requires `BILLING_ENABLED=true` and org owner/admin.",
+        security: bearerAuth,
+        request: {
+            params: orgIdParamsSchema,
+            body: {
+                required: true,
+                content: {
+                    "application/json": { schema: createCheckoutSessionSchema },
+                },
+            },
+        },
+        responses: {
+            201: {
+                description: "Checkout session created",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(z.object({
+                            componentsSdkKey: z.string(),
+                            sessionId: z.string(),
+                            expiresAt: z.string().nullable(),
+                        })),
+                    },
+                },
+            },
+            ...errorResponses,
+        },
+    });
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/billing/webhooks/xendit",
+        tags: ["Billing"],
+        summary: "Xendit webhook receiver",
+        description: "Verifies `x-callback-token` and activates subscriptions on successful payment.",
+        responses: {
+            200: {
+                description: "Webhook processed",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(z.object({
+                            handled: z.boolean(),
+                        })),
+                    },
+                },
+            },
+            401: {
+                description: "Invalid webhook token",
+                content: { "application/json": { schema: errorResponseSchema } },
+            },
         },
     });
     registry.registerPath({
@@ -301,6 +396,83 @@ export function registerApiPaths(registry) {
             200: {
                 description: "API key deleted",
                 content: { "application/json": { schema: dataEnvelope(deletedResponseSchema) } },
+            },
+            ...errorResponses,
+        },
+    });
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/projects/{projectId}/ai-requests",
+        tags: ["AI Requests"],
+        summary: "List AI requests for a project",
+        description: "Returns paginated request summaries (newest first). Use `status`, `limit`, and `offset` query params. Full payloads are available on the detail endpoint.",
+        security: bearerAuth,
+        request: {
+            params: projectIdParamsSchema,
+            query: listAiRequestsQuerySchema,
+        },
+        responses: {
+            200: {
+                description: "Paginated AI request summaries",
+                content: {
+                    "application/json": { schema: dataEnvelope(aiRequestListSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    });
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/projects/{projectId}/ai-requests/{requestId}",
+        tags: ["AI Requests"],
+        summary: "Get an AI request",
+        description: "Returns full request and response payloads for a single AI request.",
+        security: bearerAuth,
+        request: {
+            params: aiRequestParamsSchema,
+        },
+        responses: {
+            200: {
+                description: "AI request detail",
+                content: {
+                    "application/json": { schema: dataEnvelope(aiRequestDetailSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    });
+    registry.registerPath({
+        method: "post",
+        path: "/v1/text/chat",
+        tags: ["Gateway"],
+        summary: "Text chat completion",
+        description: "Invoke a text chat model via the data plane. Authenticate with a project API key (`Authorization: Bearer ain_…`). Model must be a `provider/model` slug (e.g. `openai/gpt-4o-mini` or `gemini/gemini-3.6-flash`). Free plans may only call `freeEligible` catalog models and are subject to monthly request/token caps.",
+        security: apiKeyAuth,
+        request: {
+            body: {
+                content: {
+                    "application/json": { schema: textChatSchema },
+                },
+            },
+        },
+        responses: {
+            200: {
+                description: "Assistant message",
+                content: {
+                    "application/json": { schema: dataEnvelope(textChatResponseSchema) },
+                },
+            },
+            402: {
+                description: "Organization has no active subscription",
+                content: { "application/json": { schema: errorResponseSchema } },
+            },
+            429: {
+                description: "Monthly plan request or token limit exceeded",
+                content: { "application/json": { schema: errorResponseSchema } },
+            },
+            501: {
+                description: "Provider adapter not implemented",
+                content: { "application/json": { schema: errorResponseSchema } },
             },
             ...errorResponses,
         },

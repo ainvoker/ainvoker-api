@@ -1558,9 +1558,11 @@ export declare const TransactionIsolationLevel: {
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel];
 export declare const UserScalarFieldEnum: {
     readonly id: "id";
+    readonly email: "email";
     readonly firstName: "firstName";
     readonly lastName: "lastName";
     readonly profilePicture: "profilePicture";
+    readonly themePreference: "themePreference";
     readonly createdAt: "createdAt";
     readonly updatedAt: "updatedAt";
 };
@@ -1576,6 +1578,8 @@ export declare const OrganizationScalarFieldEnum: {
     readonly slug: "slug";
     readonly status: "status";
     readonly createdByUserId: "createdByUserId";
+    readonly xenditCustomerReference: "xenditCustomerReference";
+    readonly xenditPaymentTokenId: "xenditPaymentTokenId";
     readonly createdAt: "createdAt";
     readonly updatedAt: "updatedAt";
 };
@@ -1633,6 +1637,7 @@ export declare const AIModelScalarFieldEnum: {
     readonly inputPrice: "inputPrice";
     readonly outputPrice: "outputPrice";
     readonly status: "status";
+    readonly freeEligible: "freeEligible";
     readonly createdAt: "createdAt";
     readonly updatedAt: "updatedAt";
 };
@@ -1705,6 +1710,7 @@ export declare const PlanScalarFieldEnum: {
     readonly monthlyPrice: "monthlyPrice";
     readonly tokenLimit: "tokenLimit";
     readonly requestLimit: "requestLimit";
+    readonly billingMode: "billingMode";
     readonly description: "description";
     readonly createdAt: "createdAt";
     readonly updatedAt: "updatedAt";
@@ -1717,6 +1723,7 @@ export declare const SubscriptionScalarFieldEnum: {
     readonly status: "status";
     readonly startedAt: "startedAt";
     readonly expiresAt: "expiresAt";
+    readonly xenditSessionId: "xenditSessionId";
     readonly createdAt: "createdAt";
     readonly updatedAt: "updatedAt";
 };
@@ -1783,6 +1790,14 @@ export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 
  * Reference to a field of type 'String[]'
  */
 export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>;
+/**
+ * Reference to a field of type 'ThemePreference'
+ */
+export type EnumThemePreferenceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ThemePreference'>;
+/**
+ * Reference to a field of type 'ThemePreference[]'
+ */
+export type ListEnumThemePreferenceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ThemePreference[]'>;
 /**
  * Reference to a field of type 'DateTime'
  */
@@ -1864,6 +1879,10 @@ export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
  */
 export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>;
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>;
+/**
  * Reference to a field of type 'AIServiceType'
  */
 export type EnumAIServiceTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AIServiceType'>;
@@ -1903,6 +1922,14 @@ export type EnumWebhookStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pr
  * Reference to a field of type 'WebhookStatus[]'
  */
 export type ListEnumWebhookStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WebhookStatus[]'>;
+/**
+ * Reference to a field of type 'PlanBillingMode'
+ */
+export type EnumPlanBillingModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PlanBillingMode'>;
+/**
+ * Reference to a field of type 'PlanBillingMode[]'
+ */
+export type ListEnumPlanBillingModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PlanBillingMode[]'>;
 /**
  * Reference to a field of type 'SubscriptionStatus'
  */

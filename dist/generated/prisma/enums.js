@@ -66,15 +66,25 @@ export const WebhookStatus = {
     DISABLED: 'DISABLED'
 };
 export const SubscriptionStatus = {
+    PENDING: 'PENDING',
     ACTIVE: 'ACTIVE',
     PAST_DUE: 'PAST_DUE',
     CANCELED: 'CANCELED',
     EXPIRED: 'EXPIRED'
+};
+export const PlanBillingMode = {
+    FIXED_MONTHLY: 'FIXED_MONTHLY',
+    METERED: 'METERED'
 };
 export const PaymentStatus = {
     PENDING: 'PENDING',
     SUCCEEDED: 'SUCCEEDED',
     FAILED: 'FAILED',
     REFUNDED: 'REFUNDED'
+};
+export const ThemePreference = {
+    LIGHT: 'LIGHT',
+    DARK: 'DARK',
+    DEVICE: 'DEVICE'
 };
 //# sourceMappingURL=enums.js.map
