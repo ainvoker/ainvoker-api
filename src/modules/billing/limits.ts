@@ -1,4 +1,4 @@
-import type { AIModel, Plan } from "../../../generated/prisma/client.js"
+import type { AIModel, Plan } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
 import { ensureBillingCatalog, PLAN_NAMES, type PlanName } from "./catalog.js"

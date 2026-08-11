@@ -1,4 +1,4 @@
-import { Prisma } from "../../../generated/prisma/client.js"
+import { Prisma } from "../../generated/prisma/client.js"
 import prismaClient from "../../platform/prisma.js"
 
 const OPENAI_PROVIDER = "openai"

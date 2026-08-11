@@ -1,4 +1,4 @@
-import type { Prisma } from "../../../generated/prisma/client.js"
+import type { Prisma } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import apiKeyHasher from "../../platform/hash.js"
 import prismaClient from "../../platform/prisma.js"
