@@ -1,4 +1,5 @@
 export * from "../modules/apiKeys/schemas.js"
+export * from "../modules/billing/schemas.js"
 export * from "../modules/organizations/schemas.js"
 export {
     createProjectSchema,

@@ -83,10 +83,16 @@ enum WebhookStatus {
 }
 
 enum SubscriptionStatus {
+  PENDING
   ACTIVE
   PAST_DUE
   CANCELED
   EXPIRED
+}
+
+enum PlanBillingMode {
+  FIXED_MONTHLY
+  METERED
 }
 
 enum PaymentStatus {
@@ -138,6 +144,9 @@ model Organization {
 
   createdByUserId String?
   createdBy       User?   @relation("OrganizationCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  xenditCustomerReference String?
+  xenditPaymentTokenId    String?
 
   members       OrganizationMember[]
   projects      Project[]
@@ -243,6 +252,8 @@ model AIModel {
   inputPrice    Decimal       @db.Decimal(12, 6)
   outputPrice   Decimal       @db.Decimal(12, 6)
   status        CatalogStatus @default(ACTIVE)
+  /// When true, orgs on the Free plan may call this model.
+  freeEligible  Boolean       @default(false)
 
   provider AIProvider  @relation(fields: [providerId], references: [id], onDelete: Restrict)
   requests AIRequest[]
@@ -379,10 +390,11 @@ model Webhook {
 model Plan {
   id Int @id @default(autoincrement())
 
-  name         String  @unique
-  monthlyPrice Decimal @db.Decimal(12, 6)
+  name         String          @unique
+  monthlyPrice Decimal         @db.Decimal(12, 6)
   tokenLimit   Int
   requestLimit Int
+  billingMode  PlanBillingMode
   description  String?
 
   subscriptions Subscription[]
@@ -397,9 +409,10 @@ model Subscription {
   organizationId String
   planId         Int
 
-  status    SubscriptionStatus @default(ACTIVE)
-  startedAt DateTime
-  expiresAt DateTime?
+  status          SubscriptionStatus @default(ACTIVE)
+  startedAt       DateTime
+  expiresAt       DateTime?
+  xenditSessionId String?
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   plan         Plan         @relation(fields: [planId], references: [id], onDelete: Restrict)

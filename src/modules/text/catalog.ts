@@ -52,11 +52,13 @@ async function seedTextCatalog(): Promise<void> {
             inputPrice: new Prisma.Decimal("0.000150"),
             outputPrice: new Prisma.Decimal("0.000600"),
             status: "ACTIVE",
+            freeEligible: true,
         },
         update: {
             type: "TEXT",
             status: "ACTIVE",
             contextWindow: 128000,
+            freeEligible: true,
         },
     })
 
@@ -89,6 +91,7 @@ async function seedTextCatalog(): Promise<void> {
             inputPrice: new Prisma.Decimal("0"),
             outputPrice: new Prisma.Decimal("0"),
             status: "ACTIVE",
+            freeEligible: true,
         },
         update: {
             type: "TEXT",
@@ -96,6 +99,7 @@ async function seedTextCatalog(): Promise<void> {
             contextWindow: 1048576,
             inputPrice: new Prisma.Decimal("0"),
             outputPrice: new Prisma.Decimal("0"),
+            freeEligible: true,
         },
     })
 }

@@ -1,13 +1,28 @@
 import { Prisma } from "../../../generated/prisma/client.js"
+import {
+    assertModelAllowedForPlan,
+    assertWithinPlanLimits,
+    getActiveSubscriptionWithPlan,
+    type QuotaSnapshot,
+} from "../billing/limits.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
 import chatProviderRegistry from "../../providers/index.js"
+import type { ChatMessage } from "../../providers/types.js"
 import type { ApiKeyContext } from "../../types/express.js"
 import { ensureTextCatalog } from "./catalog.js"
 import { parseModelSlug, type TextChatBody } from "./schemas.js"
 
+export type TextChatResult = {
+    id: string
+    model: string
+    message: ChatMessage
+    usage: { inputTokens: number; outputTokens: number; totalTokens: number } | null
+    quota: QuotaSnapshot
+}
+
 class TextService {
-    async chat(apiKeyContext: ApiKeyContext, body: TextChatBody) {
+    async chat(apiKeyContext: ApiKeyContext, body: TextChatBody): Promise<TextChatResult> {
         await ensureTextCatalog()
 
         const { providerName, modelName } = parseModelSlug(body.model)
@@ -31,6 +46,10 @@ class TextService {
         if (!model || model.status !== "ACTIVE" || model.type !== "TEXT") {
             throw new AppError(404, "NOT_FOUND", `Unknown or inactive text model "${modelSlug}"`)
         }
+
+        const subscription = await getActiveSubscriptionWithPlan(apiKeyContext.organizationId)
+        assertModelAllowedForPlan(subscription.plan, model)
+        const quota = await assertWithinPlanLimits(apiKeyContext.organizationId)
 
         const adapter = chatProviderRegistry.get(providerName)
 
@@ -101,6 +120,7 @@ class TextService {
                 model: modelSlug,
                 message: result.message,
                 usage,
+                quota,
             }
         } catch (err) {
             const latency = Date.now() - started

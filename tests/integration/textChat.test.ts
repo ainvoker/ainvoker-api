@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import request from "supertest"
 import app from "../../src/app.js"
+import { ensureBillingCatalog, getPlanByName, PLAN_NAMES } from "../../src/modules/billing/catalog.js"
+import { ensureTextCatalog, textCatalogDefaults } from "../../src/modules/text/catalog.js"
 import apiKeyHasher from "../../src/platform/hash.js"
 import prismaClient from "../../src/platform/prisma.js"
 import { cleanupTestUser, seedUserWithPersonalOrg, testUserId } from "../helpers/db.js"
@@ -8,6 +10,7 @@ import "../../src/providers/index.js"
 
 describe("POST /v1/text/chat", () => {
     let userId: string
+    let organizationId: string
     let projectId: string
     let plaintextKey: string
     let fetchSpy: ReturnType<typeof vi.spyOn>
@@ -15,6 +18,7 @@ describe("POST /v1/text/chat", () => {
     beforeEach(async () => {
         userId = testUserId()
         const seeded = await seedUserWithPersonalOrg(userId)
+        organizationId = seeded.organizationId
 
         const project = await prismaClient.project.create({
             data: {
@@ -75,13 +79,15 @@ describe("POST /v1/text/chat", () => {
     })
 
     afterEach(async () => {
-        fetchSpy.mockRestore()
-        await cleanupTestUser(userId)
+        fetchSpy?.mockRestore()
+        if (userId) {
+            await cleanupTestUser(userId)
+        }
     })
 
     it("returns 401 without Authorization", async () => {
         const res = await request(app.express).post("/v1/text/chat").send({
-            model: "openai/gpt-4o-mini",
+            model: textCatalogDefaults.modelSlug,
             messages: [{ role: "user", content: "Hi" }],
         })
         expect(res.status).toBe(401)
@@ -93,7 +99,7 @@ describe("POST /v1/text/chat", () => {
             .post("/v1/text/chat")
             .set({ Authorization: `Bearer ${userId}` })
             .send({
-                model: "openai/gpt-4o-mini",
+                model: textCatalogDefaults.modelSlug,
                 messages: [{ role: "user", content: "Hi" }],
             })
         expect(res.status).toBe(401)
@@ -104,13 +110,13 @@ describe("POST /v1/text/chat", () => {
             .post("/v1/text/chat")
             .set({ Authorization: `Bearer ${plaintextKey}` })
             .send({
-                model: "openai/gpt-4o-mini",
+                model: textCatalogDefaults.modelSlug,
                 messages: [{ role: "user", content: "Say hello" }],
             })
 
         expect(res.status).toBe(200)
         expect(res.body.data).toMatchObject({
-            model: "openai/gpt-4o-mini",
+            model: textCatalogDefaults.modelSlug,
             message: { role: "assistant", content: "Hello from mock" },
             usage: {
                 inputTokens: 10,
@@ -119,6 +125,7 @@ describe("POST /v1/text/chat", () => {
             },
         })
         expect(typeof res.body.data.id).toBe("string")
+        expect(res.headers["x-ratelimit-limit-requests"]).toBe("300")
 
         expect(fetchSpy).toHaveBeenCalled()
         const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit]
@@ -141,7 +148,7 @@ describe("POST /v1/text/chat", () => {
             .post("/v1/text/chat")
             .set({ Authorization: `Bearer ${plaintextKey}` })
             .send({
-                model: "gemini/gemini-2.5-flash",
+                model: textCatalogDefaults.geminiModelSlug,
                 messages: [
                     { role: "system", content: "Be brief" },
                     { role: "user", content: "Say hello" },
@@ -150,7 +157,7 @@ describe("POST /v1/text/chat", () => {
 
         expect(res.status).toBe(200)
         expect(res.body.data).toMatchObject({
-            model: "gemini/gemini-2.5-flash",
+            model: textCatalogDefaults.geminiModelSlug,
             message: { role: "assistant", content: "Hello from Gemini mock" },
             usage: {
                 inputTokens: 8,
@@ -162,7 +169,7 @@ describe("POST /v1/text/chat", () => {
 
         expect(fetchSpy).toHaveBeenCalled()
         const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit]
-        expect(url).toContain("/models/gemini-2.5-flash:generateContent")
+        expect(url).toContain(`/models/${textCatalogDefaults.geminiModelSlug.split("/")[1]}:generateContent`)
         expect(init.method).toBe("POST")
         const headers = init.headers as Record<string, string>
         expect(headers["x-goog-api-key"]).toBeTruthy()
@@ -195,5 +202,151 @@ describe("POST /v1/text/chat", () => {
             })
         expect(res.status).toBe(400)
         expect(res.body.error.code).toBe("VALIDATION_ERROR")
+    })
+
+    it("returns 429 when Free monthly request limit is exceeded", async () => {
+        await ensureTextCatalog()
+        const openai = await prismaClient.aIProvider.findUniqueOrThrow({
+            where: { name: "openai" },
+        })
+        const model = await prismaClient.aIModel.findUniqueOrThrow({
+            where: {
+                providerId_name: { providerId: openai.id, name: "gpt-4o-mini" },
+            },
+        })
+
+        const apiKey = await prismaClient.apiKey.findFirstOrThrow({
+            where: { projectId },
+        })
+
+        await prismaClient.aIRequest.create({
+            data: {
+                projectId,
+                apiKeyId: apiKey.id,
+                modelId: model.id,
+                serviceType: "TEXT",
+                requestPayload: { model: textCatalogDefaults.modelSlug },
+                requestStatus: "SUCCESS",
+                totalTokens: 1,
+            },
+        })
+
+        const free = await getPlanByName(PLAN_NAMES.free)
+        await prismaClient.plan.update({
+            where: { id: free.id },
+            data: { requestLimit: 1 },
+        })
+
+        try {
+            const res = await request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.modelSlug,
+                    messages: [{ role: "user", content: "Hi" }],
+                })
+
+            expect(res.status).toBe(429)
+            expect(res.body.error.code).toBe("RATE_LIMIT_EXCEEDED")
+            expect(fetchSpy).not.toHaveBeenCalled()
+        } finally {
+            await prismaClient.plan.update({
+                where: { id: free.id },
+                data: { requestLimit: 300 },
+            })
+        }
+    })
+
+    it("returns 403 when Free plan calls a non-eligible model", async () => {
+        await ensureTextCatalog()
+        const openai = await prismaClient.aIProvider.findUniqueOrThrow({
+            where: { name: "openai" },
+        })
+
+        await prismaClient.aIModel.upsert({
+            where: {
+                providerId_name: { providerId: openai.id, name: "gpt-4o" },
+            },
+            create: {
+                providerId: openai.id,
+                name: "gpt-4o",
+                type: "TEXT",
+                contextWindow: 128000,
+                inputPrice: 2.5,
+                outputPrice: 10,
+                status: "ACTIVE",
+                freeEligible: false,
+            },
+            update: {
+                status: "ACTIVE",
+                freeEligible: false,
+            },
+        })
+
+        const res = await request(app.express)
+            .post("/v1/text/chat")
+            .set({ Authorization: `Bearer ${plaintextKey}` })
+            .send({
+                model: "openai/gpt-4o",
+                messages: [{ role: "user", content: "Hi" }],
+            })
+
+        expect(res.status).toBe(403)
+        expect(res.body.error.code).toBe("MODEL_NOT_ALLOWED_ON_PLAN")
+        expect(fetchSpy).not.toHaveBeenCalled()
+    })
+
+    it("allows Pro plans to call non-eligible models", async () => {
+        await ensureBillingCatalog()
+        await ensureTextCatalog()
+
+        const openai = await prismaClient.aIProvider.findUniqueOrThrow({
+            where: { name: "openai" },
+        })
+        await prismaClient.aIModel.upsert({
+            where: {
+                providerId_name: { providerId: openai.id, name: "gpt-4o" },
+            },
+            create: {
+                providerId: openai.id,
+                name: "gpt-4o",
+                type: "TEXT",
+                contextWindow: 128000,
+                inputPrice: 2.5,
+                outputPrice: 10,
+                status: "ACTIVE",
+                freeEligible: false,
+            },
+            update: {
+                status: "ACTIVE",
+                freeEligible: false,
+            },
+        })
+
+        const pro = await getPlanByName(PLAN_NAMES.pro)
+        await prismaClient.subscription.updateMany({
+            where: { organizationId, status: "ACTIVE" },
+            data: { status: "CANCELED" },
+        })
+        await prismaClient.subscription.create({
+            data: {
+                organizationId,
+                planId: pro.id,
+                status: "ACTIVE",
+                startedAt: new Date(),
+            },
+        })
+
+        const res = await request(app.express)
+            .post("/v1/text/chat")
+            .set({ Authorization: `Bearer ${plaintextKey}` })
+            .send({
+                model: "openai/gpt-4o",
+                messages: [{ role: "user", content: "Hi" }],
+            })
+
+        expect(res.status).toBe(200)
+        expect(res.body.data.model).toBe("openai/gpt-4o")
+        expect(fetchSpy).toHaveBeenCalled()
     })
 })

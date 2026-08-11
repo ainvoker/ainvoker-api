@@ -9,6 +9,13 @@ const envSchema = z.object({
     CORS_ORIGIN: z.string().min(1).default("http://localhost:5173"),
     OPENAI_API_KEY: z.string().min(1).optional(),
     GEMINI_API_KEY: z.string().min(1).optional(),
+    BILLING_ENABLED: z
+        .enum(["true", "false"])
+        .default("false")
+        .transform((v) => v === "true"),
+    XENDIT_SECRET_KEY: z.string().min(1).optional(),
+    XENDIT_WEBHOOK_TOKEN: z.string().min(1).optional(),
+    XENDIT_PRO_AMOUNT: z.coerce.number().int().positive().default(109900),
 })
 
 class EnvConfig {
@@ -17,9 +24,12 @@ class EnvConfig {
     readonly DATABASE_URL: string
     readonly NEON_AUTH_URL: string
     readonly CORS_ORIGIN: string
-    /** Present when set; adapters must check before calling upstream. */
     readonly OPENAI_API_KEY: string | undefined
     readonly GEMINI_API_KEY: string | undefined
+    readonly BILLING_ENABLED: boolean
+    readonly XENDIT_SECRET_KEY: string | undefined
+    readonly XENDIT_WEBHOOK_TOKEN: string | undefined
+    readonly XENDIT_PRO_AMOUNT: number
 
     constructor() {
         const parsed = envSchema.safeParse(process.env)
@@ -39,6 +49,18 @@ class EnvConfig {
         this.CORS_ORIGIN = parsed.data.CORS_ORIGIN
         this.OPENAI_API_KEY = parsed.data.OPENAI_API_KEY
         this.GEMINI_API_KEY = parsed.data.GEMINI_API_KEY
+        this.BILLING_ENABLED = parsed.data.BILLING_ENABLED
+        this.XENDIT_SECRET_KEY = parsed.data.XENDIT_SECRET_KEY
+        this.XENDIT_WEBHOOK_TOKEN = parsed.data.XENDIT_WEBHOOK_TOKEN
+        this.XENDIT_PRO_AMOUNT = parsed.data.XENDIT_PRO_AMOUNT
+
+        if (this.BILLING_ENABLED && !this.XENDIT_SECRET_KEY) {
+            console.error("XENDIT_SECRET_KEY is required when BILLING_ENABLED=true")
+            if (process.env.NODE_ENV === "test") {
+                throw new Error("XENDIT_SECRET_KEY is required when BILLING_ENABLED=true")
+            }
+            process.exit(1)
+        }
     }
 }
 

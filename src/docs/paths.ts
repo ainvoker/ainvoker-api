@@ -6,6 +6,8 @@ import {
     projectIdParamsSchema,
     orgIdParamsSchema,
     createOrganizationSchema,
+    createCheckoutSessionSchema,
+    orgSubscriptionResponseSchema,
     createProjectSchema,
     projectParamsSchema,
     updateProjectSchema,
@@ -171,6 +173,8 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         path: "/api/v1/organizations",
         tags: ["Organizations"],
         summary: "Create an organization",
+        description:
+            "Create an additional organization with Pro (`plan: pro`). Pro subscription starts PENDING until Xendit checkout completes. Scale requires contact sales.",
         security: bearerAuth,
         request: {
             body: {
@@ -188,6 +192,86 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
                 },
             },
             ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/organizations/{orgId}/subscription",
+        tags: ["Billing"],
+        summary: "Get organization subscription",
+        security: bearerAuth,
+        request: { params: orgIdParamsSchema },
+        responses: {
+            200: {
+                description: "Current subscription for the organization",
+                content: {
+                    "application/json": { schema: dataEnvelope(orgSubscriptionResponseSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/organizations/{orgId}/checkout-sessions",
+        tags: ["Billing"],
+        summary: "Create Xendit Components checkout session (Pro)",
+        description:
+            "Returns `componentsSdkKey` for embedded Xendit Components checkout. Requires `BILLING_ENABLED=true` and org owner/admin.",
+        security: bearerAuth,
+        request: {
+            params: orgIdParamsSchema,
+            body: {
+                required: true,
+                content: {
+                    "application/json": { schema: createCheckoutSessionSchema },
+                },
+            },
+        },
+        responses: {
+            201: {
+                description: "Checkout session created",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(
+                            z.object({
+                                componentsSdkKey: z.string(),
+                                sessionId: z.string(),
+                                expiresAt: z.string().nullable(),
+                            }),
+                        ),
+                    },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/billing/webhooks/xendit",
+        tags: ["Billing"],
+        summary: "Xendit webhook receiver",
+        description: "Verifies `x-callback-token` and activates subscriptions on successful payment.",
+        responses: {
+            200: {
+                description: "Webhook processed",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(
+                            z.object({
+                                handled: z.boolean(),
+                            }),
+                        ),
+                    },
+                },
+            },
+            401: {
+                description: "Invalid webhook token",
+                content: { "application/json": { schema: errorResponseSchema } },
+            },
         },
     })
 
@@ -426,7 +510,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         tags: ["Gateway"],
         summary: "Text chat completion",
         description:
-            "Invoke a text chat model via the data plane. Authenticate with a project API key (`Authorization: Bearer ain_…`). Model must be a `provider/model` slug (e.g. `openai/gpt-4o-mini` or `gemini/gemini-2.5-flash`).",
+            "Invoke a text chat model via the data plane. Authenticate with a project API key (`Authorization: Bearer ain_…`). Model must be a `provider/model` slug (e.g. `openai/gpt-4o-mini` or `gemini/gemini-3.6-flash`). Free plans may only call `freeEligible` catalog models and are subject to monthly request/token caps.",
         security: apiKeyAuth,
         request: {
             body: {
@@ -441,6 +525,14 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
                 content: {
                     "application/json": { schema: dataEnvelope(textChatResponseSchema) },
                 },
+            },
+            402: {
+                description: "Organization has no active subscription",
+                content: { "application/json": { schema: errorResponseSchema } },
+            },
+            429: {
+                description: "Monthly plan request or token limit exceeded",
+                content: { "application/json": { schema: errorResponseSchema } },
             },
             501: {
                 description: "Provider adapter not implemented",

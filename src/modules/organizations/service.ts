@@ -1,6 +1,11 @@
 import { Prisma } from "../../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
+import {
+    ensureBillingCatalog,
+    getPlanByName,
+    PLAN_NAMES,
+} from "../billing/catalog.js"
 import type { ProfileFields } from "../users/schemas.js"
 import type { createOrganizationSchema } from "./schemas.js"
 import type { z } from "zod"
@@ -39,6 +44,7 @@ class OrganizationService {
 
     async ensureUserAndPersonalOrg(userId: string, profile?: ProfileFields) {
         await this.ensureRoles()
+        await ensureBillingCatalog()
 
         let user = await prismaClient.user.upsert({
             where: { id: userId },
@@ -86,7 +92,35 @@ class OrganizationService {
             await this.createPersonalOrgIfNeeded(userId)
         }
 
+        await this.ensureFreeSubscriptionOnPersonalOrg(userId)
+
         return { user }
+    }
+
+    /**
+     * Attach Free only when the Personal org has no ACTIVE subscription.
+     * Never downgrades Pro/Scale.
+     */
+    private async ensureFreeSubscriptionOnPersonalOrg(userId: string) {
+        const slug = personalOrgSlug(userId)
+        const org = await prismaClient.organization.findUnique({ where: { slug } })
+        if (!org) return
+
+        const active = await prismaClient.subscription.findFirst({
+            where: { organizationId: org.id, status: "ACTIVE" },
+            select: { id: true },
+        })
+        if (active) return
+
+        const freePlan = await getPlanByName(PLAN_NAMES.free)
+        await prismaClient.subscription.create({
+            data: {
+                organizationId: org.id,
+                planId: freePlan.id,
+                status: "ACTIVE",
+                startedAt: new Date(),
+            },
+        })
     }
 
     /** Idempotent under concurrent bootstrap (React Strict Mode, double refresh, etc.). */
@@ -95,6 +129,7 @@ class OrganizationService {
             where: { name: "owner" },
         })
         const slug = personalOrgSlug(userId)
+        const freePlan = await getPlanByName(PLAN_NAMES.free)
 
         try {
             await prismaClient.$transaction(async (tx) => {
@@ -141,6 +176,15 @@ class OrganizationService {
                         organizationId: organization.id,
                         userId,
                         roleId: ownerRole.id,
+                    },
+                })
+
+                await tx.subscription.create({
+                    data: {
+                        organizationId: organization.id,
+                        planId: freePlan.id,
+                        status: "ACTIVE",
+                        startedAt: new Date(),
                     },
                 })
             })
@@ -204,15 +248,26 @@ class OrganizationService {
     ) {
         await this.ensureUserAndPersonalOrg(userId)
 
+        if (input.plan === PLAN_NAMES.scale) {
+            throw new AppError(
+                403,
+                "PLAN_CONTACT_REQUIRED",
+                "Scale plans require contacting sales",
+            )
+        }
+
+        const paidPlan = await getPlanByName(input.plan)
+
         const ownerRole = await prismaClient.role.findUniqueOrThrow({
             where: { name: "owner" },
         })
 
         const baseSlug = input.slug ?? slugifyOrganizationName(input.name)
-        // Explicit slug must be free; auto-generated slugs get a suffix if taken.
         const slug = input.slug
             ? baseSlug
             : await this.allocateUniqueSlug(baseSlug)
+
+        const subscriptionStatus = input.plan === PLAN_NAMES.pro ? "PENDING" : "ACTIVE"
 
         try {
             const organization = await prismaClient.$transaction(async (tx) => {
@@ -229,6 +284,15 @@ class OrganizationService {
                         organizationId: org.id,
                         userId,
                         roleId: ownerRole.id,
+                    },
+                })
+
+                await tx.subscription.create({
+                    data: {
+                        organizationId: org.id,
+                        planId: paidPlan.id,
+                        status: subscriptionStatus,
+                        startedAt: new Date(),
                     },
                 })
 
