@@ -43,7 +43,7 @@ class BillingRoutes extends BaseRoutes {
         const membership = req.membership!
         const returnUrl =
             body.returnUrl ??
-            `${env.CORS_ORIGIN}/billing/checkout?orgId=${orgId}&plan=pro&resume=1`
+            `${env.getClientOrigin()}/billing/checkout?orgId=${orgId}&plan=pro&resume=1`
 
         const data = await BillingService.createProCheckoutSession({
             organizationId: orgId,

@@ -16,6 +16,11 @@ const envSchema = z.object({
     XENDIT_SECRET_KEY: z.string().min(1).optional(),
     XENDIT_WEBHOOK_TOKEN: z.string().min(1).optional(),
     XENDIT_PRO_AMOUNT: z.coerce.number().int().positive().default(109900),
+    /**
+     * HTTPS origin(s) for Xendit Components (comma-separated).
+     * Xendit rejects http:// here. Local SPA may still run on http; use mock SDK or an HTTPS tunnel for real Components.
+     */
+    XENDIT_COMPONENTS_ORIGIN: z.string().min(1).default("https://localhost:5173"),
 })
 
 class EnvConfig {
@@ -30,6 +35,7 @@ class EnvConfig {
     readonly XENDIT_SECRET_KEY: string | undefined
     readonly XENDIT_WEBHOOK_TOKEN: string | undefined
     readonly XENDIT_PRO_AMOUNT: number
+    readonly XENDIT_COMPONENTS_ORIGIN: string
 
     constructor() {
         const parsed = envSchema.safeParse(process.env)
@@ -53,6 +59,7 @@ class EnvConfig {
         this.XENDIT_SECRET_KEY = parsed.data.XENDIT_SECRET_KEY
         this.XENDIT_WEBHOOK_TOKEN = parsed.data.XENDIT_WEBHOOK_TOKEN
         this.XENDIT_PRO_AMOUNT = parsed.data.XENDIT_PRO_AMOUNT
+        this.XENDIT_COMPONENTS_ORIGIN = parsed.data.XENDIT_COMPONENTS_ORIGIN
 
         if (this.BILLING_ENABLED && !this.XENDIT_SECRET_KEY) {
             console.error("XENDIT_SECRET_KEY is required when BILLING_ENABLED=true")
@@ -61,6 +68,27 @@ class EnvConfig {
             }
             process.exit(1)
         }
+    }
+
+    /** Xendit Components requires HTTPS origins (API validation). */
+    getXenditComponentsOrigins(): string[] {
+        const origins = this.XENDIT_COMPONENTS_ORIGIN.split(",")
+            .map((o) => o.trim())
+            .filter(Boolean)
+            .map((origin) => {
+                if (origin.startsWith("https://")) return origin
+                if (origin.startsWith("http://")) {
+                    return `https://${origin.slice("http://".length)}`
+                }
+                return `https://${origin}`
+            })
+
+        return origins.length > 0 ? origins : ["https://localhost:5173"]
+    }
+
+    /** SPA base for default return URLs — prefer real CORS origin (may be http locally). */
+    getClientOrigin(): string {
+        return this.CORS_ORIGIN.split(",")[0]?.trim() || "http://localhost:5173"
     }
 }
 

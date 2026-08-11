@@ -135,7 +135,7 @@ class BillingService {
             reference_id: referenceId,
             session_type: "PAY",
             mode: "COMPONENTS",
-            amount: String(amount),
+            amount: Number(amount),
             currency: "PHP",
             country: "PH",
             locale: "en",
@@ -157,7 +157,8 @@ class BillingService {
                 subscriptionId: pendingSub.id,
             },
             components_configuration: {
-                origins: [env.CORS_ORIGIN],
+                origins: env.getXenditComponentsOrigins(),
+                // Must match the real SPA URL the browser is on (http OK locally).
                 return_url: input.returnUrl,
             },
         })
