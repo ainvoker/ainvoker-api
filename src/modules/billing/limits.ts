@@ -1,7 +1,8 @@
 import type { AIModel, Plan } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
-import { ensureBillingCatalog, PLAN_NAMES, type PlanName } from "./catalog.js"
+import { ensureBillingCatalog, getPlanByName, PLAN_NAMES, type PlanName } from "./catalog.js"
+import { isEntitlementUnexpired } from "./period.js"
 
 export type QuotaSnapshot = {
     planName: string
@@ -17,8 +18,63 @@ function startOfUtcMonth(now = new Date()): Date {
     return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0))
 }
 
+export async function expireLapsedSubscriptions(organizationId: string) {
+    const now = new Date()
+    await prismaClient.subscription.updateMany({
+        where: {
+            organizationId,
+            status: "ACTIVE",
+            expiresAt: { lte: now },
+        },
+        data: { status: "EXPIRED" },
+    })
+
+    const stillActive = await prismaClient.subscription.findFirst({
+        where: { organizationId, status: "ACTIVE" },
+        select: { id: true },
+    })
+    if (stillActive) {
+        return
+    }
+
+    const org = await prismaClient.organization.findUnique({
+        where: { id: organizationId },
+        select: { slug: true },
+    })
+    if (!org?.slug.startsWith("personal-")) {
+        return
+    }
+
+    const freePlan = await getPlanByName(PLAN_NAMES.free)
+    const canceledFree = await prismaClient.subscription.findFirst({
+        where: {
+            organizationId,
+            planId: freePlan.id,
+            status: "CANCELED",
+        },
+        orderBy: { startedAt: "desc" },
+    })
+    if (canceledFree) {
+        await prismaClient.subscription.update({
+            where: { id: canceledFree.id },
+            data: { status: "ACTIVE", expiresAt: null },
+        })
+        return
+    }
+
+    await prismaClient.subscription.create({
+        data: {
+            organizationId,
+            planId: freePlan.id,
+            status: "ACTIVE",
+            startedAt: new Date(),
+        },
+    })
+}
+
 export async function getActiveSubscriptionWithPlan(organizationId: string) {
     await ensureBillingCatalog()
+    await expireLapsedSubscriptions(organizationId)
 
     const subscription = await prismaClient.subscription.findFirst({
         where: {
@@ -29,7 +85,7 @@ export async function getActiveSubscriptionWithPlan(organizationId: string) {
         orderBy: { startedAt: "desc" },
     })
 
-    if (!subscription) {
+    if (!subscription || !isEntitlementUnexpired(subscription.expiresAt)) {
         throw new AppError(
             402,
             "SUBSCRIPTION_REQUIRED",

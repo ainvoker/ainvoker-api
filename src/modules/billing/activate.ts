@@ -1,6 +1,7 @@
 import { Prisma } from "../../generated/prisma/client.js"
 import prismaClient from "../../platform/prisma.js"
 import { ensureBillingCatalog, getPlanByName, PLAN_NAMES } from "./catalog.js"
+import { proPrepaidExpiresAt } from "./period.js"
 
 export async function activateProSubscription(input: {
     organizationId: string
@@ -52,11 +53,13 @@ export async function activateProSubscription(input: {
             data: { status: "CANCELED" },
         })
 
+        const startedAt = new Date()
         await tx.subscription.update({
             where: { id: pending.id },
             data: {
                 status: "ACTIVE",
-                startedAt: new Date(),
+                startedAt,
+                expiresAt: proPrepaidExpiresAt(startedAt),
             },
         })
 

@@ -12,6 +12,7 @@ export const orgSubscriptionResponseSchema = z.object({
     tokenLimit: z.number(),
     requestLimit: z.number(),
     pendingPlanName: z.string().nullable().optional(),
+    expiresAt: z.string().nullable().optional(),
 })
 
 export type OrgSubscriptionResponse = z.infer<typeof orgSubscriptionResponseSchema>

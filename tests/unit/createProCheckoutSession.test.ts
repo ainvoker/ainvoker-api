@@ -16,8 +16,10 @@ const {
         },
         subscription: {
             findFirst: vi.fn(),
+            findMany: vi.fn(),
             create: vi.fn(),
             update: vi.fn(),
+            updateMany: vi.fn(),
         },
     },
     createXenditSession: vi.fn(),
@@ -44,6 +46,10 @@ vi.mock("../../src/modules/billing/catalog.js", () => ({
     PLAN_NAMES: { free: "free", pro: "pro", scale: "scale" },
 }))
 
+vi.mock("../../src/modules/billing/limits.js", () => ({
+    expireLapsedSubscriptions: vi.fn().mockResolvedValue(undefined),
+}))
+
 vi.mock("../../src/modules/billing/xendit/client.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../src/modules/billing/xendit/client.js")>()
     return {
@@ -62,7 +68,11 @@ type OrgRow = {
     xenditCustomerId: string | null
 }
 
-function setupPrisma(org: OrgRow, pending: { id: string; xenditSessionId: string | null }) {
+function setupPrisma(
+    org: OrgRow,
+    pending: { id: string; xenditSessionId: string | null },
+    activePro: { id: string; expiresAt: Date | null } | null = null,
+) {
     prisma.user.findUnique.mockResolvedValue({
         id: "user_1",
         email: "a@example.com",
@@ -75,12 +85,22 @@ function setupPrisma(org: OrgRow, pending: { id: string; xenditSessionId: string
         Object.assign(org, data)
         return { ...org }
     })
-    prisma.subscription.findFirst.mockResolvedValue({
-        id: pending.id,
-        organizationId: org.id,
-        xenditSessionId: pending.xenditSessionId,
-    })
+    prisma.subscription.findFirst.mockImplementation(
+        async (args: { where?: { status?: string } }) => {
+            if (args.where?.status === "ACTIVE") {
+                return activePro
+                    ? { ...activePro, organizationId: org.id, planId: "plan_pro" }
+                    : null
+            }
+            return {
+                id: pending.id,
+                organizationId: org.id,
+                xenditSessionId: pending.xenditSessionId,
+            }
+        },
+    )
     prisma.subscription.update.mockResolvedValue({})
+    prisma.subscription.updateMany.mockResolvedValue({ count: 0 })
 }
 
 const checkoutInput = {
@@ -122,6 +142,7 @@ describe("createProCheckoutSession", () => {
             type: "INDIVIDUAL",
         })
         expect(body).not.toHaveProperty("customer_id")
+        expect(body.allow_save_payment_method).toBe("DISABLED")
         expect(prisma.organization.update).toHaveBeenCalledWith({
             where: { id: "org_abc" },
             data: { xenditCustomerId: "cust-new-1" },
@@ -226,5 +247,40 @@ describe("createProCheckoutSession", () => {
             expiresAt: "2026-08-12T10:00:00.000Z",
         })
         expect(createXenditSession).not.toHaveBeenCalled()
+    })
+
+    it("rejects checkout while unexpired Pro is active", async () => {
+        const org: OrgRow = {
+            id: "org_abc",
+            xenditCustomerReference: "org_org_abc",
+            xenditCustomerId: "cust-existing",
+        }
+        setupPrisma(
+            org,
+            { id: "sub_pending", xenditSessionId: null },
+            { id: "sub_active", expiresAt: new Date(Date.now() + 86_400_000) },
+        )
+
+        await expect(BillingService.createProCheckoutSession(checkoutInput)).rejects.toMatchObject({
+            status: 409,
+            code: "ALREADY_ACTIVE",
+        })
+        expect(createXenditSession).not.toHaveBeenCalled()
+    })
+
+    it("allows renew checkout after Pro expires", async () => {
+        const org: OrgRow = {
+            id: "org_abc",
+            xenditCustomerReference: "org_org_abc",
+            xenditCustomerId: "cust-existing",
+        }
+        setupPrisma(
+            org,
+            { id: "sub_pending", xenditSessionId: null },
+            { id: "sub_active", expiresAt: new Date(Date.now() - 1000) },
+        )
+
+        await BillingService.createProCheckoutSession(checkoutInput)
+        expect(createXenditSession).toHaveBeenCalledOnce()
     })
 })

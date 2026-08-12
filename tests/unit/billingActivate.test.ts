@@ -45,6 +45,12 @@ describe("activateProSubscription", () => {
         })
         expect(active.status).toBe("ACTIVE")
         expect(active.plan.name).toBe(PLAN_NAMES.pro)
+        expect(active.expiresAt).not.toBeNull()
+        if (active.expiresAt) {
+            const days =
+                (active.expiresAt.getTime() - active.startedAt.getTime()) / 86_400_000
+            expect(days).toBeCloseTo(30, 5)
+        }
 
         const orgRow = await prismaClient.organization.findUniqueOrThrow({
             where: { id: org.id },

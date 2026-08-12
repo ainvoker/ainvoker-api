@@ -14,6 +14,8 @@ import {
     isDuplicateCustomerReferenceError,
 } from "./xendit/client.js"
 import { activateProSubscription } from "./activate.js"
+import { expireLapsedSubscriptions } from "./limits.js"
+import { isEntitlementUnexpired } from "./period.js"
 import { buildNestedCustomer, sessionCustomerFields } from "./sessionCustomer.js"
 
 const BILLING_ADMIN_ROLES = new Set(["owner", "admin"])
@@ -128,20 +130,23 @@ async function ensurePendingProSubscription(organizationId: string) {
 class BillingService {
     async getOrganizationSubscription(organizationId: string) {
         await ensureBillingCatalog()
+        await expireLapsedSubscriptions(organizationId)
 
         const subscriptions = await prismaClient.subscription.findMany({
             where: {
                 organizationId,
-                status: { in: ["PENDING", "ACTIVE", "PAST_DUE"] },
+                status: { in: ["PENDING", "ACTIVE", "PAST_DUE", "EXPIRED"] },
             },
             include: { plan: true },
             orderBy: { startedAt: "desc" },
         })
 
-        const subscription =
-            subscriptions.find((s) => s.status === "ACTIVE") ??
-            subscriptions.find((s) => s.status === "PENDING") ??
-            subscriptions[0]
+        const unexpiredActive = subscriptions.find(
+            (s) => s.status === "ACTIVE" && isEntitlementUnexpired(s.expiresAt),
+        )
+        const pending = subscriptions.find((s) => s.status === "PENDING")
+        const expired = subscriptions.find((s) => s.status === "EXPIRED")
+        const subscription = unexpiredActive ?? pending ?? expired ?? subscriptions[0]
 
         const pendingPro = subscriptions.find(
             (s) => s.status === "PENDING" && s.plan.name === PLAN_NAMES.pro,
@@ -158,6 +163,7 @@ class BillingService {
             tokenLimit: subscription.plan.tokenLimit,
             requestLimit: subscription.plan.requestLimit,
             pendingPlanName: pendingPro ? pendingPro.plan.name : null,
+            expiresAt: subscription.expiresAt ? subscription.expiresAt.toISOString() : null,
         }
     }
 
@@ -194,6 +200,24 @@ class BillingService {
             throw new AppError(404, "NOT_FOUND", "User not found")
         }
 
+        await expireLapsedSubscriptions(input.organizationId)
+        const proPlan = await getPlanByName(PLAN_NAMES.pro)
+        const activePro = await prismaClient.subscription.findFirst({
+            where: {
+                organizationId: input.organizationId,
+                planId: proPlan.id,
+                status: "ACTIVE",
+            },
+            orderBy: { startedAt: "desc" },
+        })
+        if (activePro && isEntitlementUnexpired(activePro.expiresAt)) {
+            throw new AppError(
+                409,
+                "ALREADY_ACTIVE",
+                "Pro is already active for this organization",
+            )
+        }
+
         const pendingSub = await ensurePendingProSubscription(input.organizationId)
 
         if (pendingSub.xenditSessionId) {
@@ -227,8 +251,8 @@ class BillingService {
             currency: "PHP",
             country: "PH",
             locale: "en",
-            allow_save_payment_method: "FORCED",
-            description: "Ainvoker Pro subscription",
+            allow_save_payment_method: "DISABLED",
+            description: "Ainvoker Pro (30 days)",
             ...customerFields,
             metadata: {
                 organizationId: input.organizationId,
