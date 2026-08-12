@@ -115,6 +115,7 @@ export const OrganizationScalarFieldEnum = {
   status: 'status',
   createdByUserId: 'createdByUserId',
   xenditCustomerReference: 'xenditCustomerReference',
+  xenditCustomerId: 'xenditCustomerId',
   xenditPaymentTokenId: 'xenditPaymentTokenId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

@@ -7,8 +7,14 @@ import {
     getProCheckoutAmountPhp,
     PLAN_NAMES,
 } from "./catalog.js"
-import { createXenditSession } from "./xendit/client.js"
+import {
+    createXenditSession,
+    findXenditCustomerByReference,
+    getXenditSession,
+    isDuplicateCustomerReferenceError,
+} from "./xendit/client.js"
 import { activateProSubscription } from "./activate.js"
+import { buildNestedCustomer, sessionCustomerFields } from "./sessionCustomer.js"
 
 const BILLING_ADMIN_ROLES = new Set(["owner", "admin"])
 
@@ -24,11 +30,40 @@ function assertBillingRole(roleName: string) {
     }
 }
 
-async function ensureXenditCustomerReference(organizationId: string) {
-    const org = await prismaClient.organization.findUniqueOrThrow({
-        where: { id: organizationId },
-        select: { id: true, xenditCustomerReference: true },
+const checkoutLocks = new Map<string, Promise<unknown>>()
+
+async function withOrgCheckoutLock<T>(organizationId: string, fn: () => Promise<T>): Promise<T> {
+    const previous = checkoutLocks.get(organizationId) ?? Promise.resolve()
+    let release: () => void = () => {}
+    const current = new Promise<void>((resolve) => {
+        release = resolve
     })
+    const chain = previous.then(() => current)
+    checkoutLocks.set(organizationId, chain)
+    await previous
+    try {
+        return await fn()
+    } finally {
+        release()
+        if (checkoutLocks.get(organizationId) === chain) {
+            checkoutLocks.delete(organizationId)
+        }
+    }
+}
+
+async function loadOrgXenditCustomer(organizationId: string) {
+    return prismaClient.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+        select: {
+            id: true,
+            xenditCustomerReference: true,
+            xenditCustomerId: true,
+        },
+    })
+}
+
+async function ensureXenditCustomerReference(organizationId: string) {
+    const org = await loadOrgXenditCustomer(organizationId)
 
     if (org.xenditCustomerReference) {
         return org.xenditCustomerReference
@@ -40,6 +75,28 @@ async function ensureXenditCustomerReference(organizationId: string) {
         data: { xenditCustomerReference: reference },
     })
     return reference
+}
+
+async function persistXenditCustomerId(organizationId: string, customerId: string) {
+    await prismaClient.organization.update({
+        where: { id: organizationId },
+        data: { xenditCustomerId: customerId },
+    })
+}
+
+async function resolveXenditCustomerId(organizationId: string, referenceId: string) {
+    const org = await loadOrgXenditCustomer(organizationId)
+    if (org.xenditCustomerId) {
+        return org.xenditCustomerId
+    }
+
+    const existing = await findXenditCustomerByReference(referenceId)
+    if (!existing?.id) {
+        return null
+    }
+
+    await persistXenditCustomerId(organizationId, existing.id)
+    return existing.id
 }
 
 async function ensurePendingProSubscription(organizationId: string) {
@@ -113,6 +170,17 @@ class BillingService {
         assertBillingEnabled()
         assertBillingRole(input.roleName)
 
+        return withOrgCheckoutLock(input.organizationId, () =>
+            this.createProCheckoutSessionLocked(input),
+        )
+    }
+
+    private async createProCheckoutSessionLocked(input: {
+        organizationId: string
+        userId: string
+        roleName: string
+        returnUrl: string
+    }) {
         const user = await prismaClient.user.findUnique({
             where: { id: input.userId },
             select: {
@@ -127,11 +195,31 @@ class BillingService {
         }
 
         const pendingSub = await ensurePendingProSubscription(input.organizationId)
+
+        if (pendingSub.xenditSessionId) {
+            const existing = await getXenditSession(pendingSub.xenditSessionId)
+            if (existing?.status === "ACTIVE" && existing.components_sdk_key) {
+                if (existing.customer_id) {
+                    await persistXenditCustomerId(input.organizationId, existing.customer_id)
+                }
+                return {
+                    componentsSdkKey: existing.components_sdk_key,
+                    sessionId: existing.payment_session_id,
+                    expiresAt: existing.expires_at ?? null,
+                }
+            }
+        }
+
         const customerReference = await ensureXenditCustomerReference(input.organizationId)
+        await resolveXenditCustomerId(input.organizationId, customerReference)
+        const org = await loadOrgXenditCustomer(input.organizationId)
+        const nestedCustomer = buildNestedCustomer(customerReference, user)
+        const customerFields = sessionCustomerFields(org, nestedCustomer)
+
         const amount = getProCheckoutAmountPhp()
         const referenceId = `pro_${input.organizationId}_${Date.now()}`
 
-        const session = await createXenditSession({
+        const sessionBody: Record<string, unknown> = {
             reference_id: referenceId,
             session_type: "PAY",
             mode: "COMPONENTS",
@@ -141,15 +229,7 @@ class BillingService {
             locale: "en",
             allow_save_payment_method: "FORCED",
             description: "Ainvoker Pro subscription",
-            customer: {
-                reference_id: customerReference,
-                type: "INDIVIDUAL",
-                email: user.email ?? undefined,
-                individual_detail: {
-                    given_names: user.firstName ?? "Ainvoker",
-                    surname: user.lastName ?? "User",
-                },
-            },
+            ...customerFields,
             metadata: {
                 organizationId: input.organizationId,
                 planName: PLAN_NAMES.pro,
@@ -158,10 +238,34 @@ class BillingService {
             },
             components_configuration: {
                 origins: env.getXenditComponentsOrigins(),
-                // Must match the real SPA URL the browser is on (http OK locally).
                 return_url: input.returnUrl,
             },
-        })
+        }
+
+        let session
+        try {
+            session = await createXenditSession(sessionBody)
+        } catch (err) {
+            if (!isDuplicateCustomerReferenceError(err)) {
+                throw err
+            }
+
+            const customerId = await resolveXenditCustomerId(input.organizationId, customerReference)
+            if (!customerId) {
+                throw err
+            }
+
+            const retryBody = { ...sessionBody }
+            delete retryBody.customer
+            session = await createXenditSession({
+                ...retryBody,
+                customer_id: customerId,
+            })
+        }
+
+        if (session.customer_id) {
+            await persistXenditCustomerId(input.organizationId, session.customer_id)
+        }
 
         await prismaClient.subscription.update({
             where: { id: pendingSub.id },

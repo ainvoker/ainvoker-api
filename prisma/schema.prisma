@@ -146,6 +146,7 @@ model Organization {
   createdBy       User?   @relation("OrganizationCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   xenditCustomerReference String?
+  xenditCustomerId        String?
   xenditPaymentTokenId    String?
 
   members       OrganizationMember[]

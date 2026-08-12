@@ -31,6 +31,7 @@ export type OrganizationMinAggregateOutputType = {
   status: $Enums.OrganizationStatus | null
   createdByUserId: string | null
   xenditCustomerReference: string | null
+  xenditCustomerId: string | null
   xenditPaymentTokenId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -43,6 +44,7 @@ export type OrganizationMaxAggregateOutputType = {
   status: $Enums.OrganizationStatus | null
   createdByUserId: string | null
   xenditCustomerReference: string | null
+  xenditCustomerId: string | null
   xenditPaymentTokenId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -55,6 +57,7 @@ export type OrganizationCountAggregateOutputType = {
   status: number
   createdByUserId: number
   xenditCustomerReference: number
+  xenditCustomerId: number
   xenditPaymentTokenId: number
   createdAt: number
   updatedAt: number
@@ -69,6 +72,7 @@ export type OrganizationMinAggregateInputType = {
   status?: true
   createdByUserId?: true
   xenditCustomerReference?: true
+  xenditCustomerId?: true
   xenditPaymentTokenId?: true
   createdAt?: true
   updatedAt?: true
@@ -81,6 +85,7 @@ export type OrganizationMaxAggregateInputType = {
   status?: true
   createdByUserId?: true
   xenditCustomerReference?: true
+  xenditCustomerId?: true
   xenditPaymentTokenId?: true
   createdAt?: true
   updatedAt?: true
@@ -93,6 +98,7 @@ export type OrganizationCountAggregateInputType = {
   status?: true
   createdByUserId?: true
   xenditCustomerReference?: true
+  xenditCustomerId?: true
   xenditPaymentTokenId?: true
   createdAt?: true
   updatedAt?: true
@@ -178,6 +184,7 @@ export type OrganizationGroupByOutputType = {
   status: $Enums.OrganizationStatus
   createdByUserId: string | null
   xenditCustomerReference: string | null
+  xenditCustomerId: string | null
   xenditPaymentTokenId: string | null
   createdAt: Date
   updatedAt: Date
@@ -211,6 +218,7 @@ export type OrganizationWhereInput = {
   status?: Prisma.EnumOrganizationStatusFilter<"Organization"> | $Enums.OrganizationStatus
   createdByUserId?: Prisma.StringNullableFilter<"Organization"> | string | null
   xenditCustomerReference?: Prisma.StringNullableFilter<"Organization"> | string | null
+  xenditCustomerId?: Prisma.StringNullableFilter<"Organization"> | string | null
   xenditPaymentTokenId?: Prisma.StringNullableFilter<"Organization"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
@@ -227,6 +235,7 @@ export type OrganizationOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   xenditCustomerReference?: Prisma.SortOrderInput | Prisma.SortOrder
+  xenditCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder
   xenditPaymentTokenId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -246,6 +255,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumOrganizationStatusFilter<"Organization"> | $Enums.OrganizationStatus
   createdByUserId?: Prisma.StringNullableFilter<"Organization"> | string | null
   xenditCustomerReference?: Prisma.StringNullableFilter<"Organization"> | string | null
+  xenditCustomerId?: Prisma.StringNullableFilter<"Organization"> | string | null
   xenditPaymentTokenId?: Prisma.StringNullableFilter<"Organization"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
@@ -262,6 +272,7 @@ export type OrganizationOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   xenditCustomerReference?: Prisma.SortOrderInput | Prisma.SortOrder
+  xenditCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder
   xenditPaymentTokenId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -280,6 +291,7 @@ export type OrganizationScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumOrganizationStatusWithAggregatesFilter<"Organization"> | $Enums.OrganizationStatus
   createdByUserId?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
   xenditCustomerReference?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
+  xenditCustomerId?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
   xenditPaymentTokenId?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Organization"> | Date | string
@@ -291,6 +303,7 @@ export type OrganizationCreateInput = {
   slug: string
   status?: $Enums.OrganizationStatus
   xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -307,6 +320,7 @@ export type OrganizationUncheckedCreateInput = {
   status?: $Enums.OrganizationStatus
   createdByUserId?: string | null
   xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -321,6 +335,7 @@ export type OrganizationUpdateInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -337,6 +352,7 @@ export type OrganizationUncheckedUpdateInput = {
   status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -352,6 +368,7 @@ export type OrganizationCreateManyInput = {
   status?: $Enums.OrganizationStatus
   createdByUserId?: string | null
   xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -363,6 +380,7 @@ export type OrganizationUpdateManyMutationInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -375,6 +393,7 @@ export type OrganizationUncheckedUpdateManyInput = {
   status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -397,6 +416,7 @@ export type OrganizationCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
   xenditCustomerReference?: Prisma.SortOrder
+  xenditCustomerId?: Prisma.SortOrder
   xenditPaymentTokenId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -409,6 +429,7 @@ export type OrganizationMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
   xenditCustomerReference?: Prisma.SortOrder
+  xenditCustomerId?: Prisma.SortOrder
   xenditPaymentTokenId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -421,6 +442,7 @@ export type OrganizationMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
   xenditCustomerReference?: Prisma.SortOrder
+  xenditCustomerId?: Prisma.SortOrder
   xenditPaymentTokenId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -525,6 +547,7 @@ export type OrganizationCreateWithoutCreatedByInput = {
   slug: string
   status?: $Enums.OrganizationStatus
   xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -539,6 +562,7 @@ export type OrganizationUncheckedCreateWithoutCreatedByInput = {
   slug: string
   status?: $Enums.OrganizationStatus
   xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -583,6 +607,7 @@ export type OrganizationScalarWhereInput = {
   status?: Prisma.EnumOrganizationStatusFilter<"Organization"> | $Enums.OrganizationStatus
   createdByUserId?: Prisma.StringNullableFilter<"Organization"> | string | null
   xenditCustomerReference?: Prisma.StringNullableFilter<"Organization"> | string | null
+  xenditCustomerId?: Prisma.StringNullableFilter<"Organization"> | string | null
   xenditPaymentTokenId?: Prisma.StringNullableFilter<"Organization"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
@@ -594,6 +619,7 @@ export type OrganizationCreateWithoutMembersInput = {
   slug: string
   status?: $Enums.OrganizationStatus
   xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -609,6 +635,7 @@ export type OrganizationUncheckedCreateWithoutMembersInput = {
   status?: $Enums.OrganizationStatus
   createdByUserId?: string | null
   xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -638,6 +665,7 @@ export type OrganizationUpdateWithoutMembersInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -653,6 +681,7 @@ export type OrganizationUncheckedUpdateWithoutMembersInput = {
   status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -666,6 +695,7 @@ export type OrganizationCreateWithoutProjectsInput = {
   slug: string
   status?: $Enums.OrganizationStatus
   xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -681,6 +711,7 @@ export type OrganizationUncheckedCreateWithoutProjectsInput = {
   status?: $Enums.OrganizationStatus
   createdByUserId?: string | null
   xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -710,6 +741,7 @@ export type OrganizationUpdateWithoutProjectsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -725,6 +757,7 @@ export type OrganizationUncheckedUpdateWithoutProjectsInput = {
   status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -738,6 +771,7 @@ export type OrganizationCreateWithoutSubscriptionsInput = {
   slug: string
   status?: $Enums.OrganizationStatus
   xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -753,6 +787,7 @@ export type OrganizationUncheckedCreateWithoutSubscriptionsInput = {
   status?: $Enums.OrganizationStatus
   createdByUserId?: string | null
   xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -782,6 +817,7 @@ export type OrganizationUpdateWithoutSubscriptionsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -797,6 +833,7 @@ export type OrganizationUncheckedUpdateWithoutSubscriptionsInput = {
   status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
   createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -810,6 +847,7 @@ export type OrganizationCreateManyCreatedByInput = {
   slug: string
   status?: $Enums.OrganizationStatus
   xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -821,6 +859,7 @@ export type OrganizationUpdateWithoutCreatedByInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -835,6 +874,7 @@ export type OrganizationUncheckedUpdateWithoutCreatedByInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -849,6 +889,7 @@ export type OrganizationUncheckedUpdateManyWithoutCreatedByInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -910,6 +951,7 @@ export type OrganizationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   status?: boolean
   createdByUserId?: boolean
   xenditCustomerReference?: boolean
+  xenditCustomerId?: boolean
   xenditPaymentTokenId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -927,6 +969,7 @@ export type OrganizationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   status?: boolean
   createdByUserId?: boolean
   xenditCustomerReference?: boolean
+  xenditCustomerId?: boolean
   xenditPaymentTokenId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -940,6 +983,7 @@ export type OrganizationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   status?: boolean
   createdByUserId?: boolean
   xenditCustomerReference?: boolean
+  xenditCustomerId?: boolean
   xenditPaymentTokenId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -953,12 +997,13 @@ export type OrganizationSelectScalar = {
   status?: boolean
   createdByUserId?: boolean
   xenditCustomerReference?: boolean
+  xenditCustomerId?: boolean
   xenditPaymentTokenId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type OrganizationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "status" | "createdByUserId" | "xenditCustomerReference" | "xenditPaymentTokenId" | "createdAt" | "updatedAt", ExtArgs["result"]["organization"]>
+export type OrganizationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "status" | "createdByUserId" | "xenditCustomerReference" | "xenditCustomerId" | "xenditPaymentTokenId" | "createdAt" | "updatedAt", ExtArgs["result"]["organization"]>
 export type OrganizationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.Organization$createdByArgs<ExtArgs>
   members?: boolean | Prisma.Organization$membersArgs<ExtArgs>
@@ -988,6 +1033,7 @@ export type $OrganizationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     status: $Enums.OrganizationStatus
     createdByUserId: string | null
     xenditCustomerReference: string | null
+    xenditCustomerId: string | null
     xenditPaymentTokenId: string | null
     createdAt: Date
     updatedAt: Date
@@ -1424,6 +1470,7 @@ export interface OrganizationFieldRefs {
   readonly status: Prisma.FieldRef<"Organization", 'OrganizationStatus'>
   readonly createdByUserId: Prisma.FieldRef<"Organization", 'String'>
   readonly xenditCustomerReference: Prisma.FieldRef<"Organization", 'String'>
+  readonly xenditCustomerId: Prisma.FieldRef<"Organization", 'String'>
   readonly xenditPaymentTokenId: Prisma.FieldRef<"Organization", 'String'>
   readonly createdAt: Prisma.FieldRef<"Organization", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Organization", 'DateTime'>
