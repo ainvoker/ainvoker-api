@@ -71,6 +71,12 @@ async function seedBillingCatalog(): Promise<void> {
 
 export async function getPlanByName(name: PlanName) {
     await ensureBillingCatalog()
+    const existing = await prismaClient.plan.findUnique({ where: { name } })
+    if (existing) return existing
+
+    // DB was wiped after this process started (e.g. prisma migrate reset).
+    ensurePromise = null
+    await ensureBillingCatalog()
     return prismaClient.plan.findUniqueOrThrow({ where: { name } })
 }
 
