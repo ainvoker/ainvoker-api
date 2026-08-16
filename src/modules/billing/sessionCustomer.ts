@@ -22,7 +22,7 @@ export function buildNestedCustomer(
         type: "INDIVIDUAL",
         ...(user.email ? { email: user.email } : {}),
         individual_detail: {
-            given_names: user.firstName ?? "Ainvoker",
+            given_names: user.firstName ?? "AInvoker",
             surname: user.lastName ?? "User",
         },
     }

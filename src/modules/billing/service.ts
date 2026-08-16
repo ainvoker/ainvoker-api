@@ -252,7 +252,7 @@ class BillingService {
             country: "PH",
             locale: "en",
             allow_save_payment_method: "DISABLED",
-            description: "Ainvoker Pro (30 days)",
+            description: "AInvoker Pro (30 days)",
             ...customerFields,
             metadata: {
                 organizationId: input.organizationId,
