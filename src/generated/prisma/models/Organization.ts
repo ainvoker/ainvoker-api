@@ -33,6 +33,9 @@ export type OrganizationMinAggregateOutputType = {
   xenditCustomerReference: string | null
   xenditCustomerId: string | null
   xenditPaymentTokenId: string | null
+  paymentMethodType: string | null
+  paymentMethodBrand: string | null
+  paymentMethodLast4: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -46,6 +49,9 @@ export type OrganizationMaxAggregateOutputType = {
   xenditCustomerReference: string | null
   xenditCustomerId: string | null
   xenditPaymentTokenId: string | null
+  paymentMethodType: string | null
+  paymentMethodBrand: string | null
+  paymentMethodLast4: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -59,6 +65,9 @@ export type OrganizationCountAggregateOutputType = {
   xenditCustomerReference: number
   xenditCustomerId: number
   xenditPaymentTokenId: number
+  paymentMethodType: number
+  paymentMethodBrand: number
+  paymentMethodLast4: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -74,6 +83,9 @@ export type OrganizationMinAggregateInputType = {
   xenditCustomerReference?: true
   xenditCustomerId?: true
   xenditPaymentTokenId?: true
+  paymentMethodType?: true
+  paymentMethodBrand?: true
+  paymentMethodLast4?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -87,6 +99,9 @@ export type OrganizationMaxAggregateInputType = {
   xenditCustomerReference?: true
   xenditCustomerId?: true
   xenditPaymentTokenId?: true
+  paymentMethodType?: true
+  paymentMethodBrand?: true
+  paymentMethodLast4?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -100,6 +115,9 @@ export type OrganizationCountAggregateInputType = {
   xenditCustomerReference?: true
   xenditCustomerId?: true
   xenditPaymentTokenId?: true
+  paymentMethodType?: true
+  paymentMethodBrand?: true
+  paymentMethodLast4?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -186,6 +204,9 @@ export type OrganizationGroupByOutputType = {
   xenditCustomerReference: string | null
   xenditCustomerId: string | null
   xenditPaymentTokenId: string | null
+  paymentMethodType: string | null
+  paymentMethodBrand: string | null
+  paymentMethodLast4: string | null
   createdAt: Date
   updatedAt: Date
   _count: OrganizationCountAggregateOutputType | null
@@ -220,6 +241,9 @@ export type OrganizationWhereInput = {
   xenditCustomerReference?: Prisma.StringNullableFilter<"Organization"> | string | null
   xenditCustomerId?: Prisma.StringNullableFilter<"Organization"> | string | null
   xenditPaymentTokenId?: Prisma.StringNullableFilter<"Organization"> | string | null
+  paymentMethodType?: Prisma.StringNullableFilter<"Organization"> | string | null
+  paymentMethodBrand?: Prisma.StringNullableFilter<"Organization"> | string | null
+  paymentMethodLast4?: Prisma.StringNullableFilter<"Organization"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   createdBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -237,6 +261,9 @@ export type OrganizationOrderByWithRelationInput = {
   xenditCustomerReference?: Prisma.SortOrderInput | Prisma.SortOrder
   xenditCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder
   xenditPaymentTokenId?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentMethodType?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentMethodBrand?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentMethodLast4?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   createdBy?: Prisma.UserOrderByWithRelationInput
@@ -257,6 +284,9 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<{
   xenditCustomerReference?: Prisma.StringNullableFilter<"Organization"> | string | null
   xenditCustomerId?: Prisma.StringNullableFilter<"Organization"> | string | null
   xenditPaymentTokenId?: Prisma.StringNullableFilter<"Organization"> | string | null
+  paymentMethodType?: Prisma.StringNullableFilter<"Organization"> | string | null
+  paymentMethodBrand?: Prisma.StringNullableFilter<"Organization"> | string | null
+  paymentMethodLast4?: Prisma.StringNullableFilter<"Organization"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   createdBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -274,6 +304,9 @@ export type OrganizationOrderByWithAggregationInput = {
   xenditCustomerReference?: Prisma.SortOrderInput | Prisma.SortOrder
   xenditCustomerId?: Prisma.SortOrderInput | Prisma.SortOrder
   xenditPaymentTokenId?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentMethodType?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentMethodBrand?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentMethodLast4?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.OrganizationCountOrderByAggregateInput
@@ -293,6 +326,9 @@ export type OrganizationScalarWhereWithAggregatesInput = {
   xenditCustomerReference?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
   xenditCustomerId?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
   xenditPaymentTokenId?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
+  paymentMethodType?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
+  paymentMethodBrand?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
+  paymentMethodLast4?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Organization"> | Date | string
 }
@@ -305,6 +341,9 @@ export type OrganizationCreateInput = {
   xenditCustomerReference?: string | null
   xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
@@ -322,6 +361,9 @@ export type OrganizationUncheckedCreateInput = {
   xenditCustomerReference?: string | null
   xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -337,6 +379,9 @@ export type OrganizationUpdateInput = {
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
@@ -354,6 +399,9 @@ export type OrganizationUncheckedUpdateInput = {
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -370,6 +418,9 @@ export type OrganizationCreateManyInput = {
   xenditCustomerReference?: string | null
   xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -382,6 +433,9 @@ export type OrganizationUpdateManyMutationInput = {
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -395,6 +449,9 @@ export type OrganizationUncheckedUpdateManyInput = {
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -418,6 +475,9 @@ export type OrganizationCountOrderByAggregateInput = {
   xenditCustomerReference?: Prisma.SortOrder
   xenditCustomerId?: Prisma.SortOrder
   xenditPaymentTokenId?: Prisma.SortOrder
+  paymentMethodType?: Prisma.SortOrder
+  paymentMethodBrand?: Prisma.SortOrder
+  paymentMethodLast4?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -431,6 +491,9 @@ export type OrganizationMaxOrderByAggregateInput = {
   xenditCustomerReference?: Prisma.SortOrder
   xenditCustomerId?: Prisma.SortOrder
   xenditPaymentTokenId?: Prisma.SortOrder
+  paymentMethodType?: Prisma.SortOrder
+  paymentMethodBrand?: Prisma.SortOrder
+  paymentMethodLast4?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -444,6 +507,9 @@ export type OrganizationMinOrderByAggregateInput = {
   xenditCustomerReference?: Prisma.SortOrder
   xenditCustomerId?: Prisma.SortOrder
   xenditPaymentTokenId?: Prisma.SortOrder
+  paymentMethodType?: Prisma.SortOrder
+  paymentMethodBrand?: Prisma.SortOrder
+  paymentMethodLast4?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -549,6 +615,9 @@ export type OrganizationCreateWithoutCreatedByInput = {
   xenditCustomerReference?: string | null
   xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
@@ -564,6 +633,9 @@ export type OrganizationUncheckedCreateWithoutCreatedByInput = {
   xenditCustomerReference?: string | null
   xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -609,6 +681,9 @@ export type OrganizationScalarWhereInput = {
   xenditCustomerReference?: Prisma.StringNullableFilter<"Organization"> | string | null
   xenditCustomerId?: Prisma.StringNullableFilter<"Organization"> | string | null
   xenditPaymentTokenId?: Prisma.StringNullableFilter<"Organization"> | string | null
+  paymentMethodType?: Prisma.StringNullableFilter<"Organization"> | string | null
+  paymentMethodBrand?: Prisma.StringNullableFilter<"Organization"> | string | null
+  paymentMethodLast4?: Prisma.StringNullableFilter<"Organization"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
 }
@@ -621,6 +696,9 @@ export type OrganizationCreateWithoutMembersInput = {
   xenditCustomerReference?: string | null
   xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
@@ -637,6 +715,9 @@ export type OrganizationUncheckedCreateWithoutMembersInput = {
   xenditCustomerReference?: string | null
   xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
@@ -667,6 +748,9 @@ export type OrganizationUpdateWithoutMembersInput = {
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
@@ -683,6 +767,9 @@ export type OrganizationUncheckedUpdateWithoutMembersInput = {
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -697,6 +784,9 @@ export type OrganizationCreateWithoutProjectsInput = {
   xenditCustomerReference?: string | null
   xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
@@ -713,6 +803,9 @@ export type OrganizationUncheckedCreateWithoutProjectsInput = {
   xenditCustomerReference?: string | null
   xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -743,6 +836,9 @@ export type OrganizationUpdateWithoutProjectsInput = {
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
@@ -759,6 +855,9 @@ export type OrganizationUncheckedUpdateWithoutProjectsInput = {
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -773,6 +872,9 @@ export type OrganizationCreateWithoutSubscriptionsInput = {
   xenditCustomerReference?: string | null
   xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
@@ -789,6 +891,9 @@ export type OrganizationUncheckedCreateWithoutSubscriptionsInput = {
   xenditCustomerReference?: string | null
   xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -819,6 +924,9 @@ export type OrganizationUpdateWithoutSubscriptionsInput = {
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
@@ -835,6 +943,9 @@ export type OrganizationUncheckedUpdateWithoutSubscriptionsInput = {
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -849,6 +960,9 @@ export type OrganizationCreateManyCreatedByInput = {
   xenditCustomerReference?: string | null
   xenditCustomerId?: string | null
   xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -861,6 +975,9 @@ export type OrganizationUpdateWithoutCreatedByInput = {
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
@@ -876,6 +993,9 @@ export type OrganizationUncheckedUpdateWithoutCreatedByInput = {
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -891,6 +1011,9 @@ export type OrganizationUncheckedUpdateManyWithoutCreatedByInput = {
   xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -953,6 +1076,9 @@ export type OrganizationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   xenditCustomerReference?: boolean
   xenditCustomerId?: boolean
   xenditPaymentTokenId?: boolean
+  paymentMethodType?: boolean
+  paymentMethodBrand?: boolean
+  paymentMethodLast4?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   createdBy?: boolean | Prisma.Organization$createdByArgs<ExtArgs>
@@ -971,6 +1097,9 @@ export type OrganizationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   xenditCustomerReference?: boolean
   xenditCustomerId?: boolean
   xenditPaymentTokenId?: boolean
+  paymentMethodType?: boolean
+  paymentMethodBrand?: boolean
+  paymentMethodLast4?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   createdBy?: boolean | Prisma.Organization$createdByArgs<ExtArgs>
@@ -985,6 +1114,9 @@ export type OrganizationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   xenditCustomerReference?: boolean
   xenditCustomerId?: boolean
   xenditPaymentTokenId?: boolean
+  paymentMethodType?: boolean
+  paymentMethodBrand?: boolean
+  paymentMethodLast4?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   createdBy?: boolean | Prisma.Organization$createdByArgs<ExtArgs>
@@ -999,11 +1131,14 @@ export type OrganizationSelectScalar = {
   xenditCustomerReference?: boolean
   xenditCustomerId?: boolean
   xenditPaymentTokenId?: boolean
+  paymentMethodType?: boolean
+  paymentMethodBrand?: boolean
+  paymentMethodLast4?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type OrganizationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "status" | "createdByUserId" | "xenditCustomerReference" | "xenditCustomerId" | "xenditPaymentTokenId" | "createdAt" | "updatedAt", ExtArgs["result"]["organization"]>
+export type OrganizationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "status" | "createdByUserId" | "xenditCustomerReference" | "xenditCustomerId" | "xenditPaymentTokenId" | "paymentMethodType" | "paymentMethodBrand" | "paymentMethodLast4" | "createdAt" | "updatedAt", ExtArgs["result"]["organization"]>
 export type OrganizationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.Organization$createdByArgs<ExtArgs>
   members?: boolean | Prisma.Organization$membersArgs<ExtArgs>
@@ -1035,6 +1170,12 @@ export type $OrganizationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     xenditCustomerReference: string | null
     xenditCustomerId: string | null
     xenditPaymentTokenId: string | null
+    /**
+     * Display-only snapshot of the saved payment method (never full PAN).
+     */
+    paymentMethodType: string | null
+    paymentMethodBrand: string | null
+    paymentMethodLast4: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["organization"]>
@@ -1472,6 +1613,9 @@ export interface OrganizationFieldRefs {
   readonly xenditCustomerReference: Prisma.FieldRef<"Organization", 'String'>
   readonly xenditCustomerId: Prisma.FieldRef<"Organization", 'String'>
   readonly xenditPaymentTokenId: Prisma.FieldRef<"Organization", 'String'>
+  readonly paymentMethodType: Prisma.FieldRef<"Organization", 'String'>
+  readonly paymentMethodBrand: Prisma.FieldRef<"Organization", 'String'>
+  readonly paymentMethodLast4: Prisma.FieldRef<"Organization", 'String'>
   readonly createdAt: Prisma.FieldRef<"Organization", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Organization", 'DateTime'>
 }

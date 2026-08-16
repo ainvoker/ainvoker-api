@@ -20,6 +20,18 @@ class BillingRoutes extends BaseRoutes {
             requireOrgMember,
             this.bind(this.getSubscription),
         )
+        this.router.get(
+            "/organizations/:orgId/invoices",
+            requireSession,
+            requireOrgMember,
+            this.bind(this.listInvoices),
+        )
+        this.router.post(
+            "/organizations/:orgId/subscription/cancel",
+            requireSession,
+            requireOrgMember,
+            this.bind(this.cancelSubscription),
+        )
         this.router.post(
             "/organizations/:orgId/checkout-sessions",
             requireSession,
@@ -32,6 +44,23 @@ class BillingRoutes extends BaseRoutes {
     private async getSubscription(req: Request, res: Response) {
         const orgId = req.params.orgId as string
         const data = await BillingService.getOrganizationSubscription(orgId)
+        http.ok(res, data)
+    }
+
+    private async listInvoices(req: Request, res: Response) {
+        const orgId = req.params.orgId as string
+        const membership = req.membership!
+        const data = await BillingService.listOrganizationInvoices(orgId, membership.role.name)
+        http.ok(res, data)
+    }
+
+    private async cancelSubscription(req: Request, res: Response) {
+        const orgId = req.params.orgId as string
+        const membership = req.membership!
+        const data = await BillingService.cancelOrganizationSubscription({
+            organizationId: orgId,
+            roleName: membership.role.name,
+        })
         http.ok(res, data)
     }
 

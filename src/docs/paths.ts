@@ -10,6 +10,8 @@ import {
     createOrganizationSchema,
     createCheckoutSessionSchema,
     orgSubscriptionResponseSchema,
+    invoiceItemSchema,
+    cancelSubscriptionResponseSchema,
     createProjectSchema,
     projectParamsSchema,
     updateProjectSchema,
@@ -31,7 +33,9 @@ import {
     healthSchema,
     meResponseSchema,
     organizationListItemSchema,
+    organizationUsageSchema,
     projectSchema,
+    projectUsageSchema,
     rootMessageSchema,
     textChatResponseSchema,
     userSchema,
@@ -237,12 +241,75 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
     })
 
     registry.registerPath({
+        method: "get",
+        path: "/api/v1/organizations/{orgId}/invoices",
+        tags: ["Billing"],
+        summary: "List organization invoices",
+        description: "Owner/admin only. Returns payment transactions for the organization.",
+        security: bearerAuth,
+        request: { params: orgIdParamsSchema },
+        responses: {
+            200: {
+                description: "Invoice list",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(z.array(invoiceItemSchema)),
+                    },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/organizations/{orgId}/subscription/cancel",
+        tags: ["Billing"],
+        summary: "Cancel paid subscription at period end",
+        description:
+            "Owner/admin only. Stops future Xendit charges; Pro access continues until renewsAt/expiresAt.",
+        security: bearerAuth,
+        request: { params: orgIdParamsSchema },
+        responses: {
+            200: {
+                description: "Cancellation scheduled",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(cancelSubscriptionResponseSchema),
+                    },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/organizations/{orgId}/usage",
+        tags: ["Usage"],
+        summary: "Get organization usage dashboard",
+        description:
+            "Returns plan snapshot (null-safe), current UTC-month usage, per-project and per-model breakdown, and recent AI requests across the organization.",
+        security: bearerAuth,
+        request: { params: orgIdParamsSchema },
+        responses: {
+            200: {
+                description: "Organization usage snapshot",
+                content: {
+                    "application/json": { schema: dataEnvelope(organizationUsageSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
         method: "post",
         path: "/api/v1/organizations/{orgId}/checkout-sessions",
         tags: ["Billing"],
         summary: "Create Xendit Components checkout session (Pro)",
         description:
-            "Returns `componentsSdkKey` for embedded Xendit Components checkout. Requires `BILLING_ENABLED=true` and org owner/admin.",
+            "Creates a recurring SUBSCRIPTION payment session and returns `componentsSdkKey` for embedded Xendit Components. Requires `BILLING_ENABLED=true` and org owner/admin.",
         security: bearerAuth,
         request: {
             params: orgIdParamsSchema,
@@ -277,7 +344,8 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         path: "/api/v1/billing/webhooks/xendit",
         tags: ["Billing"],
         summary: "Xendit webhook receiver",
-        description: "Verifies `x-callback-token` and activates subscriptions on successful payment.",
+        description:
+            "Verifies `x-callback-token` and activates/renews subscriptions on payment and recurring cycle events.",
         responses: {
             200: {
                 description: "Webhook processed",
@@ -566,6 +634,28 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
                 description: "Paginated AI request summaries",
                 content: {
                     "application/json": { schema: dataEnvelope(aiRequestListSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/projects/{projectId}/usage",
+        tags: ["Usage"],
+        summary: "Get project usage overview",
+        description:
+            "Returns current UTC-month usage for the project, API key counts, plan snapshot for the parent organization, and recent AI requests.",
+        security: bearerAuth,
+        request: {
+            params: projectIdParamsSchema,
+        },
+        responses: {
+            200: {
+                description: "Project usage snapshot",
+                content: {
+                    "application/json": { schema: dataEnvelope(projectUsageSchema) },
                 },
             },
             ...errorResponses,

@@ -148,6 +148,10 @@ model Organization {
   xenditCustomerReference String?
   xenditCustomerId        String?
   xenditPaymentTokenId    String?
+  /// Display-only snapshot of the saved payment method (never full PAN).
+  paymentMethodType       String?
+  paymentMethodBrand      String?
+  paymentMethodLast4      String?
 
   members       OrganizationMember[]
   projects      Project[]
@@ -429,10 +433,14 @@ model Subscription {
   organizationId String
   planId         Int
 
-  status          SubscriptionStatus @default(ACTIVE)
-  startedAt       DateTime
-  expiresAt       DateTime?
-  xenditSessionId String?
+  status               SubscriptionStatus @default(ACTIVE)
+  startedAt            DateTime
+  /// Next renewal date while auto-renewing; access ends here when cancelAtPeriodEnd.
+  expiresAt            DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  canceledAt           DateTime?
+  xenditSessionId      String?
+  xenditRecurringPlanId String?
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   plan         Plan         @relation(fields: [planId], references: [id], onDelete: Restrict)
@@ -443,6 +451,7 @@ model Subscription {
   updatedAt DateTime @updatedAt
 
   @@index([organizationId])
+  @@index([xenditRecurringPlanId])
 }
 
 model Transaction {
@@ -454,6 +463,8 @@ model Transaction {
   paymentMethod   String
   referenceNumber String        @unique
   paymentStatus   PaymentStatus @default(PENDING)
+  description     String?
+  receiptUrl      String?
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
 

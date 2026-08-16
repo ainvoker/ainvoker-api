@@ -1,32 +1,27 @@
 import { describe, expect, it } from "vitest"
-import {
-    PRO_PREPAID_DAYS,
-    isEntitlementUnexpired,
-    proPrepaidExpiresAt,
-} from "../../src/modules/billing/period.js"
+import { isEntitlementUnexpired, proRenewsAt } from "../../src/modules/billing/period.js"
 
-describe("proPrepaidExpiresAt", () => {
-    it("is 30 days after the start", () => {
-        const started = new Date("2026-08-12T00:00:00.000Z")
-        const expires = proPrepaidExpiresAt(started)
-        const days = (expires.getTime() - started.getTime()) / 86_400_000
-        expect(days).toBe(PRO_PREPAID_DAYS)
+describe("proRenewsAt", () => {
+    it("adds one calendar month", () => {
+        const start = new Date("2026-01-15T12:00:00.000Z")
+        const next = proRenewsAt(start)
+        expect(next.toISOString()).toBe("2026-02-15T12:00:00.000Z")
+    })
+
+    it("caps day-of-month at 28", () => {
+        const start = new Date("2026-01-31T12:00:00.000Z")
+        const next = proRenewsAt(start)
+        expect(next.getUTCDate()).toBe(28)
+        expect(next.getUTCMonth()).toBe(1)
     })
 })
 
 describe("isEntitlementUnexpired", () => {
-    const now = new Date("2026-08-12T12:00:00.000Z")
-
-    it("grandfathers null expiry", () => {
-        expect(isEntitlementUnexpired(null, now)).toBe(true)
+    it("treats null expiry as still entitled", () => {
+        expect(isEntitlementUnexpired(null)).toBe(true)
     })
 
-    it("is entitled before expiry", () => {
-        expect(isEntitlementUnexpired(new Date("2026-08-13T00:00:00.000Z"), now)).toBe(true)
-    })
-
-    it("is lapsed at or after expiry", () => {
-        expect(isEntitlementUnexpired(new Date("2026-08-12T12:00:00.000Z"), now)).toBe(false)
-        expect(isEntitlementUnexpired(new Date("2026-08-11T00:00:00.000Z"), now)).toBe(false)
+    it("returns false when expiry is in the past", () => {
+        expect(isEntitlementUnexpired(new Date(Date.now() - 1000))).toBe(false)
     })
 })

@@ -162,6 +162,87 @@ export const aiRequestDetailSchema = aiRequestSummarySchema
     })
     .meta({ id: "AiRequestDetail" })
 
+export const usagePlanSnapshotSchema = z
+    .object({
+        planName: z.string(),
+        status: z.string(),
+        billingMode: z.string(),
+        requestLimit: z.number().int(),
+        tokenLimit: z.number().int(),
+        expiresAt: z.string().nullable(),
+    })
+    .meta({ id: "UsagePlanSnapshot" })
+
+export const usagePeriodSchema = z
+    .object({
+        requestsUsed: z.number().int(),
+        tokensUsed: z.number().int(),
+        successfulRequests: z.number().int(),
+        failedRequests: z.number().int(),
+        periodStart: z.string(),
+    })
+    .meta({ id: "UsagePeriod" })
+
+export const orgUsageProjectSchema = z
+    .object({
+        id: z.string(),
+        name: z.string(),
+        environment: z.string(),
+        status: z.string(),
+        requestsUsed: z.number().int(),
+        tokensUsed: z.number().int(),
+    })
+    .meta({ id: "OrgUsageProject" })
+
+export const orgRecentRequestSchema = aiRequestSummarySchema
+    .extend({
+        projectName: z.string().nullable(),
+    })
+    .meta({ id: "OrgRecentRequest" })
+
+export const orgUsageByModelSchema = z
+    .object({
+        modelId: z.number().int(),
+        model: z.string(),
+        requestsUsed: z.number().int(),
+        tokensUsed: z.number().int(),
+        percentOfTokenQuota: z.number().nullable(),
+    })
+    .meta({ id: "OrgUsageByModel" })
+
+export const organizationUsageSchema = z
+    .object({
+        plan: usagePlanSnapshotSchema.nullable(),
+        period: usagePeriodSchema,
+        projects: z.array(orgUsageProjectSchema),
+        byModel: z.array(orgUsageByModelSchema),
+        recentRequests: z.array(orgRecentRequestSchema),
+    })
+    .meta({ id: "OrganizationUsage" })
+
+export const projectUsagePeriodSchema = usagePeriodSchema
+    .extend({
+        avgLatency: z.number().int().nullable(),
+    })
+    .meta({ id: "ProjectUsagePeriod" })
+
+export const projectUsageKeysSchema = z
+    .object({
+        total: z.number().int(),
+        active: z.number().int(),
+    })
+    .meta({ id: "ProjectUsageKeys" })
+
+export const projectUsageSchema = z
+    .object({
+        project: projectSchema,
+        plan: usagePlanSnapshotSchema.nullable(),
+        period: projectUsagePeriodSchema,
+        keys: projectUsageKeysSchema,
+        recentRequests: z.array(aiRequestSummarySchema),
+    })
+    .meta({ id: "ProjectUsage" })
+
 export const chatMessageSchema = z
     .object({
         role: z.enum(["system", "user", "assistant"]),

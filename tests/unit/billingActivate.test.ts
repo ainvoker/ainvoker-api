@@ -49,7 +49,8 @@ describe("activateProSubscription", () => {
         if (active.expiresAt) {
             const days =
                 (active.expiresAt.getTime() - active.startedAt.getTime()) / 86_400_000
-            expect(days).toBeCloseTo(30, 5)
+            expect(days).toBeGreaterThanOrEqual(28)
+            expect(days).toBeLessThanOrEqual(31)
         }
 
         const orgRow = await prismaClient.organization.findUniqueOrThrow({

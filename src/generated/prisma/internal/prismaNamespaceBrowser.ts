@@ -118,6 +118,9 @@ export const OrganizationScalarFieldEnum = {
   xenditCustomerReference: 'xenditCustomerReference',
   xenditCustomerId: 'xenditCustomerId',
   xenditPaymentTokenId: 'xenditPaymentTokenId',
+  paymentMethodType: 'paymentMethodType',
+  paymentMethodBrand: 'paymentMethodBrand',
+  paymentMethodLast4: 'paymentMethodLast4',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -308,7 +311,10 @@ export const SubscriptionScalarFieldEnum = {
   status: 'status',
   startedAt: 'startedAt',
   expiresAt: 'expiresAt',
+  cancelAtPeriodEnd: 'cancelAtPeriodEnd',
+  canceledAt: 'canceledAt',
   xenditSessionId: 'xenditSessionId',
+  xenditRecurringPlanId: 'xenditRecurringPlanId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -323,6 +329,8 @@ export const TransactionScalarFieldEnum = {
   paymentMethod: 'paymentMethod',
   referenceNumber: 'referenceNumber',
   paymentStatus: 'paymentStatus',
+  description: 'description',
+  receiptUrl: 'receiptUrl',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

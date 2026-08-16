@@ -142,7 +142,15 @@ describe("createProCheckoutSession", () => {
             type: "INDIVIDUAL",
         })
         expect(body).not.toHaveProperty("customer_id")
-        expect(body.allow_save_payment_method).toBe("DISABLED")
+        expect(body.session_type).toBe("SUBSCRIPTION")
+        expect(body.subscription).toMatchObject({
+            schedule: {
+                interval: "MONTH",
+                interval_count: 1,
+            },
+            failed_cycle_action: "RESUME",
+        })
+        expect(body).not.toHaveProperty("allow_save_payment_method")
         expect(prisma.organization.update).toHaveBeenCalledWith({
             where: { id: "org_abc" },
             data: { xenditCustomerId: "cust-new-1" },

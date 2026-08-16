@@ -7,6 +7,11 @@ export type XenditSessionResponse = {
     expires_at?: string
     status?: string
     customer_id?: string
+    payment_token_id?: string
+    subscription?: {
+        id?: string
+        plan_id?: string
+    }
 }
 
 export type XenditCustomer = {
@@ -43,6 +48,7 @@ export async function createXenditSession(body: Record<string, unknown>): Promis
         headers: {
             Authorization: xenditAuthHeader(),
             "Content-Type": "application/json",
+            "api-version": "2026-01-01",
         },
         body: JSON.stringify(body),
     })
@@ -66,6 +72,7 @@ export async function getXenditSession(sessionId: string): Promise<XenditSession
         headers: {
             Authorization: xenditAuthHeader(),
             "Content-Type": "application/json",
+            "api-version": "2026-01-01",
         },
     })
 
@@ -102,4 +109,29 @@ export async function findXenditCustomerByReference(
 
     const customers = data.data ?? []
     return customers.find((c) => c.reference_id === referenceId) ?? customers[0] ?? null
+}
+
+/** Deactivate a Xendit recurring / subscription plan (stops future cycles). */
+export async function deactivateXenditRecurringPlan(planId: string): Promise<void> {
+    const res = await fetch(
+        `https://api.xendit.co/recurring/plans/${encodeURIComponent(planId)}/deactivate`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: xenditAuthHeader(),
+                "Content-Type": "application/json",
+                "api-version": "2020-10-31",
+            },
+            body: JSON.stringify({}),
+        },
+    )
+
+    if (res.status === 404) {
+        throw new AppError(404, "NOT_FOUND", "Xendit recurring plan not found")
+    }
+
+    if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as XenditErrorBody
+        throw toAppError(res.status, data, `Xendit plan deactivate failed (${res.status})`)
+    }
 }

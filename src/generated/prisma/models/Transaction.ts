@@ -41,6 +41,8 @@ export type TransactionMinAggregateOutputType = {
   paymentMethod: string | null
   referenceNumber: string | null
   paymentStatus: $Enums.PaymentStatus | null
+  description: string | null
+  receiptUrl: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -52,6 +54,8 @@ export type TransactionMaxAggregateOutputType = {
   paymentMethod: string | null
   referenceNumber: string | null
   paymentStatus: $Enums.PaymentStatus | null
+  description: string | null
+  receiptUrl: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -63,6 +67,8 @@ export type TransactionCountAggregateOutputType = {
   paymentMethod: number
   referenceNumber: number
   paymentStatus: number
+  description: number
+  receiptUrl: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -84,6 +90,8 @@ export type TransactionMinAggregateInputType = {
   paymentMethod?: true
   referenceNumber?: true
   paymentStatus?: true
+  description?: true
+  receiptUrl?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -95,6 +103,8 @@ export type TransactionMaxAggregateInputType = {
   paymentMethod?: true
   referenceNumber?: true
   paymentStatus?: true
+  description?: true
+  receiptUrl?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -106,6 +116,8 @@ export type TransactionCountAggregateInputType = {
   paymentMethod?: true
   referenceNumber?: true
   paymentStatus?: true
+  description?: true
+  receiptUrl?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -204,6 +216,8 @@ export type TransactionGroupByOutputType = {
   paymentMethod: string
   referenceNumber: string
   paymentStatus: $Enums.PaymentStatus
+  description: string | null
+  receiptUrl: string | null
   createdAt: Date
   updatedAt: Date
   _count: TransactionCountAggregateOutputType | null
@@ -238,6 +252,8 @@ export type TransactionWhereInput = {
   paymentMethod?: Prisma.StringFilter<"Transaction"> | string
   referenceNumber?: Prisma.StringFilter<"Transaction"> | string
   paymentStatus?: Prisma.EnumPaymentStatusFilter<"Transaction"> | $Enums.PaymentStatus
+  description?: Prisma.StringNullableFilter<"Transaction"> | string | null
+  receiptUrl?: Prisma.StringNullableFilter<"Transaction"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   subscription?: Prisma.XOR<Prisma.SubscriptionScalarRelationFilter, Prisma.SubscriptionWhereInput>
@@ -250,6 +266,8 @@ export type TransactionOrderByWithRelationInput = {
   paymentMethod?: Prisma.SortOrder
   referenceNumber?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
+  description?: Prisma.SortOrderInput | Prisma.SortOrder
+  receiptUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   subscription?: Prisma.SubscriptionOrderByWithRelationInput
@@ -265,6 +283,8 @@ export type TransactionWhereUniqueInput = Prisma.AtLeast<{
   amount?: Prisma.DecimalFilter<"Transaction"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   paymentMethod?: Prisma.StringFilter<"Transaction"> | string
   paymentStatus?: Prisma.EnumPaymentStatusFilter<"Transaction"> | $Enums.PaymentStatus
+  description?: Prisma.StringNullableFilter<"Transaction"> | string | null
+  receiptUrl?: Prisma.StringNullableFilter<"Transaction"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   subscription?: Prisma.XOR<Prisma.SubscriptionScalarRelationFilter, Prisma.SubscriptionWhereInput>
@@ -277,6 +297,8 @@ export type TransactionOrderByWithAggregationInput = {
   paymentMethod?: Prisma.SortOrder
   referenceNumber?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
+  description?: Prisma.SortOrderInput | Prisma.SortOrder
+  receiptUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.TransactionCountOrderByAggregateInput
@@ -296,6 +318,8 @@ export type TransactionScalarWhereWithAggregatesInput = {
   paymentMethod?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
   referenceNumber?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
   paymentStatus?: Prisma.EnumPaymentStatusWithAggregatesFilter<"Transaction"> | $Enums.PaymentStatus
+  description?: Prisma.StringNullableWithAggregatesFilter<"Transaction"> | string | null
+  receiptUrl?: Prisma.StringNullableWithAggregatesFilter<"Transaction"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Transaction"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Transaction"> | Date | string
 }
@@ -306,6 +330,8 @@ export type TransactionCreateInput = {
   paymentMethod: string
   referenceNumber: string
   paymentStatus?: $Enums.PaymentStatus
+  description?: string | null
+  receiptUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   subscription: Prisma.SubscriptionCreateNestedOneWithoutTransactionsInput
@@ -318,6 +344,8 @@ export type TransactionUncheckedCreateInput = {
   paymentMethod: string
   referenceNumber: string
   paymentStatus?: $Enums.PaymentStatus
+  description?: string | null
+  receiptUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -328,6 +356,8 @@ export type TransactionUpdateInput = {
   paymentMethod?: Prisma.StringFieldUpdateOperationsInput | string
   referenceNumber?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   subscription?: Prisma.SubscriptionUpdateOneRequiredWithoutTransactionsNestedInput
@@ -340,6 +370,8 @@ export type TransactionUncheckedUpdateInput = {
   paymentMethod?: Prisma.StringFieldUpdateOperationsInput | string
   referenceNumber?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -351,6 +383,8 @@ export type TransactionCreateManyInput = {
   paymentMethod: string
   referenceNumber: string
   paymentStatus?: $Enums.PaymentStatus
+  description?: string | null
+  receiptUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -361,6 +395,8 @@ export type TransactionUpdateManyMutationInput = {
   paymentMethod?: Prisma.StringFieldUpdateOperationsInput | string
   referenceNumber?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -372,6 +408,8 @@ export type TransactionUncheckedUpdateManyInput = {
   paymentMethod?: Prisma.StringFieldUpdateOperationsInput | string
   referenceNumber?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -393,6 +431,8 @@ export type TransactionCountOrderByAggregateInput = {
   paymentMethod?: Prisma.SortOrder
   referenceNumber?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
+  description?: Prisma.SortOrder
+  receiptUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -408,6 +448,8 @@ export type TransactionMaxOrderByAggregateInput = {
   paymentMethod?: Prisma.SortOrder
   referenceNumber?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
+  description?: Prisma.SortOrder
+  receiptUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -419,6 +461,8 @@ export type TransactionMinOrderByAggregateInput = {
   paymentMethod?: Prisma.SortOrder
   referenceNumber?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
+  description?: Prisma.SortOrder
+  receiptUrl?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -479,6 +523,8 @@ export type TransactionCreateWithoutSubscriptionInput = {
   paymentMethod: string
   referenceNumber: string
   paymentStatus?: $Enums.PaymentStatus
+  description?: string | null
+  receiptUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -489,6 +535,8 @@ export type TransactionUncheckedCreateWithoutSubscriptionInput = {
   paymentMethod: string
   referenceNumber: string
   paymentStatus?: $Enums.PaymentStatus
+  description?: string | null
+  receiptUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -529,6 +577,8 @@ export type TransactionScalarWhereInput = {
   paymentMethod?: Prisma.StringFilter<"Transaction"> | string
   referenceNumber?: Prisma.StringFilter<"Transaction"> | string
   paymentStatus?: Prisma.EnumPaymentStatusFilter<"Transaction"> | $Enums.PaymentStatus
+  description?: Prisma.StringNullableFilter<"Transaction"> | string | null
+  receiptUrl?: Prisma.StringNullableFilter<"Transaction"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Transaction"> | Date | string
 }
@@ -539,6 +589,8 @@ export type TransactionCreateManySubscriptionInput = {
   paymentMethod: string
   referenceNumber: string
   paymentStatus?: $Enums.PaymentStatus
+  description?: string | null
+  receiptUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -549,6 +601,8 @@ export type TransactionUpdateWithoutSubscriptionInput = {
   paymentMethod?: Prisma.StringFieldUpdateOperationsInput | string
   referenceNumber?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -559,6 +613,8 @@ export type TransactionUncheckedUpdateWithoutSubscriptionInput = {
   paymentMethod?: Prisma.StringFieldUpdateOperationsInput | string
   referenceNumber?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -569,6 +625,8 @@ export type TransactionUncheckedUpdateManyWithoutSubscriptionInput = {
   paymentMethod?: Prisma.StringFieldUpdateOperationsInput | string
   referenceNumber?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -582,6 +640,8 @@ export type TransactionSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   paymentMethod?: boolean
   referenceNumber?: boolean
   paymentStatus?: boolean
+  description?: boolean
+  receiptUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   subscription?: boolean | Prisma.SubscriptionDefaultArgs<ExtArgs>
@@ -594,6 +654,8 @@ export type TransactionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   paymentMethod?: boolean
   referenceNumber?: boolean
   paymentStatus?: boolean
+  description?: boolean
+  receiptUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   subscription?: boolean | Prisma.SubscriptionDefaultArgs<ExtArgs>
@@ -606,6 +668,8 @@ export type TransactionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   paymentMethod?: boolean
   referenceNumber?: boolean
   paymentStatus?: boolean
+  description?: boolean
+  receiptUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   subscription?: boolean | Prisma.SubscriptionDefaultArgs<ExtArgs>
@@ -618,11 +682,13 @@ export type TransactionSelectScalar = {
   paymentMethod?: boolean
   referenceNumber?: boolean
   paymentStatus?: boolean
+  description?: boolean
+  receiptUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type TransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "subscriptionId" | "amount" | "paymentMethod" | "referenceNumber" | "paymentStatus" | "createdAt" | "updatedAt", ExtArgs["result"]["transaction"]>
+export type TransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "subscriptionId" | "amount" | "paymentMethod" | "referenceNumber" | "paymentStatus" | "description" | "receiptUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["transaction"]>
 export type TransactionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   subscription?: boolean | Prisma.SubscriptionDefaultArgs<ExtArgs>
 }
@@ -645,6 +711,8 @@ export type $TransactionPayload<ExtArgs extends runtime.Types.Extensions.Interna
     paymentMethod: string
     referenceNumber: string
     paymentStatus: $Enums.PaymentStatus
+    description: string | null
+    receiptUrl: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["transaction"]>
@@ -1077,6 +1145,8 @@ export interface TransactionFieldRefs {
   readonly paymentMethod: Prisma.FieldRef<"Transaction", 'String'>
   readonly referenceNumber: Prisma.FieldRef<"Transaction", 'String'>
   readonly paymentStatus: Prisma.FieldRef<"Transaction", 'PaymentStatus'>
+  readonly description: Prisma.FieldRef<"Transaction", 'String'>
+  readonly receiptUrl: Prisma.FieldRef<"Transaction", 'String'>
   readonly createdAt: Prisma.FieldRef<"Transaction", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Transaction", 'DateTime'>
 }

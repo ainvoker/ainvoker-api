@@ -1,6 +1,7 @@
 import type { AIModel, Plan } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
+import { aggregatePeriodUsage, startOfUtcMonth } from "../usage/aggregate.js"
 import { ensureBillingCatalog, getPlanByName, PLAN_NAMES, type PlanName } from "./catalog.js"
 import { isEntitlementUnexpired } from "./period.js"
 
@@ -14,23 +15,21 @@ export type QuotaSnapshot = {
     periodStart: Date
 }
 
-function startOfUtcMonth(now = new Date()): Date {
-    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0))
-}
+export { startOfUtcMonth }
 
 export async function expireLapsedSubscriptions(organizationId: string) {
     const now = new Date()
     await prismaClient.subscription.updateMany({
         where: {
             organizationId,
-            status: "ACTIVE",
+            status: { in: ["ACTIVE", "PAST_DUE"] },
             expiresAt: { lte: now },
         },
         data: { status: "EXPIRED" },
     })
 
     const stillActive = await prismaClient.subscription.findFirst({
-        where: { organizationId, status: "ACTIVE" },
+        where: { organizationId, status: { in: ["ACTIVE", "PAST_DUE"] } },
         select: { id: true },
     })
     if (stillActive) {
@@ -79,7 +78,7 @@ export async function getActiveSubscriptionWithPlan(organizationId: string) {
     const subscription = await prismaClient.subscription.findFirst({
         where: {
             organizationId,
-            status: "ACTIVE",
+            status: { in: ["ACTIVE", "PAST_DUE"] },
         },
         include: { plan: true },
         orderBy: { startedAt: "desc" },
@@ -141,25 +140,12 @@ export function assertModelAllowedForPlan(
 export async function assertWithinPlanLimits(organizationId: string): Promise<QuotaSnapshot> {
     const subscription = await getActiveSubscriptionWithPlan(organizationId)
     const { plan } = subscription
-    const periodStart = startOfUtcMonth()
-
-    const usage = await prismaClient.aIRequest.aggregate({
-        where: {
-            project: { organizationId },
-            createdAt: { gte: periodStart },
-            requestStatus: { in: ["PENDING", "SUCCESS", "FAILED"] },
-        },
-        _count: { _all: true },
-        _sum: { totalTokens: true },
-    })
-
-    const requestsUsed = usage._count._all
-    const tokensUsed = usage._sum.totalTokens ?? 0
+    const period = await aggregatePeriodUsage({ organizationId })
 
     const enforceRequests = plan.billingMode === "FIXED_MONTHLY" || plan.requestLimit > 0
     const enforceTokens = plan.billingMode === "FIXED_MONTHLY" || plan.tokenLimit > 0
 
-    if (enforceRequests && plan.requestLimit > 0 && requestsUsed >= plan.requestLimit) {
+    if (enforceRequests && plan.requestLimit > 0 && period.requestsUsed >= plan.requestLimit) {
         throw new AppError(
             429,
             "RATE_LIMIT_EXCEEDED",
@@ -167,7 +153,7 @@ export async function assertWithinPlanLimits(organizationId: string): Promise<Qu
         )
     }
 
-    if (enforceTokens && plan.tokenLimit > 0 && tokensUsed >= plan.tokenLimit) {
+    if (enforceTokens && plan.tokenLimit > 0 && period.tokensUsed >= plan.tokenLimit) {
         throw new AppError(
             429,
             "RATE_LIMIT_EXCEEDED",
@@ -179,10 +165,10 @@ export async function assertWithinPlanLimits(organizationId: string): Promise<Qu
         planName: plan.name,
         billingMode: plan.billingMode,
         requestLimit: plan.requestLimit,
-        requestsUsed,
+        requestsUsed: period.requestsUsed,
         tokenLimit: plan.tokenLimit,
-        tokensUsed,
-        periodStart,
+        tokensUsed: period.tokensUsed,
+        periodStart: period.periodStart,
     }
 }
 
