@@ -1,7 +1,9 @@
 import type { NextFunction, Request, Response } from "express"
 import { AppError } from "../platform/errors.js"
 import apiKeyHasher from "../platform/hash.js"
+import { tryNormalizeOrigin } from "../platform/origin.js"
 import prismaClient from "../platform/prisma.js"
+import allowedOriginsService from "../modules/allowedOrigins/service.js"
 
 class ApiKeyMiddleware {
     constructor() {
@@ -48,6 +50,26 @@ class ApiKeyMiddleware {
 
             if (apiKey.project.status !== "ACTIVE") {
                 throw new AppError(403, "FORBIDDEN", "Project is not active")
+            }
+
+            const rawOrigin = req.headers.origin
+            if (typeof rawOrigin === "string" && rawOrigin.trim().length > 0) {
+                const origin = tryNormalizeOrigin(rawOrigin)
+                if (!origin) {
+                    throw new AppError(403, "ORIGIN_NOT_ALLOWED", "Request origin is not allowed")
+                }
+
+                const allowed = await allowedOriginsService.isOriginAllowedForProject(
+                    apiKey.projectId,
+                    origin,
+                )
+                if (!allowed) {
+                    throw new AppError(
+                        403,
+                        "ORIGIN_NOT_ALLOWED",
+                        "Request origin is not allowed for this project",
+                    )
+                }
             }
 
             req.apiKeyContext = {

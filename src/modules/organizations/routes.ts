@@ -3,7 +3,7 @@ import type { Request, Response } from "express"
 import requireSession from "../../middleware/requireSession.js"
 import { BaseRoutes } from "../../platform/BaseRoutes.js"
 import http from "../../platform/http.js"
-import { createOrganizationSchema } from "./schemas.js"
+import { createOrganizationSchema, orgIdParamsSchema } from "./schemas.js"
 import OrganizationsService from "./service.js"
 
 class OrganizationsRoutes extends BaseRoutes {
@@ -14,6 +14,7 @@ class OrganizationsRoutes extends BaseRoutes {
 
         this.router.get("/", requireSession, this.bind(this.list))
         this.router.post("/", requireSession, this.bind(this.create))
+        this.router.delete("/:orgId", requireSession, this.bind(this.remove))
     }
 
     private async list(req: Request, res: Response) {
@@ -27,6 +28,13 @@ class OrganizationsRoutes extends BaseRoutes {
         const body = createOrganizationSchema.parse(req.body)
         const data = await OrganizationsService.createOrganization(auth.userId, body)
         http.ok(res, data, 201)
+    }
+
+    private async remove(req: Request, res: Response) {
+        const auth = this.requireAuth(req)
+        const { orgId } = orgIdParamsSchema.parse(req.params)
+        const data = await OrganizationsService.deleteOrganization(orgId, auth.userId)
+        http.ok(res, data)
     }
 }
 

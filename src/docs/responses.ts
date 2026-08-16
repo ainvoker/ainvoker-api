@@ -99,6 +99,16 @@ export const createdApiKeySchema = apiKeySchema
     })
     .meta({ id: "CreatedApiKey" })
 
+export const allowedOriginSchema = z
+    .object({
+        id: z.string(),
+        projectId: z.string(),
+        origin: z.string(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+    })
+    .meta({ id: "AllowedOrigin" })
+
 export const deletedResponseSchema = z
     .object({
         deleted: z.literal(true),

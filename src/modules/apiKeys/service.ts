@@ -2,6 +2,7 @@ import type { Prisma } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import apiKeyHasher from "../../platform/hash.js"
 import prismaClient from "../../platform/prisma.js"
+import { assertOrgCanMutateResources } from "../billing/limits.js"
 import projectsService from "../projects/service.js"
 import type { z } from "zod"
 import type { createApiKeySchema } from "./schemas.js"
@@ -49,7 +50,8 @@ class ApiKeyService {
         userId: string,
         input: z.infer<typeof createApiKeySchema>,
     ) {
-        await projectsService.getProjectForMember(projectId, userId)
+        const project = await projectsService.getProjectForMember(projectId, userId)
+        await assertOrgCanMutateResources(project.organizationId)
 
         const { plaintext, keyHash, keyPrefix } = apiKeyHasher.generate()
 

@@ -17,6 +17,10 @@ function personalOrgSlug(userId: string) {
     return `personal-${sanitized || "user"}`
 }
 
+export function isPersonalOrganizationSlug(slug: string) {
+    return slug.startsWith("personal-")
+}
+
 /** Lowercase slug from a display name; falls back to "workspace". */
 export function slugifyOrganizationName(name: string) {
     const slug = name
@@ -320,7 +324,10 @@ class OrganizationService {
         await this.ensureUserAndPersonalOrg(userId)
 
         const memberships = await prismaClient.organizationMember.findMany({
-            where: { userId },
+            where: {
+                userId,
+                organization: { status: { not: "DELETED" } },
+            },
             include: {
                 role: true,
                 organization: true,
@@ -337,6 +344,57 @@ class OrganizationService {
             createdAt: m.organization.createdAt,
             updatedAt: m.organization.updatedAt,
         }))
+    }
+
+    async deleteOrganization(organizationId: string, userId: string) {
+        await this.ensureUserAndPersonalOrg(userId)
+
+        const membership = await prismaClient.organizationMember.findUnique({
+            where: {
+                organizationId_userId: { organizationId, userId },
+            },
+            include: {
+                role: true,
+                organization: true,
+            },
+        })
+
+        if (!membership || membership.organization.status === "DELETED") {
+            throw new AppError(404, "NOT_FOUND", "Organization not found")
+        }
+
+        if (membership.role.name !== "owner") {
+            throw new AppError(
+                403,
+                "FORBIDDEN",
+                "Only organization owners can delete a workspace",
+            )
+        }
+
+        if (isPersonalOrganizationSlug(membership.organization.slug)) {
+            throw new AppError(
+                403,
+                "FORBIDDEN",
+                "Your Personal workspace cannot be deleted",
+            )
+        }
+
+        await prismaClient.$transaction(async (tx) => {
+            await tx.subscription.updateMany({
+                where: {
+                    organizationId,
+                    status: { not: "CANCELED" },
+                },
+                data: { status: "CANCELED" },
+            })
+
+            await tx.organization.update({
+                where: { id: organizationId },
+                data: { status: "DELETED" },
+            })
+        })
+
+        return { deleted: true as const }
     }
 }
 

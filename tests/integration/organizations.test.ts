@@ -92,6 +92,93 @@ describe("POST /api/v1/organizations", () => {
         expect(personalSub?.plan.name).toBe(PLAN_NAMES.free)
     })
 
+    it("blocks project creation on PENDING Pro orgs until activated", async () => {
+        const createOrg = await request(app.express)
+            .post("/api/v1/organizations")
+            .set(authUser.headers())
+            .send({
+                name: `Pending Gate ${authUser.auth.userId.slice(-6)}`,
+                plan: PLAN_NAMES.pro,
+            })
+        expect(createOrg.status).toBe(201)
+        const orgId = createOrg.body.data.id as string
+
+        const blocked = await request(app.express)
+            .post(`/api/v1/organizations/${orgId}/projects`)
+            .set(authUser.headers())
+            .send({ name: "Blocked Project", environment: "DEVELOPMENT" })
+        expect(blocked.status).toBe(402)
+        expect(blocked.body.error.code).toBe("SUBSCRIPTION_REQUIRED")
+
+        await prismaClient.subscription.updateMany({
+            where: { organizationId: orgId, status: "PENDING" },
+            data: { status: "ACTIVE" },
+        })
+
+        const allowed = await request(app.express)
+            .post(`/api/v1/organizations/${orgId}/projects`)
+            .set(authUser.headers())
+            .send({ name: "Allowed Project", environment: "DEVELOPMENT" })
+        expect(allowed.status).toBe(201)
+        expect(allowed.body.data.name).toBe("Allowed Project")
+    })
+
+    it("soft-deletes a non-personal org and keeps Personal Free plan", async () => {
+        const createOrg = await request(app.express)
+            .post("/api/v1/organizations")
+            .set(authUser.headers())
+            .send({
+                name: `Delete Me ${authUser.auth.userId.slice(-6)}`,
+                plan: PLAN_NAMES.pro,
+            })
+        expect(createOrg.status).toBe(201)
+        const orgId = createOrg.body.data.id as string
+
+        const deleteRes = await request(app.express)
+            .delete(`/api/v1/organizations/${orgId}`)
+            .set(authUser.headers())
+        expect(deleteRes.status).toBe(200)
+        expect(deleteRes.body.data).toEqual({ deleted: true })
+
+        const listed = await request(app.express)
+            .get("/api/v1/organizations")
+            .set(authUser.headers())
+        expect(listed.status).toBe(200)
+        expect(listed.body.data.some((org: { id: string }) => org.id === orgId)).toBe(false)
+        expect(
+            listed.body.data.some(
+                (org: { id: string }) => org.id === authUser.auth.organizationId,
+            ),
+        ).toBe(true)
+
+        const deletedOrg = await prismaClient.organization.findUnique({
+            where: { id: orgId },
+        })
+        expect(deletedOrg?.status).toBe("DELETED")
+
+        const canceled = await prismaClient.subscription.findMany({
+            where: { organizationId: orgId },
+        })
+        expect(canceled.every((sub) => sub.status === "CANCELED")).toBe(true)
+
+        const personalSub = await prismaClient.subscription.findFirst({
+            where: {
+                organizationId: authUser.auth.organizationId,
+                status: "ACTIVE",
+            },
+            include: { plan: true },
+        })
+        expect(personalSub?.plan.name).toBe(PLAN_NAMES.free)
+    })
+
+    it("rejects deleting the Personal workspace", async () => {
+        const res = await request(app.express)
+            .delete(`/api/v1/organizations/${authUser.auth.organizationId}`)
+            .set(authUser.headers())
+        expect(res.status).toBe(403)
+        expect(res.body.error.code).toBe("FORBIDDEN")
+    })
+
     it("rejects Scale org creation (contact sales)", async () => {
         const res = await request(app.express)
             .post("/api/v1/organizations")

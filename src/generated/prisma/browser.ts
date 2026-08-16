@@ -43,6 +43,11 @@ export type OrganizationMember = Prisma.OrganizationMemberModel
  */
 export type Project = Prisma.ProjectModel
 /**
+ * Model ProjectAllowedOrigin
+ * 
+ */
+export type ProjectAllowedOrigin = Prisma.ProjectAllowedOriginModel
+/**
  * Model ApiKey
  * 
  */

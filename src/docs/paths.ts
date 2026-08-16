@@ -1,7 +1,9 @@
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi"
 import { z } from "zod"
 import {
+    allowedOriginParamsSchema,
     apiKeyParamsSchema,
+    createAllowedOriginSchema,
     createApiKeySchema,
     projectIdParamsSchema,
     orgIdParamsSchema,
@@ -18,6 +20,7 @@ import {
     listAiRequestsQuerySchema,
 } from "./schemas.js"
 import {
+    allowedOriginSchema,
     apiKeySchema,
     aiRequestDetailSchema,
     aiRequestListSchema,
@@ -189,6 +192,26 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
                 description: "Created organization (caller is owner)",
                 content: {
                     "application/json": { schema: dataEnvelope(organizationListItemSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "delete",
+        path: "/api/v1/organizations/{orgId}",
+        tags: ["Organizations"],
+        summary: "Soft-delete an organization",
+        description:
+            "Owner-only. Marks the organization DELETED and cancels its subscriptions. Personal workspaces cannot be deleted.",
+        security: bearerAuth,
+        request: { params: orgIdParamsSchema },
+        responses: {
+            200: {
+                description: "Organization soft-deleted",
+                content: {
+                    "application/json": { schema: dataEnvelope(deletedResponseSchema) },
                 },
             },
             ...errorResponses,
@@ -454,6 +477,72 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         responses: {
             200: {
                 description: "API key deleted",
+                content: { "application/json": { schema: dataEnvelope(deletedResponseSchema) } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/projects/{projectId}/allowed-origins",
+        tags: ["Allowed Origins"],
+        summary: "List allowed browser origins for a project",
+        description:
+            "Origins allowed to call the SDK gateway (`/v1`) from a browser for this project.",
+        security: bearerAuth,
+        request: {
+            params: projectIdParamsSchema,
+        },
+        responses: {
+            200: {
+                description: "Allowed origins",
+                content: {
+                    "application/json": { schema: dataEnvelope(z.array(allowedOriginSchema)) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/projects/{projectId}/allowed-origins",
+        tags: ["Allowed Origins"],
+        summary: "Add an allowed browser origin",
+        description:
+            "Provide scheme + host (+ optional port), e.g. `https://app.example.com` or `http://localhost:5173`.",
+        security: bearerAuth,
+        request: {
+            params: projectIdParamsSchema,
+            body: {
+                required: true,
+                content: {
+                    "application/json": { schema: createAllowedOriginSchema },
+                },
+            },
+        },
+        responses: {
+            201: {
+                description: "Created allowed origin",
+                content: { "application/json": { schema: dataEnvelope(allowedOriginSchema) } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "delete",
+        path: "/api/v1/projects/{projectId}/allowed-origins/{originId}",
+        tags: ["Allowed Origins"],
+        summary: "Remove an allowed browser origin",
+        security: bearerAuth,
+        request: {
+            params: allowedOriginParamsSchema,
+        },
+        responses: {
+            200: {
+                description: "Allowed origin deleted",
                 content: { "application/json": { schema: dataEnvelope(deletedResponseSchema) } },
             },
             ...errorResponses,

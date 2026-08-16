@@ -349,4 +349,117 @@ describe("POST /v1/text/chat", () => {
         expect(res.body.data.model).toBe("openai/gpt-4o")
         expect(fetchSpy).toHaveBeenCalled()
     })
+
+    it("allows requests without Origin (Node / server SDK)", async () => {
+        const res = await request(app.express)
+            .post("/v1/text/chat")
+            .set({ Authorization: `Bearer ${plaintextKey}` })
+            .send({
+                model: textCatalogDefaults.modelSlug,
+                messages: [{ role: "user", content: "Hi" }],
+            })
+        expect(res.status).toBe(200)
+    })
+
+    it("rejects unlisted browser Origin with ORIGIN_NOT_ALLOWED", async () => {
+        const res = await request(app.express)
+            .post("/v1/text/chat")
+            .set({
+                Authorization: `Bearer ${plaintextKey}`,
+                Origin: "https://unlisted.example.com",
+            })
+            .send({
+                model: textCatalogDefaults.modelSlug,
+                messages: [{ role: "user", content: "Hi" }],
+            })
+
+        expect(res.status).toBe(403)
+        expect(res.body.error.code).toBe("ORIGIN_NOT_ALLOWED")
+        expect(fetchSpy).not.toHaveBeenCalled()
+    })
+
+    it("allows a browser Origin listed on this project", async () => {
+        await prismaClient.projectAllowedOrigin.create({
+            data: {
+                projectId,
+                origin: "https://app.example.com",
+            },
+        })
+
+        const res = await request(app.express)
+            .post("/v1/text/chat")
+            .set({
+                Authorization: `Bearer ${plaintextKey}`,
+                Origin: "https://app.example.com",
+            })
+            .send({
+                model: textCatalogDefaults.modelSlug,
+                messages: [{ role: "user", content: "Hi" }],
+            })
+
+        expect(res.status).toBe(200)
+        expect(res.headers["access-control-allow-origin"]).toBe("https://app.example.com")
+    })
+
+    it("rejects Origin allowed on a different project", async () => {
+        const otherProject = await prismaClient.project.create({
+            data: {
+                organizationId,
+                name: `Other Origins ${userId.slice(-8)}`,
+                environment: "DEVELOPMENT",
+            },
+        })
+        await prismaClient.projectAllowedOrigin.create({
+            data: {
+                projectId: otherProject.id,
+                origin: "https://other.example.com",
+            },
+        })
+
+        const res = await request(app.express)
+            .post("/v1/text/chat")
+            .set({
+                Authorization: `Bearer ${plaintextKey}`,
+                Origin: "https://other.example.com",
+            })
+            .send({
+                model: textCatalogDefaults.modelSlug,
+                messages: [{ role: "user", content: "Hi" }],
+            })
+
+        expect(res.status).toBe(403)
+        expect(res.body.error.code).toBe("ORIGIN_NOT_ALLOWED")
+    })
+
+    it("reflects Access-Control-Allow-Origin on preflight for registered origins", async () => {
+        await prismaClient.projectAllowedOrigin.create({
+            data: {
+                projectId,
+                origin: "https://preflight.example.com",
+            },
+        })
+
+        const allowed = await request(app.express)
+            .options("/v1/text/chat")
+            .set({
+                Origin: "https://preflight.example.com",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "authorization,content-type",
+            })
+
+        expect(allowed.status).toBe(204)
+        expect(allowed.headers["access-control-allow-origin"]).toBe(
+            "https://preflight.example.com",
+        )
+
+        const denied = await request(app.express)
+            .options("/v1/text/chat")
+            .set({
+                Origin: "https://denied.example.com",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "authorization,content-type",
+            })
+
+        expect(denied.headers["access-control-allow-origin"]).toBeUndefined()
+    })
 })

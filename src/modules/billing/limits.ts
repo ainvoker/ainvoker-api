@@ -96,6 +96,27 @@ export async function getActiveSubscriptionWithPlan(organizationId: string) {
     return subscription
 }
 
+/**
+ * Gate dashboard mutations (create project / API key) until the org is ACTIVE
+ * and has an ACTIVE, unexpired subscription. PENDING Pro orgs cannot mutate.
+ */
+export async function assertOrgCanMutateResources(organizationId: string) {
+    const org = await prismaClient.organization.findUnique({
+        where: { id: organizationId },
+        select: { status: true },
+    })
+
+    if (!org || org.status === "DELETED") {
+        throw new AppError(404, "NOT_FOUND", "Organization not found")
+    }
+
+    if (org.status !== "ACTIVE") {
+        throw new AppError(403, "FORBIDDEN", "Organization is not active")
+    }
+
+    await getActiveSubscriptionWithPlan(organizationId)
+}
+
 export function assertModelAllowedForPlan(
     plan: Pick<Plan, "name">,
     model: Pick<AIModel, "freeEligible" | "name">,

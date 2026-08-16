@@ -189,17 +189,36 @@ model Project {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
-  apiKeys        ApiKey[]
-  actions        Action[]
-  aiRequests     AIRequest[]
-  usageAnalytics UsageAnalytics[]
-  webhooks       Webhook[]
+  apiKeys         ApiKey[]
+  actions         Action[]
+  aiRequests      AIRequest[]
+  usageAnalytics  UsageAnalytics[]
+  webhooks        Webhook[]
+  allowedOrigins  ProjectAllowedOrigin[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([organizationId, name])
   @@index([organizationId])
+}
+
+// ── Allowed browser origins (SDK CORS) ──────────────────────────────────────
+
+model ProjectAllowedOrigin {
+  id String @id @default(cuid())
+
+  projectId String
+  origin    String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, origin])
+  @@index([origin])
+  @@index([projectId])
 }
 
 // ── API keys ────────────────────────────────────────────────────────────────

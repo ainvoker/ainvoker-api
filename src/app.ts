@@ -1,11 +1,12 @@
 import cors from "cors"
 import express from "express"
-import type { Express } from "express"
-import env from "./config/env.js"
+import type { Express, NextFunction, Request, Response } from "express"
 import errorHandler from "./platform/errors.js"
 import { mountSwagger } from "./platform/swagger.js"
+import { dashboardCorsOptions, gatewayCorsOptions } from "./platform/cors.js"
 import gatewayRoutes from "./routes/gateway.js"
 import apiV1Routes from "./routes/v1.js"
+import env from "./config/env.js"
 
 class App {
     readonly express: Express
@@ -16,7 +17,16 @@ class App {
     }
 
     private setup() {
-        this.express.use(cors({ origin: env.CORS_ORIGIN }))
+        const dashboardCors = cors(dashboardCorsOptions)
+        const gatewayCors = cors(gatewayCorsOptions)
+
+        this.express.use((req: Request, res: Response, next: NextFunction) => {
+            if (req.path === "/v1" || req.path.startsWith("/v1/")) {
+                return gatewayCors(req, res, next)
+            }
+            return dashboardCors(req, res, next)
+        })
+
         this.express.use(express.json())
 
         this.express.get("/", (_req, res) => {

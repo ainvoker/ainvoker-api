@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { createApiKeySchema, apiKeyParamsSchema } from "../../src/modules/apiKeys/schemas.js"
+import { createAllowedOriginSchema } from "../../src/modules/allowedOrigins/schemas.js"
 import {
     createProjectSchema,
     updateProjectSchema,
@@ -58,6 +59,17 @@ describe("apiKeyParamsSchema", () => {
         expect(
             apiKeyParamsSchema.parse({ projectId: "p1", keyId: "k1" }),
         ).toEqual({ projectId: "p1", keyId: "k1" })
+    })
+})
+
+describe("createAllowedOriginSchema", () => {
+    it("trims origin input", () => {
+        const parsed = createAllowedOriginSchema.parse({ origin: " https://app.example.com " })
+        expect(parsed.origin).toBe("https://app.example.com")
+    })
+
+    it("rejects empty origin", () => {
+        expect(() => createAllowedOriginSchema.parse({ origin: "  " })).toThrow()
     })
 })
 

@@ -45,6 +45,10 @@ export function buildOpenApiDocument() {
             { name: "Organizations", description: "Organizations the user belongs to" },
             { name: "Projects", description: "Organization projects" },
             { name: "API Keys", description: "Project API keys" },
+            {
+                name: "Allowed Origins",
+                description: "Browser origins allowed to call the SDK gateway for a project",
+            },
             { name: "AI Requests", description: "Logged gateway invocations for a project" },
             { name: "Gateway", description: "Data-plane model invocation (API key auth)" },
         ],

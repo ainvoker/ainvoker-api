@@ -1,6 +1,7 @@
 import { Prisma } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
+import { assertOrgCanMutateResources } from "../billing/limits.js"
 import type { z } from "zod"
 import type { createProjectSchema, updateProjectSchema } from "./schemas.js"
 
@@ -71,6 +72,7 @@ class ProjectService {
         input: z.infer<typeof createProjectSchema>,
     ) {
         await this.assertOrgMember(organizationId, userId)
+        await assertOrgCanMutateResources(organizationId)
 
         try {
             const project = await prismaClient.project.create({
@@ -131,7 +133,51 @@ class ProjectService {
 
     async deleteProject(projectId: string, userId: string) {
         await this.getProjectForMember(projectId, userId)
-        await prismaClient.project.delete({ where: { id: projectId } })
+
+        try {
+            await prismaClient.$transaction(async (tx) => {
+                const actions = await tx.action.findMany({
+                    where: { projectId },
+                    select: { id: true },
+                })
+                const actionIds = actions.map((action) => action.id)
+
+                if (actionIds.length > 0) {
+                    await tx.actionInvocation.deleteMany({
+                        where: { actionId: { in: actionIds } },
+                    })
+                }
+
+                const requests = await tx.aIRequest.findMany({
+                    where: { projectId },
+                    select: { id: true },
+                })
+                const requestIds = requests.map((row) => row.id)
+
+                if (requestIds.length > 0) {
+                    await tx.actionInvocation.deleteMany({
+                        where: { requestId: { in: requestIds } },
+                    })
+                    await tx.aIRequest.deleteMany({ where: { projectId } })
+                }
+
+                await tx.apiKey.deleteMany({ where: { projectId } })
+                await tx.action.deleteMany({ where: { projectId } })
+                await tx.usageAnalytics.deleteMany({ where: { projectId } })
+                await tx.webhook.deleteMany({ where: { projectId } })
+                await tx.projectAllowedOrigin.deleteMany({ where: { projectId } })
+                await tx.project.delete({ where: { id: projectId } })
+            })
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2003") {
+                throw new AppError(
+                    409,
+                    "CONFLICT",
+                    "Project cannot be deleted because related records still reference it",
+                )
+            }
+            throw err
+        }
     }
 }
 
