@@ -8,6 +8,7 @@ import {
     PLAN_NAMES,
 } from "./catalog.js"
 import {
+    canReuseXenditCheckoutSession,
     createXenditSession,
     deactivateXenditRecurringPlan,
     findXenditCustomerByReference,
@@ -446,12 +447,12 @@ class BillingService {
 
         if (pendingSub.xenditSessionId) {
             const existing = await getXenditSession(pendingSub.xenditSessionId)
-            if (existing?.status === "ACTIVE" && existing.components_sdk_key) {
+            if (canReuseXenditCheckoutSession(existing)) {
                 if (existing.customer_id) {
                     await persistXenditCustomerId(input.organizationId, existing.customer_id)
                 }
                 return {
-                    componentsSdkKey: existing.components_sdk_key,
+                    componentsSdkKey: existing.components_sdk_key!,
                     sessionId: existing.payment_session_id,
                     expiresAt: existing.expires_at ?? null,
                 }
@@ -466,11 +467,10 @@ class BillingService {
 
         const amount = getProCheckoutAmountPhp()
         const referenceId = `pro_${input.organizationId}_${Date.now()}`
-        const anchorDate = new Date()
-        // Xendit max day-of-month for anchors is 28
-        if (anchorDate.getUTCDate() > 28) {
-            anchorDate.setUTCDate(28)
-        }
+        const createdAt = new Date()
+        const sessionExpiresAt = new Date(createdAt.getTime() + 30 * 60 * 1000)
+        // First month is charged by the session; Xendit requires anchor_date >= expires_at.
+        const anchorDate = proRenewsAt(createdAt)
 
         const sessionBody: Record<string, unknown> = {
             reference_id: referenceId,
@@ -481,6 +481,7 @@ class BillingService {
             country: "PH",
             locale: "en",
             description: "AInvoker Pro (monthly)",
+            expires_at: sessionExpiresAt.toISOString(),
             ...customerFields,
             metadata: {
                 organizationId: input.organizationId,

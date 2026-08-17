@@ -11,7 +11,34 @@ export type XenditSessionResponse = {
     subscription?: {
         id?: string
         plan_id?: string
+        schedule?: {
+            anchor_date?: string
+        }
     }
+}
+
+/** Xendit requires subscription.schedule.anchor_date >= session expires_at. */
+export function canReuseXenditCheckoutSession(
+    existing: XenditSessionResponse | null,
+    now = new Date(),
+): existing is XenditSessionResponse & { components_sdk_key: string } {
+    if (!existing || existing.status !== "ACTIVE" || !existing.components_sdk_key) {
+        return false
+    }
+
+    const expiresAtMs = existing.expires_at ? Date.parse(existing.expires_at) : Number.NaN
+    if (!Number.isNaN(expiresAtMs) && expiresAtMs <= now.getTime()) {
+        return false
+    }
+
+    const anchorMs = existing.subscription?.schedule?.anchor_date
+        ? Date.parse(existing.subscription.schedule.anchor_date)
+        : Number.NaN
+    if (Number.isNaN(expiresAtMs) || Number.isNaN(anchorMs)) {
+        return false
+    }
+
+    return anchorMs >= expiresAtMs
 }
 
 export type XenditCustomer = {

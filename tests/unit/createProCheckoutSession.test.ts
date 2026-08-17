@@ -150,6 +150,10 @@ describe("createProCheckoutSession", () => {
             },
             failed_cycle_action: "RESUME",
         })
+        const schedule = (body.subscription as { schedule: { anchor_date: string } }).schedule
+        expect(Date.parse(schedule.anchor_date)).toBeGreaterThanOrEqual(
+            Date.parse(body.expires_at as string),
+        )
         expect(body).not.toHaveProperty("allow_save_payment_method")
         expect(prisma.organization.update).toHaveBeenCalledWith({
             where: { id: "org_abc" },
@@ -239,12 +243,18 @@ describe("createProCheckoutSession", () => {
             xenditCustomerId: "cust-existing",
         }
         setupPrisma(org, { id: "sub_1", xenditSessionId: "ps_active" })
+        const expiresAt = new Date(Date.now() + 20 * 60 * 1000).toISOString()
         getXenditSession.mockResolvedValue({
             payment_session_id: "ps_active",
             components_sdk_key: "sdk_active",
             status: "ACTIVE",
             customer_id: "cust-existing",
-            expires_at: "2026-08-12T10:00:00.000Z",
+            expires_at: expiresAt,
+            subscription: {
+                schedule: {
+                    anchor_date: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+                },
+            },
         })
 
         const result = await BillingService.createProCheckoutSession(checkoutInput)
@@ -252,9 +262,34 @@ describe("createProCheckoutSession", () => {
         expect(result).toEqual({
             componentsSdkKey: "sdk_active",
             sessionId: "ps_active",
-            expiresAt: "2026-08-12T10:00:00.000Z",
+            expiresAt,
         })
         expect(createXenditSession).not.toHaveBeenCalled()
+    })
+
+    it("creates a new session when the existing one has an invalid anchor_date", async () => {
+        const org: OrgRow = {
+            id: "org_abc",
+            xenditCustomerReference: "org_org_abc",
+            xenditCustomerId: "cust-existing",
+        }
+        setupPrisma(org, { id: "sub_1", xenditSessionId: "ps_bad_anchor" })
+        getXenditSession.mockResolvedValue({
+            payment_session_id: "ps_bad_anchor",
+            components_sdk_key: "sdk_bad",
+            status: "ACTIVE",
+            customer_id: "cust-existing",
+            expires_at: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
+            subscription: {
+                schedule: {
+                    anchor_date: new Date().toISOString(),
+                },
+            },
+        })
+
+        await BillingService.createProCheckoutSession(checkoutInput)
+
+        expect(createXenditSession).toHaveBeenCalledOnce()
     })
 
     it("rejects checkout while unexpired Pro is active", async () => {
