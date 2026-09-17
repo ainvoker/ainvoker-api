@@ -206,3 +206,121 @@ describe("POST /api/v1/organizations", () => {
         expect(second.body.error.code).toBe("CONFLICT")
     })
 })
+
+describe("PATCH /api/v1/organizations/:orgId", () => {
+    const authUser = useTestAuthUser()
+
+    it("returns 401 without Authorization", async () => {
+        const res = await request(app.express)
+            .patch(`/api/v1/organizations/${authUser.auth.organizationId}`)
+            .send({ name: "Renamed" })
+        expect(res.status).toBe(401)
+        expect(res.body.error.code).toBe("UNAUTHORIZED")
+    })
+
+    it("rejects renaming the Personal workspace", async () => {
+        const res = await request(app.express)
+            .patch(`/api/v1/organizations/${authUser.auth.organizationId}`)
+            .set(authUser.headers())
+            .send({ name: "Not Personal" })
+        expect(res.status).toBe(403)
+        expect(res.body.error.code).toBe("FORBIDDEN")
+    })
+
+    it("renames a non-personal org and can update its slug", async () => {
+        const created = await request(app.express)
+            .post("/api/v1/organizations")
+            .set(authUser.headers())
+            .send({
+                name: `Rename Me ${authUser.auth.userId.slice(-6)}`,
+                plan: PLAN_NAMES.pro,
+            })
+        expect(created.status).toBe(201)
+        const orgId = created.body.data.id as string
+        const nextSlug = `renamed-${authUser.auth.userId.slice(-8).toLowerCase()}`
+
+        const res = await request(app.express)
+            .patch(`/api/v1/organizations/${orgId}`)
+            .set(authUser.headers())
+            .send({ name: "Renamed Labs", slug: nextSlug })
+
+        expect(res.status).toBe(200)
+        expect(res.body.data).toMatchObject({
+            id: orgId,
+            name: "Renamed Labs",
+            slug: nextSlug,
+            role: "owner",
+        })
+
+        const listed = await request(app.express)
+            .get("/api/v1/organizations")
+            .set(authUser.headers())
+        expect(listed.status).toBe(200)
+        expect(
+            listed.body.data.some(
+                (org: { id: string; name: string; slug: string }) =>
+                    org.id === orgId && org.name === "Renamed Labs" && org.slug === nextSlug,
+            ),
+        ).toBe(true)
+    })
+
+    it("rejects a duplicate slug on update", async () => {
+        const first = await request(app.express)
+            .post("/api/v1/organizations")
+            .set(authUser.headers())
+            .send({ name: "Slug One", slug: "slug-one-unique", plan: PLAN_NAMES.pro })
+        expect(first.status).toBe(201)
+
+        const second = await request(app.express)
+            .post("/api/v1/organizations")
+            .set(authUser.headers())
+            .send({ name: "Slug Two", plan: PLAN_NAMES.pro })
+        expect(second.status).toBe(201)
+
+        const res = await request(app.express)
+            .patch(`/api/v1/organizations/${second.body.data.id as string}`)
+            .set(authUser.headers())
+            .send({ slug: "slug-one-unique" })
+
+        expect(res.status).toBe(409)
+        expect(res.body.error.code).toBe("CONFLICT")
+    })
+
+    it("rejects a Personal-prefixed slug", async () => {
+        const created = await request(app.express)
+            .post("/api/v1/organizations")
+            .set(authUser.headers())
+            .send({
+                name: `Prefix Check ${authUser.auth.userId.slice(-6)}`,
+                plan: PLAN_NAMES.pro,
+            })
+        expect(created.status).toBe(201)
+
+        const res = await request(app.express)
+            .patch(`/api/v1/organizations/${created.body.data.id as string}`)
+            .set(authUser.headers())
+            .send({ slug: "personal-taken" })
+
+        expect(res.status).toBe(400)
+        expect(res.body.error.code).toBe("VALIDATION_ERROR")
+    })
+
+    it("rejects an empty update body", async () => {
+        const created = await request(app.express)
+            .post("/api/v1/organizations")
+            .set(authUser.headers())
+            .send({
+                name: `Empty Body ${authUser.auth.userId.slice(-6)}`,
+                plan: PLAN_NAMES.pro,
+            })
+        expect(created.status).toBe(201)
+
+        const res = await request(app.express)
+            .patch(`/api/v1/organizations/${created.body.data.id as string}`)
+            .set(authUser.headers())
+            .send({})
+
+        expect(res.status).toBe(400)
+        expect(res.body.error.code).toBe("VALIDATION_ERROR")
+    })
+})

@@ -8,6 +8,7 @@ import {
     projectIdParamsSchema,
     orgIdParamsSchema,
     createOrganizationSchema,
+    updateOrganizationSchema,
     createCheckoutSessionSchema,
     orgSubscriptionResponseSchema,
     invoiceItemSchema,
@@ -194,6 +195,34 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         responses: {
             201: {
                 description: "Created organization (caller is owner)",
+                content: {
+                    "application/json": { schema: dataEnvelope(organizationListItemSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "patch",
+        path: "/api/v1/organizations/{orgId}",
+        tags: ["Organizations"],
+        summary: "Update an organization",
+        description:
+            "Owner or admin. Rename a workspace and optionally change its slug. Personal workspaces cannot be renamed.",
+        security: bearerAuth,
+        request: {
+            params: orgIdParamsSchema,
+            body: {
+                required: true,
+                content: {
+                    "application/json": { schema: updateOrganizationSchema },
+                },
+            },
+        },
+        responses: {
+            200: {
+                description: "Updated organization with the caller's role",
                 content: {
                     "application/json": { schema: dataEnvelope(organizationListItemSchema) },
                 },

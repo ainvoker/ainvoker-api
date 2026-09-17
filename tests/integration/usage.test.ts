@@ -136,6 +136,26 @@ describe("usage endpoints", () => {
             successfulRequests: expect.any(Number),
             failedRequests: expect.any(Number),
         })
+        expect(Array.isArray(res.body.data.dailyByProject)).toBe(true)
+        expect(Array.isArray(res.body.data.dailyByModel)).toBe(true)
+        if (res.body.data.dailyByProject.length > 0) {
+            expect(res.body.data.dailyByProject[0]).toMatchObject({
+                date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+                id: expect.any(String),
+                name: expect.any(String),
+                requestsUsed: expect.any(Number),
+                tokensUsed: expect.any(Number),
+            })
+        }
+        if (res.body.data.dailyByModel.length > 0) {
+            expect(res.body.data.dailyByModel[0]).toMatchObject({
+                date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+                id: expect.any(String),
+                name: expect.any(String),
+                requestsUsed: expect.any(Number),
+                tokensUsed: expect.any(Number),
+            })
+        }
         const dailyRequests = res.body.data.daily.reduce(
             (sum: number, d: { requestsUsed: number }) => sum + d.requestsUsed,
             0,

@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest"
-import { fillDailySeries, startOfUtcMonth } from "../../src/modules/usage/aggregate.js"
+import {
+    fillDailySeries,
+    startOfNextUtcDay,
+    startOfUtcMonth,
+} from "../../src/modules/usage/aggregate.js"
+
+describe("startOfNextUtcDay", () => {
+    it("returns the exclusive upper bound after today UTC", () => {
+        const now = new Date(Date.UTC(2026, 8, 17, 15, 30, 0))
+        expect(startOfNextUtcDay(now).toISOString()).toBe(
+            "2026-09-18T00:00:00.000Z",
+        )
+    })
+})
 
 describe("fillDailySeries", () => {
     it("fills every UTC day from period start through today with zeros", () => {

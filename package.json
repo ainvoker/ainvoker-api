@@ -12,6 +12,7 @@
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
         "prisma:seed": "prisma db seed",
+        "seed:usage": "tsx prisma/seed-usage.ts",
         "prisma:studio": "prisma studio"
     },
     "keywords": [],

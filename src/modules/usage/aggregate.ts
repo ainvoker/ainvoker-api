@@ -42,6 +42,11 @@ function nextUtcDay(date: Date): Date {
     return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 0, 0, 0, 0))
 }
 
+/** Exclusive upper bound: usage counted through end of today (UTC), not future-dated rows. */
+export function startOfNextUtcDay(now = new Date()): Date {
+    return nextUtcDay(startOfUtcDay(now))
+}
+
 /** Fill every UTC day from period start through today (inclusive); zeros for quiet days. */
 export function fillDailySeries(
     periodStart: Date,
@@ -71,6 +76,7 @@ export function fillDailySeries(
 function periodWhere(
     scope: { organizationId: string } | { projectId: string },
     periodStart: Date,
+    now = new Date(),
 ): PrismaTypes.AIRequestWhereInput {
     const base: PrismaTypes.AIRequestWhereInput =
         "organizationId" in scope
@@ -79,15 +85,16 @@ function periodWhere(
 
     return {
         ...base,
-        createdAt: { gte: periodStart },
+        createdAt: { gte: periodStart, lt: startOfNextUtcDay(now) },
     }
 }
 
 export async function aggregatePeriodUsage(
     scope: { organizationId: string } | { projectId: string },
     periodStart = startOfUtcMonth(),
+    now = new Date(),
 ): Promise<PeriodUsage> {
-    const where = periodWhere(scope, periodStart)
+    const where = periodWhere(scope, periodStart, now)
 
     const [quotaAgg, successfulRequests, failedRequests] = await Promise.all([
         prismaClient.aIRequest.aggregate({
@@ -118,11 +125,12 @@ export async function aggregatePeriodUsage(
 export async function aggregateProjectPeriodUsage(
     projectId: string,
     periodStart = startOfUtcMonth(),
+    now = new Date(),
 ): Promise<ProjectPeriodUsage> {
-    const where = periodWhere({ projectId }, periodStart)
+    const where = periodWhere({ projectId }, periodStart, now)
 
     const [period, latencyAgg] = await Promise.all([
-        aggregatePeriodUsage({ projectId }, periodStart),
+        aggregatePeriodUsage({ projectId }, periodStart, now),
         prismaClient.aIRequest.aggregate({
             where: {
                 ...where,
@@ -150,12 +158,13 @@ export type ProjectUsageRow = {
 export async function aggregateOrgUsageByProject(
     organizationId: string,
     periodStart = startOfUtcMonth(),
+    now = new Date(),
 ): Promise<ProjectUsageRow[]> {
     const rows = await prismaClient.aIRequest.groupBy({
         by: ["projectId"],
         where: {
             project: { organizationId },
-            createdAt: { gte: periodStart },
+            createdAt: { gte: periodStart, lt: startOfNextUtcDay(now) },
             requestStatus: { in: [...QUOTA_STATUSES] },
         },
         _count: { _all: true },
@@ -199,12 +208,13 @@ async function resolveModelLabels(rows: { modelId: number }[]): Promise<Map<numb
 export async function aggregateOrgUsageByModel(
     organizationId: string,
     periodStart = startOfUtcMonth(),
+    now = new Date(),
 ): Promise<ModelUsageRow[]> {
     const rows = await prismaClient.aIRequest.groupBy({
         by: ["modelId"],
         where: {
             project: { organizationId },
-            createdAt: { gte: periodStart },
+            createdAt: { gte: periodStart, lt: startOfNextUtcDay(now) },
             requestStatus: { in: [...QUOTA_STATUSES] },
         },
         _count: { _all: true },
@@ -230,12 +240,13 @@ export async function aggregateOrgUsageByModel(
 export async function aggregateProjectUsageByModel(
     projectId: string,
     periodStart = startOfUtcMonth(),
+    now = new Date(),
 ): Promise<ModelUsageRow[]> {
     const rows = await prismaClient.aIRequest.groupBy({
         by: ["modelId"],
         where: {
             projectId,
-            createdAt: { gte: periodStart },
+            createdAt: { gte: periodStart, lt: startOfNextUtcDay(now) },
             requestStatus: { in: [...QUOTA_STATUSES] },
         },
         _count: { _all: true },
@@ -283,6 +294,7 @@ export async function aggregateDailyUsage(
         "organizationId" in scope
             ? Prisma.sql`p."organizationId" = ${scope.organizationId}`
             : Prisma.sql`r."projectId" = ${scope.projectId}`
+    const periodEnd = startOfNextUtcDay(now)
 
     const rows = await prismaClient.$queryRaw<DailyRawRow[]>`
         SELECT
@@ -304,6 +316,7 @@ export async function aggregateDailyUsage(
         INNER JOIN "Project" p ON p.id = r."projectId"
         WHERE ${scopeFilter}
           AND r."createdAt" >= ${periodStart}
+          AND r."createdAt" < ${periodEnd}
         GROUP BY 1
         ORDER BY 1 ASC
     `
@@ -319,4 +332,104 @@ export async function aggregateDailyUsage(
     }
 
     return fillDailySeries(periodStart, buckets, now)
+}
+
+export type UsageDailySegmentPoint = {
+    date: string
+    id: string
+    name: string
+    requestsUsed: number
+    tokensUsed: number
+}
+
+type DailySegmentRawRow = {
+    day: string
+    segment_id: string
+    segment_name: string
+    requests_used: bigint | number
+    tokens_used: bigint | number
+}
+
+/** Per-day × project usage for stacked charts (org scope, quota statuses). */
+export async function aggregateDailyUsageByProject(
+    organizationId: string,
+    periodStart = startOfUtcMonth(),
+    now = new Date(),
+): Promise<UsageDailySegmentPoint[]> {
+    const periodEnd = startOfNextUtcDay(now)
+    const rows = await prismaClient.$queryRaw<DailySegmentRawRow[]>`
+        SELECT
+            to_char(
+                date_trunc('day', r."createdAt" AT TIME ZONE 'UTC'),
+                'YYYY-MM-DD'
+            ) AS day,
+            r."projectId" AS segment_id,
+            p.name AS segment_name,
+            COUNT(*)::bigint AS requests_used,
+            COALESCE(SUM(r."totalTokens"), 0)::bigint AS tokens_used
+        FROM "AIRequest" r
+        INNER JOIN "Project" p ON p.id = r."projectId"
+        WHERE p."organizationId" = ${organizationId}
+          AND r."createdAt" >= ${periodStart}
+          AND r."createdAt" < ${periodEnd}
+          AND r."requestStatus" IN ('PENDING', 'SUCCESS', 'FAILED')
+        GROUP BY 1, 2, 3
+        ORDER BY 1 ASC
+    `
+
+    return rows.map((row) => ({
+        date: row.day,
+        id: row.segment_id,
+        name: row.segment_name,
+        requestsUsed: toInt(row.requests_used),
+        tokensUsed: toInt(row.tokens_used),
+    }))
+}
+
+type DailyModelRawRow = {
+    day: string
+    model_id: number
+    requests_used: bigint | number
+    tokens_used: bigint | number
+}
+
+/** Per-day × model usage for stacked charts (org scope, quota statuses). */
+export async function aggregateDailyUsageByModel(
+    organizationId: string,
+    periodStart = startOfUtcMonth(),
+    now = new Date(),
+): Promise<UsageDailySegmentPoint[]> {
+    const periodEnd = startOfNextUtcDay(now)
+    const rows = await prismaClient.$queryRaw<DailyModelRawRow[]>`
+        SELECT
+            to_char(
+                date_trunc('day', r."createdAt" AT TIME ZONE 'UTC'),
+                'YYYY-MM-DD'
+            ) AS day,
+            r."modelId" AS model_id,
+            COUNT(*)::bigint AS requests_used,
+            COALESCE(SUM(r."totalTokens"), 0)::bigint AS tokens_used
+        FROM "AIRequest" r
+        INNER JOIN "Project" p ON p.id = r."projectId"
+        WHERE p."organizationId" = ${organizationId}
+          AND r."createdAt" >= ${periodStart}
+          AND r."createdAt" < ${periodEnd}
+          AND r."requestStatus" IN ('PENDING', 'SUCCESS', 'FAILED')
+        GROUP BY 1, 2
+        ORDER BY 1 ASC
+    `
+
+    if (rows.length === 0) return []
+
+    const modelById = await resolveModelLabels(
+        rows.map((row) => ({ modelId: row.model_id })),
+    )
+
+    return rows.map((row) => ({
+        date: row.day,
+        id: String(row.model_id),
+        name: modelById.get(row.model_id) ?? `model:${row.model_id}`,
+        requestsUsed: toInt(row.requests_used),
+        tokensUsed: toInt(row.tokens_used),
+    }))
 }

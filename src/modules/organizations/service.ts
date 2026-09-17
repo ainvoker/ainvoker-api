@@ -7,10 +7,20 @@ import {
     PLAN_NAMES,
 } from "../billing/catalog.js"
 import type { ProfileFields } from "../users/schemas.js"
-import type { createOrganizationSchema } from "./schemas.js"
+import type { createOrganizationSchema, updateOrganizationSchema } from "./schemas.js"
 import type { z } from "zod"
 
 const ROLE_NAMES = ["owner", "admin", "member"] as const
+const WORKSPACE_EDITOR_ROLES = new Set(["owner", "admin"])
+
+type OrganizationRow = {
+    id: string
+    name: string
+    slug: string
+    status: string
+    createdAt: Date
+    updatedAt: Date
+}
 
 function personalOrgSlug(userId: string) {
     const sanitized = userId.replace(/[^a-zA-Z0-9_-]/g, "")
@@ -226,6 +236,18 @@ class OrganizationService {
         }
     }
 
+    private serializeListItem(organization: OrganizationRow, role: string) {
+        return {
+            id: organization.id,
+            name: organization.name,
+            slug: organization.slug,
+            status: organization.status,
+            role,
+            createdAt: organization.createdAt,
+            updatedAt: organization.updatedAt,
+        }
+    }
+
     private async allocateUniqueSlug(baseSlug: string) {
         const existing = await prismaClient.organization.findUnique({
             where: { slug: baseSlug },
@@ -303,15 +325,7 @@ class OrganizationService {
                 return org
             })
 
-            return {
-                id: organization.id,
-                name: organization.name,
-                slug: organization.slug,
-                status: organization.status,
-                role: "owner" as const,
-                createdAt: organization.createdAt,
-                updatedAt: organization.updatedAt,
-            }
+            return this.serializeListItem(organization, "owner")
         } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
                 throw new AppError(409, "CONFLICT", "An organization with this slug already exists")
@@ -335,15 +349,70 @@ class OrganizationService {
             orderBy: { createdAt: "asc" },
         })
 
-        return memberships.map((m) => ({
-            id: m.organization.id,
-            name: m.organization.name,
-            slug: m.organization.slug,
-            status: m.organization.status,
-            role: m.role.name,
-            createdAt: m.organization.createdAt,
-            updatedAt: m.organization.updatedAt,
-        }))
+        return memberships.map((m) => this.serializeListItem(m.organization, m.role.name))
+    }
+
+    async updateOrganization(
+        organizationId: string,
+        userId: string,
+        input: z.infer<typeof updateOrganizationSchema>,
+    ) {
+        await this.ensureUserAndPersonalOrg(userId)
+
+        const membership = await prismaClient.organizationMember.findUnique({
+            where: {
+                organizationId_userId: { organizationId, userId },
+            },
+            include: {
+                role: true,
+                organization: true,
+            },
+        })
+
+        if (!membership || membership.organization.status === "DELETED") {
+            throw new AppError(404, "NOT_FOUND", "Organization not found")
+        }
+
+        if (!WORKSPACE_EDITOR_ROLES.has(membership.role.name)) {
+            throw new AppError(
+                403,
+                "FORBIDDEN",
+                "Only workspace owners and admins can edit this workspace",
+            )
+        }
+
+        if (isPersonalOrganizationSlug(membership.organization.slug)) {
+            throw new AppError(
+                403,
+                "FORBIDDEN",
+                "Your Personal workspace cannot be renamed",
+            )
+        }
+
+        if (input.slug !== undefined && isPersonalOrganizationSlug(input.slug)) {
+            throw new AppError(
+                400,
+                "VALIDATION_ERROR",
+                "Slug cannot use the Personal workspace prefix",
+            )
+        }
+
+        try {
+            const organization = await prismaClient.organization.update({
+                where: { id: organizationId },
+                data: {
+                    ...(input.name !== undefined ? { name: input.name } : {}),
+                    ...(input.slug !== undefined ? { slug: input.slug } : {}),
+                },
+            })
+
+            return this.serializeListItem(organization, membership.role.name)
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+                throw new AppError(409, "CONFLICT", "An organization with this slug already exists")
+            }
+            throw err
+        }
     }
 
     async deleteOrganization(organizationId: string, userId: string) {

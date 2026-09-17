@@ -20,3 +20,12 @@ export const createOrganizationSchema = z.object({
     /** Paid plan for the new org. Free is Personal-only and not allowed here. */
     plan: z.enum(["pro", "scale"]),
 })
+
+export const updateOrganizationSchema = z
+    .object({
+        name: z.string().trim().min(1).max(100).optional(),
+        slug: slugSchema.optional(),
+    })
+    .refine((body) => Object.keys(body).length > 0, {
+        message: "At least one field is required",
+    })

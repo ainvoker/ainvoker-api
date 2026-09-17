@@ -7,6 +7,8 @@ import { isEntitlementUnexpired } from "../billing/period.js"
 import projectsService from "../projects/service.js"
 import {
     aggregateDailyUsage,
+    aggregateDailyUsageByModel,
+    aggregateDailyUsageByProject,
     aggregateOrgUsageByModel,
     aggregateOrgUsageByProject,
     aggregatePeriodUsage,
@@ -157,7 +159,8 @@ class UsageService {
 
         const periodStart = startOfUtcMonth()
 
-        const [plan, period, projects, byProject, byModel, daily, recentRows] = await Promise.all([
+        const [plan, period, projects, byProject, byModel, daily, dailyByProject, dailyByModel, recentRows] =
+            await Promise.all([
             getPlanSnapshot(organizationId),
             aggregatePeriodUsage({ organizationId }, periodStart),
             prismaClient.project.findMany({
@@ -167,6 +170,8 @@ class UsageService {
             aggregateOrgUsageByProject(organizationId, periodStart),
             aggregateOrgUsageByModel(organizationId, periodStart),
             aggregateDailyUsage({ organizationId }, periodStart),
+            aggregateDailyUsageByProject(organizationId, periodStart),
+            aggregateDailyUsageByModel(organizationId, periodStart),
             prismaClient.aIRequest.findMany({
                 where: { project: { organizationId } },
                 include: {
@@ -206,6 +211,8 @@ class UsageService {
                         : null,
             })),
             daily,
+            dailyByProject,
+            dailyByModel,
             recentRequests: recentRows.map((row) => serializeRequestSummary(row, true)),
         }
     }

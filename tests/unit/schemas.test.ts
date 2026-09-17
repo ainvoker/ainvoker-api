@@ -6,6 +6,7 @@ import {
     updateProjectSchema,
     projectIdParamsSchema,
 } from "../../src/modules/projects/schemas.js"
+import { createOrganizationSchema, updateOrganizationSchema } from "../../src/modules/organizations/schemas.js"
 import { updateProfileSchema } from "../../src/modules/users/schemas.js"
 
 describe("createProjectSchema", () => {
@@ -33,6 +34,27 @@ describe("updateProjectSchema", () => {
     it("accepts a partial update", () => {
         const parsed = updateProjectSchema.parse({ status: "ARCHIVED" })
         expect(parsed.status).toBe("ARCHIVED")
+    })
+})
+
+describe("updateOrganizationSchema", () => {
+    it("requires at least one field", () => {
+        expect(() => updateOrganizationSchema.parse({})).toThrow(/At least one field/)
+    })
+
+    it("accepts a name-only update", () => {
+        const parsed = updateOrganizationSchema.parse({ name: " Acme " })
+        expect(parsed.name).toBe("Acme")
+    })
+
+    it("rejects an invalid slug", () => {
+        expect(() => updateOrganizationSchema.parse({ slug: "Not Valid" })).toThrow()
+    })
+})
+
+describe("createOrganizationSchema", () => {
+    it("requires a paid plan", () => {
+        expect(() => createOrganizationSchema.parse({ name: "Acme" })).toThrow()
     })
 })
 

@@ -220,6 +220,16 @@ export const usageDailyPointSchema = z
     })
     .meta({ id: "UsageDailyPoint" })
 
+export const usageDailySegmentPointSchema = z
+    .object({
+        date: z.string(),
+        id: z.string(),
+        name: z.string(),
+        requestsUsed: z.number().int(),
+        tokensUsed: z.number().int(),
+    })
+    .meta({ id: "UsageDailySegmentPoint" })
+
 export const organizationUsageSchema = z
     .object({
         plan: usagePlanSnapshotSchema.nullable(),
@@ -227,6 +237,8 @@ export const organizationUsageSchema = z
         projects: z.array(orgUsageProjectSchema),
         byModel: z.array(orgUsageByModelSchema),
         daily: z.array(usageDailyPointSchema),
+        dailyByProject: z.array(usageDailySegmentPointSchema),
+        dailyByModel: z.array(usageDailySegmentPointSchema),
         recentRequests: z.array(orgRecentRequestSchema),
     })
     .meta({ id: "OrganizationUsage" })
