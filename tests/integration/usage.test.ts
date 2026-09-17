@@ -125,6 +125,22 @@ describe("usage endpoints", () => {
             projectName: expect.any(String),
             model: "gemini/gemini-2.5-flash",
         })
+
+        const todayUtc = new Date()
+        const daysElapsed = todayUtc.getUTCDate()
+        expect(res.body.data.daily).toHaveLength(daysElapsed)
+        expect(res.body.data.daily[0]).toMatchObject({
+            date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+            requestsUsed: expect.any(Number),
+            tokensUsed: expect.any(Number),
+            successfulRequests: expect.any(Number),
+            failedRequests: expect.any(Number),
+        })
+        const dailyRequests = res.body.data.daily.reduce(
+            (sum: number, d: { requestsUsed: number }) => sum + d.requestsUsed,
+            0,
+        )
+        expect(dailyRequests).toBe(res.body.data.period.requestsUsed)
     })
 
     it("returns 401 without Authorization for project usage", async () => {
@@ -149,7 +165,21 @@ describe("usage endpoints", () => {
             failedRequests: 1,
             avgLatency: 120,
         })
+        expect(res.body.data.organizationPeriod).toMatchObject({
+            requestsUsed: expect.any(Number),
+            tokensUsed: expect.any(Number),
+        })
+        expect(res.body.data.organizationPeriod.requestsUsed).toBeGreaterThanOrEqual(2)
         expect(res.body.data.keys).toEqual({ total: 1, active: 1 })
+        expect(res.body.data.byModel.length).toBeGreaterThanOrEqual(1)
+        expect(res.body.data.byModel[0]).toMatchObject({
+            model: "gemini/gemini-2.5-flash",
+            requestsUsed: 2,
+            tokensUsed: 6,
+        })
+        const daysElapsed = new Date().getUTCDate()
+        expect(res.body.data.daily).toHaveLength(daysElapsed)
+        expect(res.body.data.organizationDaily).toHaveLength(daysElapsed)
         expect(res.body.data.recentRequests.length).toBeGreaterThanOrEqual(2)
         expect(res.body.data.recentRequests[0].projectName).toBeUndefined()
     })

@@ -210,12 +210,23 @@ export const orgUsageByModelSchema = z
     })
     .meta({ id: "OrgUsageByModel" })
 
+export const usageDailyPointSchema = z
+    .object({
+        date: z.string(),
+        requestsUsed: z.number().int(),
+        tokensUsed: z.number().int(),
+        successfulRequests: z.number().int(),
+        failedRequests: z.number().int(),
+    })
+    .meta({ id: "UsageDailyPoint" })
+
 export const organizationUsageSchema = z
     .object({
         plan: usagePlanSnapshotSchema.nullable(),
         period: usagePeriodSchema,
         projects: z.array(orgUsageProjectSchema),
         byModel: z.array(orgUsageByModelSchema),
+        daily: z.array(usageDailyPointSchema),
         recentRequests: z.array(orgRecentRequestSchema),
     })
     .meta({ id: "OrganizationUsage" })
@@ -238,7 +249,11 @@ export const projectUsageSchema = z
         project: projectSchema,
         plan: usagePlanSnapshotSchema.nullable(),
         period: projectUsagePeriodSchema,
+        organizationPeriod: usagePeriodSchema,
         keys: projectUsageKeysSchema,
+        byModel: z.array(orgUsageByModelSchema),
+        daily: z.array(usageDailyPointSchema),
+        organizationDaily: z.array(usageDailyPointSchema),
         recentRequests: z.array(aiRequestSummarySchema),
     })
     .meta({ id: "ProjectUsage" })

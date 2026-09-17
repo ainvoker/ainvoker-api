@@ -6,10 +6,12 @@ import { expireLapsedSubscriptions } from "../billing/limits.js"
 import { isEntitlementUnexpired } from "../billing/period.js"
 import projectsService from "../projects/service.js"
 import {
+    aggregateDailyUsage,
     aggregateOrgUsageByModel,
     aggregateOrgUsageByProject,
     aggregatePeriodUsage,
     aggregateProjectPeriodUsage,
+    aggregateProjectUsageByModel,
     RECENT_REQUESTS_LIMIT,
     startOfUtcMonth,
 } from "./aggregate.js"
@@ -155,7 +157,7 @@ class UsageService {
 
         const periodStart = startOfUtcMonth()
 
-        const [plan, period, projects, byProject, byModel, recentRows] = await Promise.all([
+        const [plan, period, projects, byProject, byModel, daily, recentRows] = await Promise.all([
             getPlanSnapshot(organizationId),
             aggregatePeriodUsage({ organizationId }, periodStart),
             prismaClient.project.findMany({
@@ -164,6 +166,7 @@ class UsageService {
             }),
             aggregateOrgUsageByProject(organizationId, periodStart),
             aggregateOrgUsageByModel(organizationId, periodStart),
+            aggregateDailyUsage({ organizationId }, periodStart),
             prismaClient.aIRequest.findMany({
                 where: { project: { organizationId } },
                 include: {
@@ -202,6 +205,7 @@ class UsageService {
                         ? Math.min(100, Math.round((row.tokensUsed / tokenLimit) * 1000) / 10)
                         : null,
             })),
+            daily,
             recentRequests: recentRows.map((row) => serializeRequestSummary(row, true)),
         }
     }
@@ -210,13 +214,29 @@ class UsageService {
         const project = await projectsService.getProjectForMember(projectId, userId)
         const periodStart = startOfUtcMonth()
 
-        const [period, keyCounts, recentRows, plan] = await Promise.all([
+        const [
+            period,
+            organizationPeriod,
+            keyCounts,
+            byModel,
+            daily,
+            organizationDaily,
+            recentRows,
+            plan,
+        ] = await Promise.all([
             aggregateProjectPeriodUsage(projectId, periodStart),
+            aggregatePeriodUsage({ organizationId: project.organizationId }, periodStart),
             prismaClient.apiKey.groupBy({
                 by: ["status"],
                 where: { projectId },
                 _count: { _all: true },
             }),
+            aggregateProjectUsageByModel(projectId, periodStart),
+            aggregateDailyUsage({ projectId }, periodStart),
+            aggregateDailyUsage(
+                { organizationId: project.organizationId },
+                periodStart,
+            ),
             prismaClient.aIRequest.findMany({
                 where: { projectId },
                 include: requestInclude,
@@ -235,6 +255,8 @@ class UsageService {
             }
         }
 
+        const tokenLimit = plan?.tokenLimit ?? 0
+
         return {
             project: {
                 id: project.id,
@@ -251,10 +273,23 @@ class UsageService {
                 ...serializePeriod(period),
                 avgLatency: period.avgLatency,
             },
+            organizationPeriod: serializePeriod(organizationPeriod),
             keys: {
                 total: totalKeys,
                 active: activeKeys,
             },
+            byModel: byModel.map((row) => ({
+                modelId: row.modelId,
+                model: row.model,
+                requestsUsed: row.requestsUsed,
+                tokensUsed: row.tokensUsed,
+                percentOfTokenQuota:
+                    tokenLimit > 0
+                        ? Math.min(100, Math.round((row.tokensUsed / tokenLimit) * 1000) / 10)
+                        : null,
+            })),
+            daily,
+            organizationDaily,
             recentRequests: recentRows.map((row) => serializeRequestSummary(row, false)),
         }
     }

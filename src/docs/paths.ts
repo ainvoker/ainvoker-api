@@ -289,7 +289,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         tags: ["Usage"],
         summary: "Get organization usage dashboard",
         description:
-            "Returns plan snapshot (null-safe), current UTC-month usage, per-project and per-model breakdown, and recent AI requests across the organization.",
+            "Returns plan snapshot (null-safe), current UTC-month usage, per-project and per-model breakdown, daily UTC series, and recent AI requests across the organization.",
         security: bearerAuth,
         request: { params: orgIdParamsSchema },
         responses: {
@@ -646,7 +646,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         tags: ["Usage"],
         summary: "Get project usage overview",
         description:
-            "Returns current UTC-month usage for the project, API key counts, plan snapshot for the parent organization, and recent AI requests.",
+            "Returns current UTC-month usage for the project, workspace period totals, per-model breakdown, daily UTC series, API key counts, plan snapshot for the parent organization, and recent AI requests.",
         security: bearerAuth,
         request: {
             params: projectIdParamsSchema,

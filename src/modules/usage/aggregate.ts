@@ -1,4 +1,4 @@
-import type { Prisma } from "../../generated/prisma/client.js"
+import { Prisma, type Prisma as PrismaTypes } from "../../generated/prisma/client.js"
 import prismaClient from "../../platform/prisma.js"
 
 export const RECENT_REQUESTS_LIMIT = 10
@@ -18,15 +18,61 @@ export type ProjectPeriodUsage = PeriodUsage & {
     avgLatency: number | null
 }
 
+export type UsageDailyPoint = {
+    date: string
+    requestsUsed: number
+    tokensUsed: number
+    successfulRequests: number
+    failedRequests: number
+}
+
 export function startOfUtcMonth(now = new Date()): Date {
     return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0))
+}
+
+function startOfUtcDay(now = new Date()): Date {
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0))
+}
+
+function formatUtcDate(date: Date): string {
+    return date.toISOString().slice(0, 10)
+}
+
+function nextUtcDay(date: Date): Date {
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 0, 0, 0, 0))
+}
+
+/** Fill every UTC day from period start through today (inclusive); zeros for quiet days. */
+export function fillDailySeries(
+    periodStart: Date,
+    buckets: Map<string, Omit<UsageDailyPoint, "date">>,
+    now = new Date(),
+): UsageDailyPoint[] {
+    const end = startOfUtcDay(now)
+    const points: UsageDailyPoint[] = []
+    let cursor = startOfUtcDay(periodStart)
+
+    while (cursor.getTime() <= end.getTime()) {
+        const date = formatUtcDate(cursor)
+        const bucket = buckets.get(date)
+        points.push({
+            date,
+            requestsUsed: bucket?.requestsUsed ?? 0,
+            tokensUsed: bucket?.tokensUsed ?? 0,
+            successfulRequests: bucket?.successfulRequests ?? 0,
+            failedRequests: bucket?.failedRequests ?? 0,
+        })
+        cursor = nextUtcDay(cursor)
+    }
+
+    return points
 }
 
 function periodWhere(
     scope: { organizationId: string } | { projectId: string },
     periodStart: Date,
-): Prisma.AIRequestWhereInput {
-    const base: Prisma.AIRequestWhereInput =
+): PrismaTypes.AIRequestWhereInput {
+    const base: PrismaTypes.AIRequestWhereInput =
         "organizationId" in scope
             ? { project: { organizationId: scope.organizationId } }
             : { projectId: scope.projectId }
@@ -130,6 +176,25 @@ export type ModelUsageRow = {
     tokensUsed: number
 }
 
+async function resolveModelLabels(rows: { modelId: number }[]): Promise<Map<number, string>> {
+    if (rows.length === 0) {
+        return new Map()
+    }
+
+    const models = await prismaClient.aIModel.findMany({
+        where: { id: { in: rows.map((row) => row.modelId) } },
+        select: {
+            id: true,
+            name: true,
+            provider: { select: { name: true } },
+        },
+    })
+
+    return new Map(
+        models.map((m) => [m.id, `${m.provider.name}/${m.name}`] as const),
+    )
+}
+
 /** Per-model request/token totals for the billing period (quota statuses only). */
 export async function aggregateOrgUsageByModel(
     organizationId: string,
@@ -151,23 +216,107 @@ export async function aggregateOrgUsageByModel(
         return []
     }
 
-    const models = await prismaClient.aIModel.findMany({
-        where: { id: { in: rows.map((row) => row.modelId) } },
-        select: {
-            id: true,
-            name: true,
-            provider: { select: { name: true } },
-        },
-    })
-    const modelById = new Map(models.map((m) => [m.id, m]))
+    const modelById = await resolveModelLabels(rows)
 
-    return rows.map((row) => {
-        const model = modelById.get(row.modelId)
-        return {
-            modelId: row.modelId,
-            model: model ? `${model.provider.name}/${model.name}` : `model:${row.modelId}`,
-            requestsUsed: row._count._all,
-            tokensUsed: row._sum.totalTokens ?? 0,
-        }
+    return rows.map((row) => ({
+        modelId: row.modelId,
+        model: modelById.get(row.modelId) ?? `model:${row.modelId}`,
+        requestsUsed: row._count._all,
+        tokensUsed: row._sum.totalTokens ?? 0,
+    }))
+}
+
+/** Per-model request/token totals for a single project in the billing period. */
+export async function aggregateProjectUsageByModel(
+    projectId: string,
+    periodStart = startOfUtcMonth(),
+): Promise<ModelUsageRow[]> {
+    const rows = await prismaClient.aIRequest.groupBy({
+        by: ["modelId"],
+        where: {
+            projectId,
+            createdAt: { gte: periodStart },
+            requestStatus: { in: [...QUOTA_STATUSES] },
+        },
+        _count: { _all: true },
+        _sum: { totalTokens: true },
+        orderBy: { _sum: { totalTokens: "desc" } },
     })
+
+    if (rows.length === 0) {
+        return []
+    }
+
+    const modelById = await resolveModelLabels(rows)
+
+    return rows.map((row) => ({
+        modelId: row.modelId,
+        model: modelById.get(row.modelId) ?? `model:${row.modelId}`,
+        requestsUsed: row._count._all,
+        tokensUsed: row._sum.totalTokens ?? 0,
+    }))
+}
+
+type DailyRawRow = {
+    day: string
+    requests_used: bigint | number
+    tokens_used: bigint | number
+    successful_requests: bigint | number
+    failed_requests: bigint | number
+}
+
+function toInt(value: bigint | number | null | undefined): number {
+    if (value == null) return 0
+    return typeof value === "bigint" ? Number(value) : value
+}
+
+/**
+ * UTC-day buckets for the billing period through today.
+ * Quota statuses for requests/tokens; success/fail use SUCCESS vs FAILED|REJECTED.
+ */
+export async function aggregateDailyUsage(
+    scope: { organizationId: string } | { projectId: string },
+    periodStart = startOfUtcMonth(),
+    now = new Date(),
+): Promise<UsageDailyPoint[]> {
+    const scopeFilter =
+        "organizationId" in scope
+            ? Prisma.sql`p."organizationId" = ${scope.organizationId}`
+            : Prisma.sql`r."projectId" = ${scope.projectId}`
+
+    const rows = await prismaClient.$queryRaw<DailyRawRow[]>`
+        SELECT
+            to_char(
+                date_trunc('day', r."createdAt" AT TIME ZONE 'UTC'),
+                'YYYY-MM-DD'
+            ) AS day,
+            COUNT(*) FILTER (
+                WHERE r."requestStatus" IN ('PENDING', 'SUCCESS', 'FAILED')
+            )::bigint AS requests_used,
+            COALESCE(SUM(r."totalTokens") FILTER (
+                WHERE r."requestStatus" IN ('PENDING', 'SUCCESS', 'FAILED')
+            ), 0)::bigint AS tokens_used,
+            COUNT(*) FILTER (WHERE r."requestStatus" = 'SUCCESS')::bigint AS successful_requests,
+            COUNT(*) FILTER (
+                WHERE r."requestStatus" IN ('FAILED', 'REJECTED')
+            )::bigint AS failed_requests
+        FROM "AIRequest" r
+        INNER JOIN "Project" p ON p.id = r."projectId"
+        WHERE ${scopeFilter}
+          AND r."createdAt" >= ${periodStart}
+        GROUP BY 1
+        ORDER BY 1 ASC
+    `
+
+    const buckets = new Map<string, Omit<UsageDailyPoint, "date">>()
+    for (const row of rows) {
+        buckets.set(row.day, {
+            requestsUsed: toInt(row.requests_used),
+            tokensUsed: toInt(row.tokens_used),
+            successfulRequests: toInt(row.successful_requests),
+            failedRequests: toInt(row.failed_requests),
+        })
+    }
+
+    return fillDailySeries(periodStart, buckets, now)
 }
