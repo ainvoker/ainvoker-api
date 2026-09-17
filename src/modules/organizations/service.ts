@@ -237,15 +237,41 @@ class OrganizationService {
     }
 
     private serializeListItem(organization: OrganizationRow, role: string) {
+        const isPersonal = isPersonalOrganizationSlug(organization.slug)
         return {
             id: organization.id,
             name: organization.name,
             slug: organization.slug,
             status: organization.status,
             role,
+            isPersonal,
+            permissions: {
+                canEdit: WORKSPACE_EDITOR_ROLES.has(role) && !isPersonal,
+                canDelete: role === "owner" && !isPersonal,
+            },
             createdAt: organization.createdAt,
             updatedAt: organization.updatedAt,
         }
+    }
+
+    async getOrganization(organizationId: string, userId: string) {
+        await this.ensureUserAndPersonalOrg(userId)
+
+        const membership = await prismaClient.organizationMember.findUnique({
+            where: {
+                organizationId_userId: { organizationId, userId },
+            },
+            include: {
+                role: true,
+                organization: true,
+            },
+        })
+
+        if (!membership || membership.organization.status === "DELETED") {
+            throw new AppError(404, "NOT_FOUND", "Organization not found")
+        }
+
+        return this.serializeListItem(membership.organization, membership.role.name)
     }
 
     private async allocateUniqueSlug(baseSlug: string) {

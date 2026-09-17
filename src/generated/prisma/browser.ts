@@ -38,6 +38,11 @@ export type Organization = Prisma.OrganizationModel
  */
 export type OrganizationMember = Prisma.OrganizationMemberModel
 /**
+ * Model OrganizationInvite
+ * 
+ */
+export type OrganizationInvite = Prisma.OrganizationInviteModel
+/**
  * Model Project
  * 
  */

@@ -83,7 +83,13 @@ function requestsForDay(day: Date, weight: number): number {
     // Ramp through Q4 so Oct/Nov look busier than early Sep
     const monthBoost = month === 8 ? 0.85 : month === 9 ? 1.1 : 1.35
     const wobble = 0.55 + hash01(`${day.toISOString().slice(0, 10)}:vol`) * 0.9
-    return Math.max(1, Math.round(base * monthBoost * weight * wobble))
+    // Climb Sep 1 → 17 so the current-month cumulative chart is visibly rising
+    let septRamp = 1
+    if (month === 8) {
+        const d = day.getUTCDate()
+        septRamp = 1.4 + ((Math.min(d, 17) - 1) / 16) * 3.2
+    }
+    return Math.max(1, Math.round(base * monthBoost * weight * wobble * septRamp))
 }
 
 async function resolveOrganizationId(): Promise<string | null> {
@@ -230,10 +236,10 @@ function buildRows(args: {
                 ),
             )
 
-            const inputTokens = 80 + Math.floor(hash01(`${key}:in`) * 420)
+            const inputTokens = 250 + Math.floor(hash01(`${key}:in`) * 620)
             const outputTokens = failed
                 ? 0
-                : 40 + Math.floor(hash01(`${key}:out`) * 380)
+                : 160 + Math.floor(hash01(`${key}:out`) * 540)
             const totalTokens = inputTokens + outputTokens
             const latency = failed
                 ? null

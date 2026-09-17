@@ -147,3 +147,13 @@ export const ThemePreference = {
 } as const
 
 export type ThemePreference = (typeof ThemePreference)[keyof typeof ThemePreference]
+
+
+export const OrganizationInviteStatus = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REVOKED: 'REVOKED',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type OrganizationInviteStatus = (typeof OrganizationInviteStatus)[keyof typeof OrganizationInviteStatus]

@@ -60,6 +60,11 @@ export const organizationListItemSchema = z
         slug: z.string(),
         status: z.string(),
         role: z.string(),
+        isPersonal: z.boolean(),
+        permissions: z.object({
+            canEdit: z.boolean(),
+            canDelete: z.boolean(),
+        }),
         createdAt: z.string(),
         updatedAt: z.string(),
     })
@@ -293,3 +298,57 @@ export const textChatResponseSchema = z
         usage: chatUsageSchema.nullable(),
     })
     .meta({ id: "TextChatResponse" })
+
+export const memberUserSchema = z
+    .object({
+        id: z.string(),
+        email: z.string().nullable(),
+        firstName: z.string().nullable(),
+        lastName: z.string().nullable(),
+        profilePicture: z.string().nullable(),
+    })
+    .meta({ id: "MemberUser" })
+
+export const memberListItemSchema = z
+    .object({
+        id: z.string(),
+        role: z.enum(["owner", "admin", "member"]),
+        createdAt: z.string(),
+        user: memberUserSchema,
+    })
+    .meta({ id: "MemberListItem" })
+
+export const inviteItemSchema = z
+    .object({
+        id: z.string(),
+        email: z.string(),
+        role: z.enum(["admin", "member"]),
+        status: z.enum(["PENDING", "ACCEPTED", "REVOKED", "EXPIRED"]),
+        expiresAt: z.string(),
+        createdAt: z.string(),
+        invitedBy: memberUserSchema,
+        acceptUrl: z.string().optional(),
+        token: z.string().optional(),
+    })
+    .meta({ id: "InviteItem" })
+
+export const invitePreviewSchema = z
+    .object({
+        organizationName: z.string(),
+        role: z.enum(["admin", "member"]),
+        email: z.string(),
+        expiresAt: z.string(),
+        status: z.enum(["PENDING", "ACCEPTED", "REVOKED", "EXPIRED"]),
+    })
+    .meta({ id: "InvitePreview" })
+
+export const acceptInviteResponseSchema = z
+    .object({
+        membership: memberListItemSchema,
+        organization: z.object({
+            id: z.string(),
+            name: z.string(),
+            slug: z.string(),
+        }),
+    })
+    .meta({ id: "AcceptInviteResponse" })

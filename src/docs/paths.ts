@@ -1,10 +1,12 @@
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi"
 import { z } from "zod"
 import {
+    acceptInviteSchema,
     allowedOriginParamsSchema,
     apiKeyParamsSchema,
     createAllowedOriginSchema,
     createApiKeySchema,
+    createInviteSchema,
     projectIdParamsSchema,
     orgIdParamsSchema,
     createOrganizationSchema,
@@ -21,8 +23,14 @@ import {
     textChatSchema,
     aiRequestParamsSchema,
     listAiRequestsQuerySchema,
+    inviteIdParamsSchema,
+    memberIdParamsSchema,
+    previewInviteQuerySchema,
+    transferOwnershipSchema,
+    updateMemberRoleSchema,
 } from "./schemas.js"
 import {
+    acceptInviteResponseSchema,
     allowedOriginSchema,
     apiKeySchema,
     aiRequestDetailSchema,
@@ -32,7 +40,10 @@ import {
     deletedResponseSchema,
     errorResponseSchema,
     healthSchema,
+    inviteItemSchema,
+    invitePreviewSchema,
     meResponseSchema,
+    memberListItemSchema,
     organizationListItemSchema,
     organizationUsageSchema,
     projectSchema,
@@ -195,6 +206,26 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         responses: {
             201: {
                 description: "Created organization (caller is owner)",
+                content: {
+                    "application/json": { schema: dataEnvelope(organizationListItemSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/organizations/{orgId}",
+        tags: ["Organizations"],
+        summary: "Get an organization",
+        description:
+            "Return a workspace the caller belongs to, including isPersonal and edit/delete permissions.",
+        security: bearerAuth,
+        request: { params: orgIdParamsSchema },
+        responses: {
+            200: {
+                description: "Organization with the caller's role and permissions",
                 content: {
                     "application/json": { schema: dataEnvelope(organizationListItemSchema) },
                 },
@@ -745,6 +776,242 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             501: {
                 description: "Provider adapter not implemented",
                 content: { "application/json": { schema: errorResponseSchema } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/organizations/{orgId}/members",
+        tags: ["Members"],
+        summary: "List organization members",
+        security: bearerAuth,
+        request: { params: orgIdParamsSchema },
+        responses: {
+            200: {
+                description: "Member list",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(z.array(memberListItemSchema)),
+                    },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/organizations/{orgId}/invites",
+        tags: ["Members"],
+        summary: "Create an organization invite",
+        description:
+            "Owner/admin only. Returns the invite plus a one-time token and acceptUrl. No email is sent.",
+        security: bearerAuth,
+        request: {
+            params: orgIdParamsSchema,
+            body: {
+                required: true,
+                content: { "application/json": { schema: createInviteSchema } },
+            },
+        },
+        responses: {
+            201: {
+                description: "Invite created with plaintext token",
+                content: {
+                    "application/json": { schema: dataEnvelope(inviteItemSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/organizations/{orgId}/invites",
+        tags: ["Members"],
+        summary: "List pending invites",
+        security: bearerAuth,
+        request: { params: orgIdParamsSchema },
+        responses: {
+            200: {
+                description: "Pending invites",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(z.array(inviteItemSchema)),
+                    },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "delete",
+        path: "/api/v1/organizations/{orgId}/invites/{inviteId}",
+        tags: ["Members"],
+        summary: "Revoke a pending invite",
+        security: bearerAuth,
+        request: { params: inviteIdParamsSchema },
+        responses: {
+            200: {
+                description: "Invite revoked",
+                content: {
+                    "application/json": { schema: dataEnvelope(deletedResponseSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/organizations/{orgId}/invites/{inviteId}/resend",
+        tags: ["Members"],
+        summary: "Rotate invite token",
+        description: "Owner/admin only. Issues a new token and acceptUrl without sending email.",
+        security: bearerAuth,
+        request: { params: inviteIdParamsSchema },
+        responses: {
+            200: {
+                description: "Invite resent with new token",
+                content: {
+                    "application/json": { schema: dataEnvelope(inviteItemSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "patch",
+        path: "/api/v1/organizations/{orgId}/members/{memberId}",
+        tags: ["Members"],
+        summary: "Update a member role",
+        description:
+            "Owner/admin can set admin/member. Promoting to owner transfers ownership (owner only).",
+        security: bearerAuth,
+        request: {
+            params: memberIdParamsSchema,
+            body: {
+                required: true,
+                content: { "application/json": { schema: updateMemberRoleSchema } },
+            },
+        },
+        responses: {
+            200: {
+                description: "Updated member",
+                content: {
+                    "application/json": { schema: dataEnvelope(memberListItemSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "delete",
+        path: "/api/v1/organizations/{orgId}/members/{memberId}",
+        tags: ["Members"],
+        summary: "Remove a member",
+        security: bearerAuth,
+        request: { params: memberIdParamsSchema },
+        responses: {
+            200: {
+                description: "Member removed",
+                content: {
+                    "application/json": { schema: dataEnvelope(deletedResponseSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/organizations/{orgId}/transfer-ownership",
+        tags: ["Members"],
+        summary: "Transfer workspace ownership",
+        security: bearerAuth,
+        request: {
+            params: orgIdParamsSchema,
+            body: {
+                required: true,
+                content: { "application/json": { schema: transferOwnershipSchema } },
+            },
+        },
+        responses: {
+            200: {
+                description: "New owner membership",
+                content: {
+                    "application/json": { schema: dataEnvelope(memberListItemSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/organizations/{orgId}/leave",
+        tags: ["Members"],
+        summary: "Leave the organization",
+        security: bearerAuth,
+        request: { params: orgIdParamsSchema },
+        responses: {
+            200: {
+                description: "Left the organization",
+                content: {
+                    "application/json": { schema: dataEnvelope(deletedResponseSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/invites/accept",
+        tags: ["Members"],
+        summary: "Accept an organization invite",
+        security: bearerAuth,
+        request: {
+            body: {
+                required: true,
+                content: { "application/json": { schema: acceptInviteSchema } },
+            },
+        },
+        responses: {
+            200: {
+                description: "Membership created",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(acceptInviteResponseSchema),
+                    },
+                },
+            },
+            410: {
+                description: "Invite expired",
+                content: { "application/json": { schema: errorResponseSchema } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/invites/preview",
+        tags: ["Members"],
+        summary: "Preview an invite by token",
+        description: "Public endpoint; token is the capability. Returns org name, role, email, expiry.",
+        request: { query: previewInviteQuerySchema },
+        responses: {
+            200: {
+                description: "Invite preview",
+                content: {
+                    "application/json": { schema: dataEnvelope(invitePreviewSchema) },
+                },
             },
             ...errorResponses,
         },

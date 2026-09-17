@@ -248,6 +248,7 @@ export type OrganizationWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   createdBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   members?: Prisma.OrganizationMemberListRelationFilter
+  invites?: Prisma.OrganizationInviteListRelationFilter
   projects?: Prisma.ProjectListRelationFilter
   subscriptions?: Prisma.SubscriptionListRelationFilter
 }
@@ -268,6 +269,7 @@ export type OrganizationOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   createdBy?: Prisma.UserOrderByWithRelationInput
   members?: Prisma.OrganizationMemberOrderByRelationAggregateInput
+  invites?: Prisma.OrganizationInviteOrderByRelationAggregateInput
   projects?: Prisma.ProjectOrderByRelationAggregateInput
   subscriptions?: Prisma.SubscriptionOrderByRelationAggregateInput
 }
@@ -291,6 +293,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   createdBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   members?: Prisma.OrganizationMemberListRelationFilter
+  invites?: Prisma.OrganizationInviteListRelationFilter
   projects?: Prisma.ProjectListRelationFilter
   subscriptions?: Prisma.SubscriptionListRelationFilter
 }, "id" | "slug">
@@ -348,6 +351,7 @@ export type OrganizationCreateInput = {
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
   members?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
+  invites?: Prisma.OrganizationInviteCreateNestedManyWithoutOrganizationInput
   projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
   subscriptions?: Prisma.SubscriptionCreateNestedManyWithoutOrganizationInput
 }
@@ -367,6 +371,7 @@ export type OrganizationUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
+  invites?: Prisma.OrganizationInviteUncheckedCreateNestedManyWithoutOrganizationInput
   projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
   subscriptions?: Prisma.SubscriptionUncheckedCreateNestedManyWithoutOrganizationInput
 }
@@ -386,6 +391,7 @@ export type OrganizationUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
   members?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
+  invites?: Prisma.OrganizationInviteUpdateManyWithoutOrganizationNestedInput
   projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
   subscriptions?: Prisma.SubscriptionUpdateManyWithoutOrganizationNestedInput
 }
@@ -405,6 +411,7 @@ export type OrganizationUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
+  invites?: Prisma.OrganizationInviteUncheckedUpdateManyWithoutOrganizationNestedInput
   projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
   subscriptions?: Prisma.SubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput
 }
@@ -579,6 +586,20 @@ export type OrganizationUpdateOneRequiredWithoutMembersNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutMembersInput, Prisma.OrganizationUpdateWithoutMembersInput>, Prisma.OrganizationUncheckedUpdateWithoutMembersInput>
 }
 
+export type OrganizationCreateNestedOneWithoutInvitesInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutInvitesInput, Prisma.OrganizationUncheckedCreateWithoutInvitesInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutInvitesInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+}
+
+export type OrganizationUpdateOneRequiredWithoutInvitesNestedInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutInvitesInput, Prisma.OrganizationUncheckedCreateWithoutInvitesInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutInvitesInput
+  upsert?: Prisma.OrganizationUpsertWithoutInvitesInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutInvitesInput, Prisma.OrganizationUpdateWithoutInvitesInput>, Prisma.OrganizationUncheckedUpdateWithoutInvitesInput>
+}
+
 export type OrganizationCreateNestedOneWithoutProjectsInput = {
   create?: Prisma.XOR<Prisma.OrganizationCreateWithoutProjectsInput, Prisma.OrganizationUncheckedCreateWithoutProjectsInput>
   connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutProjectsInput
@@ -621,6 +642,7 @@ export type OrganizationCreateWithoutCreatedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
+  invites?: Prisma.OrganizationInviteCreateNestedManyWithoutOrganizationInput
   projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
   subscriptions?: Prisma.SubscriptionCreateNestedManyWithoutOrganizationInput
 }
@@ -639,6 +661,7 @@ export type OrganizationUncheckedCreateWithoutCreatedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
+  invites?: Prisma.OrganizationInviteUncheckedCreateNestedManyWithoutOrganizationInput
   projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
   subscriptions?: Prisma.SubscriptionUncheckedCreateNestedManyWithoutOrganizationInput
 }
@@ -702,6 +725,7 @@ export type OrganizationCreateWithoutMembersInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
+  invites?: Prisma.OrganizationInviteCreateNestedManyWithoutOrganizationInput
   projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
   subscriptions?: Prisma.SubscriptionCreateNestedManyWithoutOrganizationInput
 }
@@ -720,6 +744,7 @@ export type OrganizationUncheckedCreateWithoutMembersInput = {
   paymentMethodLast4?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  invites?: Prisma.OrganizationInviteUncheckedCreateNestedManyWithoutOrganizationInput
   projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
   subscriptions?: Prisma.SubscriptionUncheckedCreateNestedManyWithoutOrganizationInput
 }
@@ -754,6 +779,7 @@ export type OrganizationUpdateWithoutMembersInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
+  invites?: Prisma.OrganizationInviteUpdateManyWithoutOrganizationNestedInput
   projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
   subscriptions?: Prisma.SubscriptionUpdateManyWithoutOrganizationNestedInput
 }
@@ -772,6 +798,99 @@ export type OrganizationUncheckedUpdateWithoutMembersInput = {
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  invites?: Prisma.OrganizationInviteUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  subscriptions?: Prisma.SubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationCreateWithoutInvitesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.OrganizationStatus
+  xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
+  xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
+  members?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  subscriptions?: Prisma.SubscriptionCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationUncheckedCreateWithoutInvitesInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.OrganizationStatus
+  createdByUserId?: string | null
+  xenditCustomerReference?: string | null
+  xenditCustomerId?: string | null
+  xenditPaymentTokenId?: string | null
+  paymentMethodType?: string | null
+  paymentMethodBrand?: string | null
+  paymentMethodLast4?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  subscriptions?: Prisma.SubscriptionUncheckedCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationCreateOrConnectWithoutInvitesInput = {
+  where: Prisma.OrganizationWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutInvitesInput, Prisma.OrganizationUncheckedCreateWithoutInvitesInput>
+}
+
+export type OrganizationUpsertWithoutInvitesInput = {
+  update: Prisma.XOR<Prisma.OrganizationUpdateWithoutInvitesInput, Prisma.OrganizationUncheckedUpdateWithoutInvitesInput>
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutInvitesInput, Prisma.OrganizationUncheckedCreateWithoutInvitesInput>
+  where?: Prisma.OrganizationWhereInput
+}
+
+export type OrganizationUpdateToOneWithWhereWithoutInvitesInput = {
+  where?: Prisma.OrganizationWhereInput
+  data: Prisma.XOR<Prisma.OrganizationUpdateWithoutInvitesInput, Prisma.OrganizationUncheckedUpdateWithoutInvitesInput>
+}
+
+export type OrganizationUpdateWithoutInvitesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
+  xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
+  members?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  subscriptions?: Prisma.SubscriptionUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationUncheckedUpdateWithoutInvitesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumOrganizationStatusFieldUpdateOperationsInput | $Enums.OrganizationStatus
+  createdByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  xenditPaymentTokenId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
   projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
   subscriptions?: Prisma.SubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput
 }
@@ -791,6 +910,7 @@ export type OrganizationCreateWithoutProjectsInput = {
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
   members?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
+  invites?: Prisma.OrganizationInviteCreateNestedManyWithoutOrganizationInput
   subscriptions?: Prisma.SubscriptionCreateNestedManyWithoutOrganizationInput
 }
 
@@ -809,6 +929,7 @@ export type OrganizationUncheckedCreateWithoutProjectsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
+  invites?: Prisma.OrganizationInviteUncheckedCreateNestedManyWithoutOrganizationInput
   subscriptions?: Prisma.SubscriptionUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
@@ -843,6 +964,7 @@ export type OrganizationUpdateWithoutProjectsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
   members?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
+  invites?: Prisma.OrganizationInviteUpdateManyWithoutOrganizationNestedInput
   subscriptions?: Prisma.SubscriptionUpdateManyWithoutOrganizationNestedInput
 }
 
@@ -861,6 +983,7 @@ export type OrganizationUncheckedUpdateWithoutProjectsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
+  invites?: Prisma.OrganizationInviteUncheckedUpdateManyWithoutOrganizationNestedInput
   subscriptions?: Prisma.SubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
@@ -879,6 +1002,7 @@ export type OrganizationCreateWithoutSubscriptionsInput = {
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
   members?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
+  invites?: Prisma.OrganizationInviteCreateNestedManyWithoutOrganizationInput
   projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
 }
 
@@ -897,6 +1021,7 @@ export type OrganizationUncheckedCreateWithoutSubscriptionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
+  invites?: Prisma.OrganizationInviteUncheckedCreateNestedManyWithoutOrganizationInput
   projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
@@ -931,6 +1056,7 @@ export type OrganizationUpdateWithoutSubscriptionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
   members?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
+  invites?: Prisma.OrganizationInviteUpdateManyWithoutOrganizationNestedInput
   projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
 }
 
@@ -949,6 +1075,7 @@ export type OrganizationUncheckedUpdateWithoutSubscriptionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
+  invites?: Prisma.OrganizationInviteUncheckedUpdateManyWithoutOrganizationNestedInput
   projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
@@ -981,6 +1108,7 @@ export type OrganizationUpdateWithoutCreatedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
+  invites?: Prisma.OrganizationInviteUpdateManyWithoutOrganizationNestedInput
   projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
   subscriptions?: Prisma.SubscriptionUpdateManyWithoutOrganizationNestedInput
 }
@@ -999,6 +1127,7 @@ export type OrganizationUncheckedUpdateWithoutCreatedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
+  invites?: Prisma.OrganizationInviteUncheckedUpdateManyWithoutOrganizationNestedInput
   projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
   subscriptions?: Prisma.SubscriptionUncheckedUpdateManyWithoutOrganizationNestedInput
 }
@@ -1025,12 +1154,14 @@ export type OrganizationUncheckedUpdateManyWithoutCreatedByInput = {
 
 export type OrganizationCountOutputType = {
   members: number
+  invites: number
   projects: number
   subscriptions: number
 }
 
 export type OrganizationCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   members?: boolean | OrganizationCountOutputTypeCountMembersArgs
+  invites?: boolean | OrganizationCountOutputTypeCountInvitesArgs
   projects?: boolean | OrganizationCountOutputTypeCountProjectsArgs
   subscriptions?: boolean | OrganizationCountOutputTypeCountSubscriptionsArgs
 }
@@ -1050,6 +1181,13 @@ export type OrganizationCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types
  */
 export type OrganizationCountOutputTypeCountMembersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.OrganizationMemberWhereInput
+}
+
+/**
+ * OrganizationCountOutputType without action
+ */
+export type OrganizationCountOutputTypeCountInvitesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.OrganizationInviteWhereInput
 }
 
 /**
@@ -1083,6 +1221,7 @@ export type OrganizationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   updatedAt?: boolean
   createdBy?: boolean | Prisma.Organization$createdByArgs<ExtArgs>
   members?: boolean | Prisma.Organization$membersArgs<ExtArgs>
+  invites?: boolean | Prisma.Organization$invitesArgs<ExtArgs>
   projects?: boolean | Prisma.Organization$projectsArgs<ExtArgs>
   subscriptions?: boolean | Prisma.Organization$subscriptionsArgs<ExtArgs>
   _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>
@@ -1142,6 +1281,7 @@ export type OrganizationOmit<ExtArgs extends runtime.Types.Extensions.InternalAr
 export type OrganizationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.Organization$createdByArgs<ExtArgs>
   members?: boolean | Prisma.Organization$membersArgs<ExtArgs>
+  invites?: boolean | Prisma.Organization$invitesArgs<ExtArgs>
   projects?: boolean | Prisma.Organization$projectsArgs<ExtArgs>
   subscriptions?: boolean | Prisma.Organization$subscriptionsArgs<ExtArgs>
   _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>
@@ -1158,6 +1298,7 @@ export type $OrganizationPayload<ExtArgs extends runtime.Types.Extensions.Intern
   objects: {
     createdBy: Prisma.$UserPayload<ExtArgs> | null
     members: Prisma.$OrganizationMemberPayload<ExtArgs>[]
+    invites: Prisma.$OrganizationInvitePayload<ExtArgs>[]
     projects: Prisma.$ProjectPayload<ExtArgs>[]
     subscriptions: Prisma.$SubscriptionPayload<ExtArgs>[]
   }
@@ -1574,6 +1715,7 @@ export interface Prisma__OrganizationClient<T, Null = never, ExtArgs extends run
   readonly [Symbol.toStringTag]: "PrismaPromise"
   createdBy<T extends Prisma.Organization$createdByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$createdByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   members<T extends Prisma.Organization$membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrganizationMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  invites<T extends Prisma.Organization$invitesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$invitesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrganizationInvitePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   projects<T extends Prisma.Organization$projectsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$projectsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProjectPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   subscriptions<T extends Prisma.Organization$subscriptionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$subscriptionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SubscriptionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -2059,6 +2201,30 @@ export type Organization$membersArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.OrganizationMemberScalarFieldEnum | Prisma.OrganizationMemberScalarFieldEnum[]
+}
+
+/**
+ * Organization.invites
+ */
+export type Organization$invitesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the OrganizationInvite
+   */
+  select?: Prisma.OrganizationInviteSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the OrganizationInvite
+   */
+  omit?: Prisma.OrganizationInviteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OrganizationInviteInclude<ExtArgs> | null
+  where?: Prisma.OrganizationInviteWhereInput
+  orderBy?: Prisma.OrganizationInviteOrderByWithRelationInput | Prisma.OrganizationInviteOrderByWithRelationInput[]
+  cursor?: Prisma.OrganizationInviteWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.OrganizationInviteScalarFieldEnum | Prisma.OrganizationInviteScalarFieldEnum[]
 }
 
 /**

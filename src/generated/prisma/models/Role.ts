@@ -193,12 +193,14 @@ export type RoleWhereInput = {
   id?: Prisma.IntFilter<"Role"> | number
   name?: Prisma.StringFilter<"Role"> | string
   members?: Prisma.OrganizationMemberListRelationFilter
+  invites?: Prisma.OrganizationInviteListRelationFilter
 }
 
 export type RoleOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   members?: Prisma.OrganizationMemberOrderByRelationAggregateInput
+  invites?: Prisma.OrganizationInviteOrderByRelationAggregateInput
 }
 
 export type RoleWhereUniqueInput = Prisma.AtLeast<{
@@ -208,6 +210,7 @@ export type RoleWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.RoleWhereInput[]
   NOT?: Prisma.RoleWhereInput | Prisma.RoleWhereInput[]
   members?: Prisma.OrganizationMemberListRelationFilter
+  invites?: Prisma.OrganizationInviteListRelationFilter
 }, "id" | "name">
 
 export type RoleOrderByWithAggregationInput = {
@@ -231,23 +234,27 @@ export type RoleScalarWhereWithAggregatesInput = {
 export type RoleCreateInput = {
   name: string
   members?: Prisma.OrganizationMemberCreateNestedManyWithoutRoleInput
+  invites?: Prisma.OrganizationInviteCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUncheckedCreateInput = {
   id?: number
   name: string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutRoleInput
+  invites?: Prisma.OrganizationInviteUncheckedCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   members?: Prisma.OrganizationMemberUpdateManyWithoutRoleNestedInput
+  invites?: Prisma.OrganizationInviteUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   name?: Prisma.StringFieldUpdateOperationsInput | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutRoleNestedInput
+  invites?: Prisma.OrganizationInviteUncheckedUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleCreateManyInput = {
@@ -314,13 +321,29 @@ export type RoleUpdateOneRequiredWithoutMembersNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.RoleUpdateToOneWithWhereWithoutMembersInput, Prisma.RoleUpdateWithoutMembersInput>, Prisma.RoleUncheckedUpdateWithoutMembersInput>
 }
 
+export type RoleCreateNestedOneWithoutInvitesInput = {
+  create?: Prisma.XOR<Prisma.RoleCreateWithoutInvitesInput, Prisma.RoleUncheckedCreateWithoutInvitesInput>
+  connectOrCreate?: Prisma.RoleCreateOrConnectWithoutInvitesInput
+  connect?: Prisma.RoleWhereUniqueInput
+}
+
+export type RoleUpdateOneRequiredWithoutInvitesNestedInput = {
+  create?: Prisma.XOR<Prisma.RoleCreateWithoutInvitesInput, Prisma.RoleUncheckedCreateWithoutInvitesInput>
+  connectOrCreate?: Prisma.RoleCreateOrConnectWithoutInvitesInput
+  upsert?: Prisma.RoleUpsertWithoutInvitesInput
+  connect?: Prisma.RoleWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.RoleUpdateToOneWithWhereWithoutInvitesInput, Prisma.RoleUpdateWithoutInvitesInput>, Prisma.RoleUncheckedUpdateWithoutInvitesInput>
+}
+
 export type RoleCreateWithoutMembersInput = {
   name: string
+  invites?: Prisma.OrganizationInviteCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUncheckedCreateWithoutMembersInput = {
   id?: number
   name: string
+  invites?: Prisma.OrganizationInviteUncheckedCreateNestedManyWithoutRoleInput
 }
 
 export type RoleCreateOrConnectWithoutMembersInput = {
@@ -341,11 +364,51 @@ export type RoleUpdateToOneWithWhereWithoutMembersInput = {
 
 export type RoleUpdateWithoutMembersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  invites?: Prisma.OrganizationInviteUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleUncheckedUpdateWithoutMembersInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   name?: Prisma.StringFieldUpdateOperationsInput | string
+  invites?: Prisma.OrganizationInviteUncheckedUpdateManyWithoutRoleNestedInput
+}
+
+export type RoleCreateWithoutInvitesInput = {
+  name: string
+  members?: Prisma.OrganizationMemberCreateNestedManyWithoutRoleInput
+}
+
+export type RoleUncheckedCreateWithoutInvitesInput = {
+  id?: number
+  name: string
+  members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutRoleInput
+}
+
+export type RoleCreateOrConnectWithoutInvitesInput = {
+  where: Prisma.RoleWhereUniqueInput
+  create: Prisma.XOR<Prisma.RoleCreateWithoutInvitesInput, Prisma.RoleUncheckedCreateWithoutInvitesInput>
+}
+
+export type RoleUpsertWithoutInvitesInput = {
+  update: Prisma.XOR<Prisma.RoleUpdateWithoutInvitesInput, Prisma.RoleUncheckedUpdateWithoutInvitesInput>
+  create: Prisma.XOR<Prisma.RoleCreateWithoutInvitesInput, Prisma.RoleUncheckedCreateWithoutInvitesInput>
+  where?: Prisma.RoleWhereInput
+}
+
+export type RoleUpdateToOneWithWhereWithoutInvitesInput = {
+  where?: Prisma.RoleWhereInput
+  data: Prisma.XOR<Prisma.RoleUpdateWithoutInvitesInput, Prisma.RoleUncheckedUpdateWithoutInvitesInput>
+}
+
+export type RoleUpdateWithoutInvitesInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  members?: Prisma.OrganizationMemberUpdateManyWithoutRoleNestedInput
+}
+
+export type RoleUncheckedUpdateWithoutInvitesInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutRoleNestedInput
 }
 
 
@@ -355,10 +418,12 @@ export type RoleUncheckedUpdateWithoutMembersInput = {
 
 export type RoleCountOutputType = {
   members: number
+  invites: number
 }
 
 export type RoleCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   members?: boolean | RoleCountOutputTypeCountMembersArgs
+  invites?: boolean | RoleCountOutputTypeCountInvitesArgs
 }
 
 /**
@@ -378,11 +443,19 @@ export type RoleCountOutputTypeCountMembersArgs<ExtArgs extends runtime.Types.Ex
   where?: Prisma.OrganizationMemberWhereInput
 }
 
+/**
+ * RoleCountOutputType without action
+ */
+export type RoleCountOutputTypeCountInvitesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.OrganizationInviteWhereInput
+}
+
 
 export type RoleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
   members?: boolean | Prisma.Role$membersArgs<ExtArgs>
+  invites?: boolean | Prisma.Role$invitesArgs<ExtArgs>
   _count?: boolean | Prisma.RoleCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["role"]>
 
@@ -404,6 +477,7 @@ export type RoleSelectScalar = {
 export type RoleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name", ExtArgs["result"]["role"]>
 export type RoleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   members?: boolean | Prisma.Role$membersArgs<ExtArgs>
+  invites?: boolean | Prisma.Role$invitesArgs<ExtArgs>
   _count?: boolean | Prisma.RoleCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type RoleIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -413,6 +487,7 @@ export type $RolePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "Role"
   objects: {
     members: Prisma.$OrganizationMemberPayload<ExtArgs>[]
+    invites: Prisma.$OrganizationInvitePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -812,6 +887,7 @@ readonly fields: RoleFieldRefs;
 export interface Prisma__RoleClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   members<T extends Prisma.Role$membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Role$membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrganizationMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  invites<T extends Prisma.Role$invitesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Role$invitesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrganizationInvitePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1257,6 +1333,30 @@ export type Role$membersArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   distinct?: Prisma.OrganizationMemberScalarFieldEnum | Prisma.OrganizationMemberScalarFieldEnum[]
+}
+
+/**
+ * Role.invites
+ */
+export type Role$invitesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the OrganizationInvite
+   */
+  select?: Prisma.OrganizationInviteSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the OrganizationInvite
+   */
+  omit?: Prisma.OrganizationInviteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OrganizationInviteInclude<ExtArgs> | null
+  where?: Prisma.OrganizationInviteWhereInput
+  orderBy?: Prisma.OrganizationInviteOrderByWithRelationInput | Prisma.OrganizationInviteOrderByWithRelationInput[]
+  cursor?: Prisma.OrganizationInviteWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.OrganizationInviteScalarFieldEnum | Prisma.OrganizationInviteScalarFieldEnum[]
 }
 
 /**

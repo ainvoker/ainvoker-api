@@ -18,6 +18,7 @@ class OrganizationsRoutes extends BaseRoutes {
 
         this.router.get("/", requireSession, this.bind(this.list))
         this.router.post("/", requireSession, this.bind(this.create))
+        this.router.get("/:orgId", requireSession, this.bind(this.get))
         this.router.patch("/:orgId", requireSession, this.bind(this.update))
         this.router.delete("/:orgId", requireSession, this.bind(this.remove))
     }
@@ -33,6 +34,13 @@ class OrganizationsRoutes extends BaseRoutes {
         const body = createOrganizationSchema.parse(req.body)
         const data = await OrganizationsService.createOrganization(auth.userId, body)
         http.ok(res, data, 201)
+    }
+
+    private async get(req: Request, res: Response) {
+        const auth = this.requireAuth(req)
+        const { orgId } = orgIdParamsSchema.parse(req.params)
+        const data = await OrganizationsService.getOrganization(orgId, auth.userId)
+        http.ok(res, data)
     }
 
     private async update(req: Request, res: Response) {

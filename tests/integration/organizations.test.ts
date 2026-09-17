@@ -26,7 +26,69 @@ describe("GET /api/v1/organizations", () => {
             id: authUser.auth.organizationId,
             name: "Personal",
             role: "owner",
+            isPersonal: true,
+            permissions: { canEdit: false, canDelete: false },
         })
+    })
+})
+
+describe("GET /api/v1/organizations/:orgId", () => {
+    const authUser = useTestAuthUser()
+
+    it("returns 401 without Authorization", async () => {
+        const res = await request(app.express).get(
+            `/api/v1/organizations/${authUser.auth.organizationId}`,
+        )
+        expect(res.status).toBe(401)
+        expect(res.body.error.code).toBe("UNAUTHORIZED")
+    })
+
+    it("returns the Personal workspace with locked permissions", async () => {
+        const res = await request(app.express)
+            .get(`/api/v1/organizations/${authUser.auth.organizationId}`)
+            .set(authUser.headers())
+
+        expect(res.status).toBe(200)
+        expect(res.body.data).toMatchObject({
+            id: authUser.auth.organizationId,
+            name: "Personal",
+            role: "owner",
+            isPersonal: true,
+            permissions: { canEdit: false, canDelete: false },
+        })
+    })
+
+    it("returns a non-personal org with edit and delete permissions for owner", async () => {
+        const created = await request(app.express)
+            .post("/api/v1/organizations")
+            .set(authUser.headers())
+            .send({
+                name: `Get Me ${authUser.auth.userId.slice(-6)}`,
+                plan: PLAN_NAMES.pro,
+            })
+        expect(created.status).toBe(201)
+        const orgId = created.body.data.id as string
+
+        const res = await request(app.express)
+            .get(`/api/v1/organizations/${orgId}`)
+            .set(authUser.headers())
+
+        expect(res.status).toBe(200)
+        expect(res.body.data).toMatchObject({
+            id: orgId,
+            role: "owner",
+            isPersonal: false,
+            permissions: { canEdit: true, canDelete: true },
+        })
+    })
+
+    it("returns 404 for an unknown organization", async () => {
+        const res = await request(app.express)
+            .get("/api/v1/organizations/nonexistent-org-id")
+            .set(authUser.headers())
+
+        expect(res.status).toBe(404)
+        expect(res.body.error.code).toBe("NOT_FOUND")
     })
 })
 
@@ -73,6 +135,8 @@ describe("POST /api/v1/organizations", () => {
             slug: "acme-labs",
             role: "owner",
             status: "ACTIVE",
+            isPersonal: false,
+            permissions: { canEdit: true, canDelete: true },
         })
 
         const newSub = await prismaClient.subscription.findFirst({
@@ -250,6 +314,8 @@ describe("PATCH /api/v1/organizations/:orgId", () => {
             name: "Renamed Labs",
             slug: nextSlug,
             role: "owner",
+            isPersonal: false,
+            permissions: { canEdit: true, canDelete: true },
         })
 
         const listed = await request(app.express)

@@ -87,6 +87,9 @@ export async function cleanupTestUser(userId: string) {
                 })
             }
 
+            await prismaClient.organizationInvite.deleteMany({
+                where: { organizationId: { in: orgIds } },
+            })
             await prismaClient.organizationMember.deleteMany({
                 where: { organizationId: { in: orgIds } },
             })

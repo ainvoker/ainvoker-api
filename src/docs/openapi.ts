@@ -53,6 +53,10 @@ export function buildOpenApiDocument() {
             { name: "Usage", description: "Organization and project usage dashboards" },
             { name: "Gateway", description: "Data-plane model invocation (API key auth)" },
             { name: "Billing", description: "Subscriptions and checkout" },
+            {
+                name: "Members",
+                description: "Organization members, invites, roles, and ownership transfer",
+            },
         ],
     })
 }

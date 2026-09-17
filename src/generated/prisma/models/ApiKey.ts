@@ -497,10 +497,6 @@ export type ApiKeyUncheckedUpdateManyWithoutProjectNestedInput = {
   deleteMany?: Prisma.ApiKeyScalarWhereInput | Prisma.ApiKeyScalarWhereInput[]
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type EnumApiKeyStatusFieldUpdateOperationsInput = {
   set?: $Enums.ApiKeyStatus
 }

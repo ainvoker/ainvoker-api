@@ -110,6 +110,13 @@ enum ThemePreference {
   DEVICE
 }
 
+enum OrganizationInviteStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
 model User {
   id              String           @id // Neon Auth user ID
   email           String?          @unique
@@ -121,6 +128,8 @@ model User {
   memberships           OrganizationMember[]
   createdOrganizations  Organization[]       @relation("OrganizationCreator")
   activityLogs          ActivityLog[]
+  invitesCreated        OrganizationInvite[] @relation("InvitesCreated")
+  invitesAccepted       OrganizationInvite[] @relation("InvitesAccepted")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -132,6 +141,7 @@ model Role {
   name String @unique
 
   members OrganizationMember[]
+  invites OrganizationInvite[]
 }
 
 // ── Organization ────────────────────────────────────────────────────────────
@@ -154,6 +164,7 @@ model Organization {
   paymentMethodLast4      String?
 
   members       OrganizationMember[]
+  invites       OrganizationInvite[]
   projects      Project[]
   subscriptions Subscription[]
 
@@ -177,6 +188,30 @@ model OrganizationMember {
 
   @@unique([organizationId, userId])
   @@index([userId])
+}
+
+model OrganizationInvite {
+  id               String                   @id @default(cuid())
+  organizationId   String
+  email            String
+  roleId           Int
+  tokenHash        String                   @unique
+  status           OrganizationInviteStatus @default(PENDING)
+  invitedByUserId  String
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  acceptedByUserId String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role         Role         @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  invitedBy    User         @relation("InvitesCreated", fields: [invitedByUserId], references: [id], onDelete: Restrict)
+  acceptedBy   User?        @relation("InvitesAccepted", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@index([email])
 }
 
 // ── Project ─────────────────────────────────────────────────────────────────
