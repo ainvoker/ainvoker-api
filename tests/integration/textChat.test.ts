@@ -257,6 +257,77 @@ describe("POST /v1/text/chat", () => {
         }
     })
 
+    it("does not exceed monthly request limit under concurrent chats", async () => {
+        await ensureTextCatalog()
+        const openai = await prismaClient.aIProvider.findUniqueOrThrow({
+            where: { name: "openai" },
+        })
+        const model = await prismaClient.aIModel.findUniqueOrThrow({
+            where: {
+                providerId_name: { providerId: openai.id, name: "gpt-4o-mini" },
+            },
+        })
+
+        const apiKey = await prismaClient.apiKey.findFirstOrThrow({
+            where: { projectId },
+        })
+
+        const requestLimit = 3
+        const free = await getPlanByName(PLAN_NAMES.free)
+        await prismaClient.plan.update({
+            where: { id: free.id },
+            data: { requestLimit },
+        })
+
+        // Seed requestLimit - 1 so only one concurrent slot remains.
+        await prismaClient.aIRequest.createMany({
+            data: Array.from({ length: requestLimit - 1 }, () => ({
+                projectId,
+                apiKeyId: apiKey.id,
+                modelId: model.id,
+                serviceType: "TEXT" as const,
+                requestPayload: { model: textCatalogDefaults.modelSlug },
+                requestStatus: "SUCCESS" as const,
+                totalTokens: 1,
+            })),
+        })
+
+        try {
+            const parallel = 5
+            const results = await Promise.all(
+                Array.from({ length: parallel }, () =>
+                    request(app.express)
+                        .post("/v1/text/chat")
+                        .set({ Authorization: `Bearer ${plaintextKey}` })
+                        .send({
+                            model: textCatalogDefaults.modelSlug,
+                            messages: [{ role: "user", content: "Hi" }],
+                        }),
+                ),
+            )
+
+            const successes = results.filter((res) => res.status === 200)
+            const rateLimited = results.filter((res) => res.status === 429)
+
+            expect(successes).toHaveLength(1)
+            expect(rateLimited).toHaveLength(parallel - 1)
+            for (const res of rateLimited) {
+                expect(res.body.error.code).toBe("RATE_LIMIT_EXCEEDED")
+            }
+            expect(fetchSpy).toHaveBeenCalledTimes(1)
+
+            const total = await prismaClient.aIRequest.count({
+                where: { project: { organizationId } },
+            })
+            expect(total).toBe(requestLimit)
+        } finally {
+            await prismaClient.plan.update({
+                where: { id: free.id },
+                data: { requestLimit: 300 },
+            })
+        }
+    })
+
     it("returns 403 when Free plan calls a non-eligible model", async () => {
         await ensureTextCatalog()
         const openai = await prismaClient.aIProvider.findUniqueOrThrow({

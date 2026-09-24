@@ -16,11 +16,15 @@ const {
         },
         subscription: {
             findFirst: vi.fn(),
+            findUnique: vi.fn(),
+            findUniqueOrThrow: vi.fn(),
             findMany: vi.fn(),
             create: vi.fn(),
             update: vi.fn(),
             updateMany: vi.fn(),
         },
+        $queryRaw: vi.fn().mockResolvedValue([{ id: "org_abc" }]),
+        $transaction: vi.fn(),
     },
     createXenditSession: vi.fn(),
     getXenditSession: vi.fn(),
@@ -68,11 +72,29 @@ type OrgRow = {
     xenditCustomerId: string | null
 }
 
+type PendingRow = {
+    id: string
+    organizationId: string
+    planId: string
+    status: "PENDING"
+    xenditSessionId: string | null
+    createdAt: Date
+}
+
 function setupPrisma(
     org: OrgRow,
     pending: { id: string; xenditSessionId: string | null },
     activePro: { id: string; expiresAt: Date | null } | null = null,
 ) {
+    const pendingRow: PendingRow = {
+        id: pending.id,
+        organizationId: org.id,
+        planId: "plan_pro",
+        status: "PENDING",
+        xenditSessionId: pending.xenditSessionId,
+        createdAt: new Date(),
+    }
+
     prisma.user.findUnique.mockResolvedValue({
         id: "user_1",
         email: "a@example.com",
@@ -85,22 +107,55 @@ function setupPrisma(
         Object.assign(org, data)
         return { ...org }
     })
+
     prisma.subscription.findFirst.mockImplementation(
-        async (args: { where?: { status?: string } }) => {
-            if (args.where?.status === "ACTIVE") {
+        async (args: { where?: { status?: string | { in?: string[] } } }) => {
+            const status = args.where?.status
+            if (status === "ACTIVE" || (typeof status === "object" && status?.in?.includes("ACTIVE"))) {
                 return activePro
                     ? { ...activePro, organizationId: org.id, planId: "plan_pro" }
                     : null
             }
-            return {
-                id: pending.id,
-                organizationId: org.id,
-                xenditSessionId: pending.xenditSessionId,
+            if (status === "PENDING") {
+                return { ...pendingRow }
             }
+            return { ...pendingRow }
         },
     )
-    prisma.subscription.update.mockResolvedValue({})
+    prisma.subscription.create.mockImplementation(async () => {
+        pendingRow.xenditSessionId = null
+        return { ...pendingRow }
+    })
+    prisma.subscription.findUnique.mockImplementation(async () => ({
+        xenditSessionId: pendingRow.xenditSessionId,
+    }))
+    prisma.subscription.findUniqueOrThrow.mockImplementation(async () => ({
+        id: pendingRow.id,
+        xenditSessionId: pendingRow.xenditSessionId,
+    }))
+    prisma.subscription.update.mockImplementation(
+        async ({ data }: { data: { xenditSessionId?: string | null } }) => {
+            if ("xenditSessionId" in data) {
+                pendingRow.xenditSessionId = data.xenditSessionId ?? null
+            }
+            return { ...pendingRow }
+        },
+    )
     prisma.subscription.updateMany.mockResolvedValue({ count: 0 })
+
+    // Serialize $transaction callbacks like a row lock (one interactive txn at a time).
+    let txnChain: Promise<unknown> = Promise.resolve()
+    prisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => {
+        const run = txnChain.then(() => fn(prisma))
+        txnChain = run.then(
+            () => undefined,
+            () => undefined,
+        )
+        return run
+    })
+    prisma.$queryRaw.mockResolvedValue([{ id: org.id }])
+
+    return pendingRow
 }
 
 const checkoutInput = {
@@ -325,5 +380,70 @@ describe("createProCheckoutSession", () => {
 
         await BillingService.createProCheckoutSession(checkoutInput)
         expect(createXenditSession).toHaveBeenCalledOnce()
+    })
+
+    it("overlapping checkouts create only one Xendit session", async () => {
+        const org: OrgRow = {
+            id: "org_abc",
+            xenditCustomerReference: "org_org_abc",
+            xenditCustomerId: "cust-existing",
+        }
+        const pendingRow = setupPrisma(org, { id: "sub_1", xenditSessionId: null })
+
+        let releaseCreate!: () => void
+        const createGate = new Promise<void>((resolve) => {
+            releaseCreate = resolve
+        })
+        let secondStarted = false
+        let resolveSecondStarted!: () => void
+        const secondStartedGate = new Promise<void>((resolve) => {
+            resolveSecondStarted = resolve
+        })
+
+        const futureExpires = new Date(Date.now() + 20 * 60 * 1000).toISOString()
+        const futureAnchor = new Date(Date.now() + 30 * 86_400_000).toISOString()
+        getXenditSession.mockImplementation(async (sessionId: string) => {
+            if (sessionId !== "ps_winner") return null
+            return {
+                payment_session_id: "ps_winner",
+                components_sdk_key: "sdk_winner",
+                expires_at: futureExpires,
+                status: "ACTIVE",
+                customer_id: "cust-existing",
+                subscription: {
+                    schedule: {
+                        anchor_date: futureAnchor,
+                    },
+                },
+            }
+        })
+        createXenditSession.mockImplementation(async () => {
+            secondStarted = true
+            resolveSecondStarted()
+            await createGate
+            return {
+                payment_session_id: "ps_winner",
+                components_sdk_key: "sdk_winner",
+                expires_at: futureExpires,
+                status: "ACTIVE",
+                customer_id: "cust-existing",
+            }
+        })
+
+        const first = BillingService.createProCheckoutSession(checkoutInput)
+        await secondStartedGate
+        expect(secondStarted).toBe(true)
+        expect(pendingRow.xenditSessionId).toMatch(/^claim:/)
+
+        const second = BillingService.createProCheckoutSession(checkoutInput)
+        // Let the waiter poll while the first still holds the claim.
+        await new Promise((r) => setTimeout(r, 50))
+        releaseCreate()
+
+        const [a, b] = await Promise.all([first, second])
+        expect(a.sessionId).toBe("ps_winner")
+        expect(b.sessionId).toBe("ps_winner")
+        expect(createXenditSession).toHaveBeenCalledOnce()
+        expect(pendingRow.xenditSessionId).toBe("ps_winner")
     })
 })

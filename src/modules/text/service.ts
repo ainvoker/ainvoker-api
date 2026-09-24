@@ -1,8 +1,8 @@
 import { Prisma } from "../../generated/prisma/client.js"
 import {
     assertModelAllowedForPlan,
-    assertWithinPlanLimits,
     getActiveSubscriptionWithPlan,
+    reservePendingTextRequest,
     type QuotaSnapshot,
 } from "../billing/limits.js"
 import { AppError } from "../../platform/errors.js"
@@ -49,7 +49,6 @@ class TextService {
 
         const subscription = await getActiveSubscriptionWithPlan(apiKeyContext.organizationId)
         assertModelAllowedForPlan(subscription.plan, model)
-        const quota = await assertWithinPlanLimits(apiKeyContext.organizationId)
 
         const adapter = chatProviderRegistry.get(providerName)
 
@@ -60,15 +59,12 @@ class TextService {
             ...(body.maxTokens !== undefined ? { maxTokens: body.maxTokens } : {}),
         }
 
-        const aiRequest = await prismaClient.aIRequest.create({
-            data: {
-                projectId: apiKeyContext.projectId,
-                apiKeyId: apiKeyContext.apiKeyId,
-                modelId: model.id,
-                serviceType: "TEXT",
-                requestPayload,
-                requestStatus: "PENDING",
-            },
+        const { aiRequest, quota } = await reservePendingTextRequest({
+            organizationId: apiKeyContext.organizationId,
+            projectId: apiKeyContext.projectId,
+            apiKeyId: apiKeyContext.apiKeyId,
+            modelId: model.id,
+            requestPayload,
         })
 
         const started = Date.now()

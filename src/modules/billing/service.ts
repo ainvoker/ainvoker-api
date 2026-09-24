@@ -1,6 +1,8 @@
+import { randomUUID } from "node:crypto"
 import env from "../../config/env.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
+import type { Prisma } from "../../generated/prisma/client.js"
 import {
     ensureBillingCatalog,
     getPlanByName,
@@ -14,6 +16,7 @@ import {
     findXenditCustomerByReference,
     getXenditSession,
     isDuplicateCustomerReferenceError,
+    type XenditSessionResponse,
 } from "./xendit/client.js"
 import { activateProSubscription, renewProSubscription } from "./activate.js"
 import { expireLapsedSubscriptions } from "./limits.js"
@@ -21,6 +24,22 @@ import { isEntitlementUnexpired, proRenewsAt } from "./period.js"
 import { buildNestedCustomer, sessionCustomerFields } from "./sessionCustomer.js"
 
 const BILLING_ADMIN_ROLES = new Set(["owner", "admin"])
+
+/** Claim stored in Subscription.xenditSessionId while creating a Xendit session. */
+const CHECKOUT_CLAIM_PREFIX = "claim:"
+const CHECKOUT_CLAIM_TTL_MS = 60_000
+const CHECKOUT_CLAIM_POLL_MS = 100
+
+type CheckoutSessionResult = {
+    componentsSdkKey: string
+    sessionId: string
+    expiresAt: string | null
+}
+
+type CheckoutClaimOutcome =
+    | { kind: "reuse"; pendingId: string; sessionId: string }
+    | { kind: "create"; pendingId: string; claim: string }
+    | { kind: "wait" }
 
 function assertBillingEnabled() {
     if (!env.BILLING_ENABLED) {
@@ -34,24 +53,248 @@ function assertBillingRole(roleName: string) {
     }
 }
 
-const checkoutLocks = new Map<string, Promise<unknown>>()
+function sleep(ms: number) {
+    return new Promise<void>((resolve) => setTimeout(resolve, ms))
+}
 
-async function withOrgCheckoutLock<T>(organizationId: string, fn: () => Promise<T>): Promise<T> {
-    const previous = checkoutLocks.get(organizationId) ?? Promise.resolve()
-    let release: () => void = () => {}
-    const current = new Promise<void>((resolve) => {
-        release = resolve
+function isCheckoutClaim(value: string | null | undefined): value is string {
+    return typeof value === "string" && value.startsWith(CHECKOUT_CLAIM_PREFIX)
+}
+
+function parseCheckoutClaim(value: string): { token: string; expiresAtMs: number } | null {
+    const rest = value.slice(CHECKOUT_CLAIM_PREFIX.length)
+    const lastColon = rest.lastIndexOf(":")
+    if (lastColon <= 0) return null
+    const token = rest.slice(0, lastColon)
+    const expiresAtMs = Number(rest.slice(lastColon + 1))
+    if (!token || !Number.isFinite(expiresAtMs)) return null
+    return { token, expiresAtMs }
+}
+
+function isFreshCheckoutClaim(value: string, now = Date.now()): boolean {
+    const parsed = parseCheckoutClaim(value)
+    return parsed !== null && parsed.expiresAtMs > now
+}
+
+function buildCheckoutClaim(token: string, now = Date.now()): string {
+    return `${CHECKOUT_CLAIM_PREFIX}${token}:${now + CHECKOUT_CLAIM_TTL_MS}`
+}
+
+/**
+ * Serialize Pro checkout across API processes with short Organization FOR UPDATE
+ * transactions. The previous in-memory Map only queued work inside one Node process
+ * and raced under multiple Render/API instances.
+ */
+async function lockOrganizationRow(tx: Prisma.TransactionClient, organizationId: string) {
+    await tx.$queryRaw`SELECT id FROM "Organization" WHERE id = ${organizationId} FOR UPDATE`
+}
+
+async function assertNoUnexpiredActivePro(
+    tx: Prisma.TransactionClient,
+    organizationId: string,
+    proPlanId: number,
+) {
+    const activePro = await tx.subscription.findFirst({
+        where: {
+            organizationId,
+            planId: proPlanId,
+            status: "ACTIVE",
+        },
+        orderBy: { startedAt: "desc" },
     })
-    const chain = previous.then(() => current)
-    checkoutLocks.set(organizationId, chain)
-    await previous
-    try {
-        return await fn()
-    } finally {
-        release()
-        if (checkoutLocks.get(organizationId) === chain) {
-            checkoutLocks.delete(organizationId)
+    if (activePro && isEntitlementUnexpired(activePro.expiresAt)) {
+        throw new AppError(
+            409,
+            "ALREADY_ACTIVE",
+            "Pro is already active for this organization",
+        )
+    }
+}
+
+async function findOrCreatePendingPro(
+    tx: Prisma.TransactionClient,
+    organizationId: string,
+    proPlanId: number,
+) {
+    const existingPending = await tx.subscription.findFirst({
+        where: {
+            organizationId,
+            planId: proPlanId,
+            status: "PENDING",
+        },
+        orderBy: { createdAt: "desc" },
+    })
+    if (existingPending) {
+        return existingPending
+    }
+
+    return tx.subscription.create({
+        data: {
+            organizationId,
+            planId: proPlanId,
+            status: "PENDING",
+            startedAt: new Date(),
+        },
+    })
+}
+
+function outcomeFromPendingSession(
+    pendingId: string,
+    sessionId: string | null,
+    claimToken: string,
+): CheckoutClaimOutcome {
+    if (!sessionId) {
+        return { kind: "wait" }
+    }
+    if (!isCheckoutClaim(sessionId)) {
+        return { kind: "reuse", pendingId, sessionId }
+    }
+    if (isFreshCheckoutClaim(sessionId)) {
+        const parsed = parseCheckoutClaim(sessionId)
+        if (parsed?.token === claimToken) {
+            return { kind: "create", pendingId, claim: sessionId }
         }
+        return { kind: "wait" }
+    }
+    return { kind: "wait" }
+}
+
+async function claimCheckoutSlot(
+    organizationId: string,
+    proPlanId: number,
+    claimToken: string,
+): Promise<CheckoutClaimOutcome> {
+    return prismaClient.$transaction(async (tx) => {
+        await lockOrganizationRow(tx, organizationId)
+        await assertNoUnexpiredActivePro(tx, organizationId, proPlanId)
+
+        const pending = await findOrCreatePendingPro(tx, organizationId, proPlanId)
+        const sessionId = pending.xenditSessionId
+
+        if (sessionId && !isCheckoutClaim(sessionId)) {
+            return { kind: "reuse" as const, pendingId: pending.id, sessionId }
+        }
+
+        if (sessionId && isCheckoutClaim(sessionId) && isFreshCheckoutClaim(sessionId)) {
+            const parsed = parseCheckoutClaim(sessionId)
+            if (parsed?.token === claimToken) {
+                return { kind: "create" as const, pendingId: pending.id, claim: sessionId }
+            }
+            return { kind: "wait" as const }
+        }
+
+        const claim = buildCheckoutClaim(claimToken)
+        await tx.subscription.update({
+            where: { id: pending.id },
+            data: { xenditSessionId: claim },
+        })
+        return { kind: "create" as const, pendingId: pending.id, claim }
+    })
+}
+
+async function claimAfterObservedSession(
+    organizationId: string,
+    proPlanId: number,
+    pendingId: string,
+    observedSessionId: string,
+    claimToken: string,
+): Promise<CheckoutClaimOutcome> {
+    return prismaClient.$transaction(async (tx) => {
+        await lockOrganizationRow(tx, organizationId)
+        await assertNoUnexpiredActivePro(tx, organizationId, proPlanId)
+
+        const pending = await tx.subscription.findUniqueOrThrow({
+            where: { id: pendingId },
+            select: { id: true, xenditSessionId: true },
+        })
+
+        if (pending.xenditSessionId !== observedSessionId) {
+            return outcomeFromPendingSession(pending.id, pending.xenditSessionId, claimToken)
+        }
+
+        const claim = buildCheckoutClaim(claimToken)
+        await tx.subscription.update({
+            where: { id: pending.id },
+            data: { xenditSessionId: claim },
+        })
+        return { kind: "create" as const, pendingId: pending.id, claim }
+    })
+}
+
+async function clearCheckoutClaimIfOwned(
+    organizationId: string,
+    pendingId: string,
+    claim: string,
+) {
+    await prismaClient.$transaction(async (tx) => {
+        await lockOrganizationRow(tx, organizationId)
+        const pending = await tx.subscription.findUnique({
+            where: { id: pendingId },
+            select: { xenditSessionId: true },
+        })
+        if (pending?.xenditSessionId !== claim) {
+            return
+        }
+        await tx.subscription.update({
+            where: { id: pendingId },
+            data: { xenditSessionId: null },
+        })
+    })
+}
+
+async function persistCheckoutSessionIfClaimed(
+    organizationId: string,
+    pendingId: string,
+    claim: string,
+    session: XenditSessionResponse,
+): Promise<
+    | { kind: "stored" }
+    | { kind: "reuse"; sessionId: string }
+    | { kind: "lost" }
+> {
+    return prismaClient.$transaction(async (tx) => {
+        await lockOrganizationRow(tx, organizationId)
+        const pending = await tx.subscription.findUniqueOrThrow({
+            where: { id: pendingId },
+            select: { xenditSessionId: true },
+        })
+
+        if (pending.xenditSessionId === claim) {
+            const recurringPlanId =
+                session.subscription?.id ?? session.subscription?.plan_id ?? undefined
+            await tx.subscription.update({
+                where: { id: pendingId },
+                data: {
+                    xenditSessionId: session.payment_session_id,
+                    ...(recurringPlanId ? { xenditRecurringPlanId: recurringPlanId } : {}),
+                },
+            })
+            return { kind: "stored" as const }
+        }
+
+        if (pending.xenditSessionId && !isCheckoutClaim(pending.xenditSessionId)) {
+            return { kind: "reuse" as const, sessionId: pending.xenditSessionId }
+        }
+
+        return { kind: "lost" as const }
+    })
+}
+
+async function returnReusableXenditSession(
+    organizationId: string,
+    sessionId: string,
+): Promise<CheckoutSessionResult | null> {
+    const existing = await getXenditSession(sessionId)
+    if (!canReuseXenditCheckoutSession(existing)) {
+        return null
+    }
+    if (existing.customer_id) {
+        await persistXenditCustomerId(organizationId, existing.customer_id)
+    }
+    return {
+        componentsSdkKey: existing.components_sdk_key,
+        sessionId: existing.payment_session_id,
+        expiresAt: existing.expires_at ?? null,
     }
 }
 
@@ -105,32 +348,6 @@ async function resolveXenditCustomerId(organizationId: string, referenceId: stri
 
     await persistXenditCustomerId(organizationId, existing.id)
     return existing.id
-}
-
-async function ensurePendingProSubscription(organizationId: string) {
-    await ensureBillingCatalog()
-    const proPlan = await getPlanByName(PLAN_NAMES.pro)
-
-    const existingPending = await prismaClient.subscription.findFirst({
-        where: {
-            organizationId,
-            planId: proPlan.id,
-            status: "PENDING",
-        },
-        orderBy: { createdAt: "desc" },
-    })
-    if (existingPending) {
-        return existingPending
-    }
-
-    return prismaClient.subscription.create({
-        data: {
-            organizationId,
-            planId: proPlan.id,
-            status: "PENDING",
-            startedAt: new Date(),
-        },
-    })
 }
 
 function paymentMethodSnapshot(org: {
@@ -397,21 +614,10 @@ class BillingService {
         userId: string
         roleName: string
         returnUrl: string
-    }) {
+    }): Promise<CheckoutSessionResult> {
         assertBillingEnabled()
         assertBillingRole(input.roleName)
 
-        return withOrgCheckoutLock(input.organizationId, () =>
-            this.createProCheckoutSessionLocked(input),
-        )
-    }
-
-    private async createProCheckoutSessionLocked(input: {
-        organizationId: string
-        userId: string
-        roleName: string
-        returnUrl: string
-    }) {
         const user = await prismaClient.user.findUnique({
             where: { id: input.userId },
             select: {
@@ -425,40 +631,81 @@ class BillingService {
             throw new AppError(404, "NOT_FOUND", "User not found")
         }
 
+        // Expire outside the org row lock — uses its own connection.
         await expireLapsedSubscriptions(input.organizationId)
+        await ensureBillingCatalog()
         const proPlan = await getPlanByName(PLAN_NAMES.pro)
-        const activePro = await prismaClient.subscription.findFirst({
-            where: {
-                organizationId: input.organizationId,
-                planId: proPlan.id,
-                status: "ACTIVE",
-            },
-            orderBy: { startedAt: "desc" },
-        })
-        if (activePro && isEntitlementUnexpired(activePro.expiresAt)) {
-            throw new AppError(
-                409,
-                "ALREADY_ACTIVE",
-                "Pro is already active for this organization",
+        const claimToken = randomUUID()
+        const deadline = Date.now() + CHECKOUT_CLAIM_TTL_MS + 5_000
+
+        while (Date.now() < deadline) {
+            const outcome = await claimCheckoutSlot(
+                input.organizationId,
+                proPlan.id,
+                claimToken,
+            )
+
+            if (outcome.kind === "wait") {
+                await sleep(CHECKOUT_CLAIM_POLL_MS)
+                continue
+            }
+
+            if (outcome.kind === "reuse") {
+                const reused = await returnReusableXenditSession(
+                    input.organizationId,
+                    outcome.sessionId,
+                )
+                if (reused) {
+                    return reused
+                }
+
+                const after = await claimAfterObservedSession(
+                    input.organizationId,
+                    proPlan.id,
+                    outcome.pendingId,
+                    outcome.sessionId,
+                    claimToken,
+                )
+                if (after.kind === "wait") {
+                    await sleep(CHECKOUT_CLAIM_POLL_MS)
+                    continue
+                }
+                if (after.kind === "reuse") {
+                    continue
+                }
+                return this.createXenditSessionForClaim(input, user, after.pendingId, after.claim)
+            }
+
+            return this.createXenditSessionForClaim(
+                input,
+                user,
+                outcome.pendingId,
+                outcome.claim,
             )
         }
 
-        const pendingSub = await ensurePendingProSubscription(input.organizationId)
+        throw new AppError(
+            503,
+            "PAYMENT_PROVIDER_ERROR",
+            "Checkout is busy for this organization; please try again",
+        )
+    }
 
-        if (pendingSub.xenditSessionId) {
-            const existing = await getXenditSession(pendingSub.xenditSessionId)
-            if (canReuseXenditCheckoutSession(existing)) {
-                if (existing.customer_id) {
-                    await persistXenditCustomerId(input.organizationId, existing.customer_id)
-                }
-                return {
-                    componentsSdkKey: existing.components_sdk_key!,
-                    sessionId: existing.payment_session_id,
-                    expiresAt: existing.expires_at ?? null,
-                }
-            }
-        }
-
+    private async createXenditSessionForClaim(
+        input: {
+            organizationId: string
+            userId: string
+            returnUrl: string
+        },
+        user: {
+            id: string
+            email: string | null
+            firstName: string | null
+            lastName: string | null
+        },
+        pendingId: string,
+        claim: string,
+    ): Promise<CheckoutSessionResult> {
         const customerReference = await ensureXenditCustomerReference(input.organizationId)
         await resolveXenditCustomerId(input.organizationId, customerReference)
         const org = await loadOrgXenditCustomer(input.organizationId)
@@ -487,7 +734,7 @@ class BillingService {
                 organizationId: input.organizationId,
                 planName: PLAN_NAMES.pro,
                 userId: input.userId,
-                subscriptionId: pendingSub.id,
+                subscriptionId: pendingId,
             },
             subscription: {
                 schedule: {
@@ -507,41 +754,65 @@ class BillingService {
             },
         }
 
-        let session
+        let session: XenditSessionResponse
         try {
             session = await createXenditSession(sessionBody)
         } catch (err) {
             if (!isDuplicateCustomerReferenceError(err)) {
+                await clearCheckoutClaimIfOwned(input.organizationId, pendingId, claim)
                 throw err
             }
 
-            const customerId = await resolveXenditCustomerId(input.organizationId, customerReference)
+            const customerId = await resolveXenditCustomerId(
+                input.organizationId,
+                customerReference,
+            )
             if (!customerId) {
+                await clearCheckoutClaimIfOwned(input.organizationId, pendingId, claim)
                 throw err
             }
 
             const retryBody = { ...sessionBody }
             delete retryBody.customer
-            session = await createXenditSession({
-                ...retryBody,
-                customer_id: customerId,
-            })
+            try {
+                session = await createXenditSession({
+                    ...retryBody,
+                    customer_id: customerId,
+                })
+            } catch (retryErr) {
+                await clearCheckoutClaimIfOwned(input.organizationId, pendingId, claim)
+                throw retryErr
+            }
         }
 
         if (session.customer_id) {
             await persistXenditCustomerId(input.organizationId, session.customer_id)
         }
 
-        const recurringPlanId =
-            session.subscription?.id ?? session.subscription?.plan_id ?? undefined
+        const persisted = await persistCheckoutSessionIfClaimed(
+            input.organizationId,
+            pendingId,
+            claim,
+            session,
+        )
 
-        await prismaClient.subscription.update({
-            where: { id: pendingSub.id },
-            data: {
-                xenditSessionId: session.payment_session_id,
-                ...(recurringPlanId ? { xenditRecurringPlanId: recurringPlanId } : {}),
-            },
-        })
+        if (persisted.kind === "stored") {
+            return {
+                componentsSdkKey: session.components_sdk_key!,
+                sessionId: session.payment_session_id,
+                expiresAt: session.expires_at ?? null,
+            }
+        }
+
+        if (persisted.kind === "reuse") {
+            const reused = await returnReusableXenditSession(
+                input.organizationId,
+                persisted.sessionId,
+            )
+            if (reused) {
+                return reused
+            }
+        }
 
         return {
             componentsSdkKey: session.components_sdk_key!,

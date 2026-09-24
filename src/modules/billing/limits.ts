@@ -1,7 +1,12 @@
-import type { AIModel, Plan } from "../../generated/prisma/client.js"
+import type { AIModel, Plan, Prisma } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
-import { aggregatePeriodUsage, startOfUtcMonth } from "../usage/aggregate.js"
+import {
+    aggregatePeriodUsage,
+    QUOTA_STATUSES,
+    startOfNextUtcDay,
+    startOfUtcMonth,
+} from "../usage/aggregate.js"
 import { ensureBillingCatalog, getPlanByName, PLAN_NAMES, type PlanName } from "./catalog.js"
 import { isEntitlementUnexpired } from "./period.js"
 
@@ -16,6 +21,16 @@ export type QuotaSnapshot = {
 }
 
 export { startOfUtcMonth }
+
+type DbClient = Prisma.TransactionClient | typeof prismaClient
+
+export type ReservePendingTextRequestInput = {
+    organizationId: string
+    projectId: string
+    apiKeyId: string
+    modelId: number
+    requestPayload: Prisma.InputJsonValue
+}
 
 export async function expireLapsedSubscriptions(organizationId: string) {
     const now = new Date()
@@ -74,25 +89,7 @@ export async function expireLapsedSubscriptions(organizationId: string) {
 export async function getActiveSubscriptionWithPlan(organizationId: string) {
     await ensureBillingCatalog()
     await expireLapsedSubscriptions(organizationId)
-
-    const subscription = await prismaClient.subscription.findFirst({
-        where: {
-            organizationId,
-            status: { in: ["ACTIVE", "PAST_DUE"] },
-        },
-        include: { plan: true },
-        orderBy: { startedAt: "desc" },
-    })
-
-    if (!subscription || !isEntitlementUnexpired(subscription.expiresAt)) {
-        throw new AppError(
-            402,
-            "SUBSCRIPTION_REQUIRED",
-            "Organization has no active subscription",
-        )
-    }
-
-    return subscription
+    return loadActiveSubscriptionPlan(prismaClient, organizationId)
 }
 
 /**
@@ -136,12 +133,14 @@ export function assertModelAllowedForPlan(
 /**
  * Enforce monthly quotas for FIXED_MONTHLY plans.
  * For METERED, only enforce when requestLimit/tokenLimit are > 0 (safety ceilings).
+ *
+ * Token caps use pre-call aggregates: PENDING rows usually have null totalTokens, so
+ * concurrent in-flight calls can still pass a token ceiling until usage is written.
  */
-export async function assertWithinPlanLimits(organizationId: string): Promise<QuotaSnapshot> {
-    const subscription = await getActiveSubscriptionWithPlan(organizationId)
-    const { plan } = subscription
-    const period = await aggregatePeriodUsage({ organizationId })
-
+function enforcePlanQuota(
+    plan: Pick<Plan, "name" | "billingMode" | "requestLimit" | "tokenLimit">,
+    period: { requestsUsed: number; tokensUsed: number; periodStart: Date },
+): QuotaSnapshot {
     const enforceRequests = plan.billingMode === "FIXED_MONTHLY" || plan.requestLimit > 0
     const enforceTokens = plan.billingMode === "FIXED_MONTHLY" || plan.tokenLimit > 0
 
@@ -170,6 +169,94 @@ export async function assertWithinPlanLimits(organizationId: string): Promise<Qu
         tokensUsed: period.tokensUsed,
         periodStart: period.periodStart,
     }
+}
+
+async function loadActiveSubscriptionPlan(db: DbClient, organizationId: string) {
+    const subscription = await db.subscription.findFirst({
+        where: {
+            organizationId,
+            status: { in: ["ACTIVE", "PAST_DUE"] },
+        },
+        include: { plan: true },
+        orderBy: { startedAt: "desc" },
+    })
+
+    if (!subscription || !isEntitlementUnexpired(subscription.expiresAt)) {
+        throw new AppError(
+            402,
+            "SUBSCRIPTION_REQUIRED",
+            "Organization has no active subscription",
+        )
+    }
+
+    return subscription
+}
+
+async function aggregateOrgQuotaUsage(
+    db: DbClient,
+    organizationId: string,
+    periodStart = startOfUtcMonth(),
+    now = new Date(),
+): Promise<{ requestsUsed: number; tokensUsed: number; periodStart: Date }> {
+    const quotaAgg = await db.aIRequest.aggregate({
+        where: {
+            project: { organizationId },
+            createdAt: { gte: periodStart, lt: startOfNextUtcDay(now) },
+            requestStatus: { in: [...QUOTA_STATUSES] },
+        },
+        _count: { _all: true },
+        _sum: { totalTokens: true },
+    })
+
+    return {
+        requestsUsed: quotaAgg._count._all,
+        tokensUsed: quotaAgg._sum.totalTokens ?? 0,
+        periodStart,
+    }
+}
+
+/**
+ * Enforce monthly quotas for FIXED_MONTHLY plans.
+ * For METERED, only enforce when requestLimit/tokenLimit are > 0 (safety ceilings).
+ */
+export async function assertWithinPlanLimits(organizationId: string): Promise<QuotaSnapshot> {
+    const subscription = await getActiveSubscriptionWithPlan(organizationId)
+    const period = await aggregatePeriodUsage({ organizationId })
+    return enforcePlanQuota(subscription.plan, period)
+}
+
+/**
+ * Atomically check org quota and insert a PENDING AIRequest.
+ * Locks the Organization row (FOR UPDATE) so concurrent chats across API
+ * instances cannot TOCTOU past monthly request/token caps. Hold the lock only
+ * for check + insert — call providers after commit.
+ */
+export async function reservePendingTextRequest(input: ReservePendingTextRequestInput): Promise<{
+    aiRequest: { id: string }
+    quota: QuotaSnapshot
+}> {
+    return prismaClient.$transaction(async (tx) => {
+        // Serialize quota check+insert per org across API processes (TOCTOU / multi-instance).
+        await tx.$queryRaw`SELECT id FROM "Organization" WHERE id = ${input.organizationId} FOR UPDATE`
+
+        const subscription = await loadActiveSubscriptionPlan(tx, input.organizationId)
+        const period = await aggregateOrgQuotaUsage(tx, input.organizationId)
+        const quota = enforcePlanQuota(subscription.plan, period)
+
+        const aiRequest = await tx.aIRequest.create({
+            data: {
+                projectId: input.projectId,
+                apiKeyId: input.apiKeyId,
+                modelId: input.modelId,
+                serviceType: "TEXT",
+                requestPayload: input.requestPayload,
+                requestStatus: "PENDING",
+            },
+            select: { id: true },
+        })
+
+        return { aiRequest, quota }
+    })
 }
 
 export function isPlanName(name: string): name is PlanName {

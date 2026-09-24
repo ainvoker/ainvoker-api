@@ -4,7 +4,7 @@ import prismaClient from "../../platform/prisma.js"
 export const RECENT_REQUESTS_LIMIT = 10
 
 /** Statuses that count toward monthly request/token quotas (matches billing limits). */
-const QUOTA_STATUSES = ["PENDING", "SUCCESS", "FAILED"] as const
+export const QUOTA_STATUSES = ["PENDING", "SUCCESS", "FAILED"] as const
 
 export type PeriodUsage = {
     requestsUsed: number
