@@ -12,7 +12,13 @@ import type {
     transferOwnershipSchema,
     updateMemberRoleSchema,
 } from "./schemas.js"
+import { sendInviteEmail } from "./mail.js"
 import { generateInviteToken, hashInviteToken, INVITE_TTL_MS } from "./token.js"
+
+type InviteDelivery = {
+    channel: "email" | "manual"
+    status: "sent" | "returned"
+}
 
 const TEAM_MANAGER_ROLES = new Set(["owner", "admin"])
 const INVITE_ROLES = new Set(["admin", "member"])
@@ -108,9 +114,11 @@ class MembersService {
         }
     }
 
+    // Invite secrets are emailed. The raw token is never serialized.
+    // acceptUrl is included only for the local/dev INVITE_RETURN_ACCEPT_URL fallback.
     private serializeInvite(
         row: InviteWithRelations,
-        secrets?: { token: string; acceptUrl: string },
+        extras?: { acceptUrl?: string; delivery?: InviteDelivery },
     ) {
         const expired = row.expiresAt.getTime() < Date.now()
         const status =
@@ -124,10 +132,72 @@ class MembersService {
             expiresAt: row.expiresAt.toISOString(),
             createdAt: row.createdAt.toISOString(),
             invitedBy: this.serializeUser(row.invitedBy),
-            ...(secrets
-                ? { acceptUrl: secrets.acceptUrl, token: secrets.token }
-                : {}),
+            ...(extras?.acceptUrl ? { acceptUrl: extras.acceptUrl } : {}),
+            ...(extras?.delivery ? { delivery: extras.delivery } : {}),
         }
+    }
+
+    private assertCanDeliverInvite() {
+        if (env.INVITE_EMAIL_ENABLED || env.returnsInviteAcceptUrl()) return
+        throw new AppError(
+            503,
+            "INVITE_DELIVERY_UNAVAILABLE",
+            "Invite email is not configured",
+        )
+    }
+
+    /**
+     * Emails the accept link. Does not return the raw token.
+     * When email is disabled or send fails, a dev-only flag may return acceptUrl instead.
+     */
+    private async deliverInviteSecret(input: {
+        to: string
+        organizationName: string
+        role: string
+        plaintext: string
+        expiresAt: Date
+    }): Promise<{ acceptUrl?: string; delivery: InviteDelivery }> {
+        const acceptUrl = this.buildAcceptUrl(input.plaintext)
+
+        if (env.INVITE_EMAIL_ENABLED) {
+            try {
+                await sendInviteEmail({
+                    to: input.to,
+                    organizationName: input.organizationName,
+                    role: input.role,
+                    acceptUrl,
+                    expiresAt: input.expiresAt,
+                })
+                return { delivery: { channel: "email", status: "sent" } }
+            } catch {
+                // Do not log the error object; provider or caller messages must not include the link.
+                console.error("Invite email delivery failed")
+                if (env.returnsInviteAcceptUrl()) {
+                    return {
+                        acceptUrl,
+                        delivery: { channel: "manual", status: "returned" },
+                    }
+                }
+                throw new AppError(
+                    502,
+                    "INVITE_DELIVERY_FAILED",
+                    "Failed to send the invite email",
+                )
+            }
+        }
+
+        if (env.returnsInviteAcceptUrl()) {
+            return {
+                acceptUrl,
+                delivery: { channel: "manual", status: "returned" },
+            }
+        }
+
+        throw new AppError(
+            503,
+            "INVITE_DELIVERY_UNAVAILABLE",
+            "Invite email is not configured",
+        )
     }
 
     private inviteInclude = {
@@ -172,8 +242,9 @@ class MembersService {
         roleName: string,
         input: z.infer<typeof createInviteSchema>,
     ) {
-        await this.assertNonPersonalOrg(organizationId)
+        const organization = await this.assertNonPersonalOrg(organizationId)
         this.requireManager(roleName)
+        this.assertCanDeliverInvite()
 
         if (!INVITE_ROLES.has(input.role)) {
             throw new AppError(400, "VALIDATION_ERROR", "Invite role must be admin or member")
@@ -239,10 +310,23 @@ class MembersService {
                 include: this.inviteInclude,
             })
 
-            return this.serializeInvite(invite, {
-                token: plaintext,
-                acceptUrl: this.buildAcceptUrl(plaintext),
-            })
+            try {
+                const delivered = await this.deliverInviteSecret({
+                    to: invite.email,
+                    organizationName: organization.name,
+                    role: invite.role.name,
+                    plaintext,
+                    expiresAt,
+                })
+                return this.serializeInvite(invite, delivered)
+            } catch (deliverErr) {
+                await prismaClient.organizationInvite
+                    .delete({ where: { id: invite.id } })
+                    .catch(() => {
+                        console.error("Failed to roll back undelivered invite")
+                    })
+                throw deliverErr
+            }
         } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
                 throw new AppError(
@@ -314,8 +398,9 @@ class MembersService {
         inviteId: string,
         roleName: string,
     ) {
-        await this.assertNonPersonalOrg(organizationId)
+        const organization = await this.assertNonPersonalOrg(organizationId)
         this.requireManager(roleName)
+        this.assertCanDeliverInvite()
 
         const invite = await prismaClient.organizationInvite.findFirst({
             where: { id: inviteId, organizationId },
@@ -328,6 +413,11 @@ class MembersService {
             throw new AppError(409, "CONFLICT", "Only pending or expired invites can be resent")
         }
 
+        const previous = {
+            tokenHash: invite.tokenHash,
+            expiresAt: invite.expiresAt,
+            status: invite.status,
+        }
         const { plaintext, tokenHash } = generateInviteToken()
         const expiresAt = new Date(Date.now() + INVITE_TTL_MS)
 
@@ -341,10 +431,26 @@ class MembersService {
             include: this.inviteInclude,
         })
 
-        return this.serializeInvite(updated, {
-            token: plaintext,
-            acceptUrl: this.buildAcceptUrl(plaintext),
-        })
+        try {
+            const delivered = await this.deliverInviteSecret({
+                to: updated.email,
+                organizationName: organization.name,
+                role: updated.role.name,
+                plaintext,
+                expiresAt,
+            })
+            return this.serializeInvite(updated, delivered)
+        } catch (deliverErr) {
+            await prismaClient.organizationInvite
+                .update({
+                    where: { id: inviteId },
+                    data: previous,
+                })
+                .catch(() => {
+                    console.error("Failed to restore invite after delivery failure")
+                })
+            throw deliverErr
+        }
     }
 
     async updateMemberRole(

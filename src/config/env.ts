@@ -21,6 +21,22 @@ const envSchema = z.object({
      * Xendit rejects http:// here. Local SPA may still run on http; use mock SDK or an HTTPS tunnel for real Components.
      */
     XENDIT_COMPONENTS_ORIGIN: z.string().min(1).default("https://localhost:5173"),
+    /** When true, create/resend emails the accept link and omits it from the JSON response. */
+    INVITE_EMAIL_ENABLED: z
+        .enum(["true", "false"])
+        .default("false")
+        .transform((v) => v === "true"),
+    /**
+     * Dev/test only. When email is off (or send fails), return acceptUrl in the JSON response.
+     * Ignored in production. The raw token is never returned.
+     */
+    INVITE_RETURN_ACCEPT_URL: z
+        .enum(["true", "false"])
+        .default("false")
+        .transform((v) => v === "true"),
+    RESEND_API_KEY: z.string().min(1).optional(),
+    /** From address for invite mail, e.g. `AInvoker <invites@yourdomain.com>`. */
+    INVITE_EMAIL_FROM: z.string().min(1).optional(),
 })
 
 class EnvConfig {
@@ -36,6 +52,10 @@ class EnvConfig {
     readonly XENDIT_WEBHOOK_TOKEN: string | undefined
     readonly XENDIT_PRO_AMOUNT: number
     readonly XENDIT_COMPONENTS_ORIGIN: string
+    readonly INVITE_EMAIL_ENABLED: boolean
+    readonly INVITE_RETURN_ACCEPT_URL: boolean
+    readonly RESEND_API_KEY: string | undefined
+    readonly INVITE_EMAIL_FROM: string | undefined
 
     constructor() {
         const parsed = envSchema.safeParse(process.env)
@@ -60,6 +80,10 @@ class EnvConfig {
         this.XENDIT_WEBHOOK_TOKEN = parsed.data.XENDIT_WEBHOOK_TOKEN
         this.XENDIT_PRO_AMOUNT = parsed.data.XENDIT_PRO_AMOUNT
         this.XENDIT_COMPONENTS_ORIGIN = parsed.data.XENDIT_COMPONENTS_ORIGIN
+        this.INVITE_EMAIL_ENABLED = parsed.data.INVITE_EMAIL_ENABLED
+        this.INVITE_RETURN_ACCEPT_URL = parsed.data.INVITE_RETURN_ACCEPT_URL
+        this.RESEND_API_KEY = parsed.data.RESEND_API_KEY
+        this.INVITE_EMAIL_FROM = parsed.data.INVITE_EMAIL_FROM
 
         if (this.BILLING_ENABLED && !this.XENDIT_SECRET_KEY) {
             console.error("XENDIT_SECRET_KEY is required when BILLING_ENABLED=true")
@@ -68,6 +92,31 @@ class EnvConfig {
             }
             process.exit(1)
         }
+
+        if (this.INVITE_EMAIL_ENABLED && (!this.RESEND_API_KEY || !this.INVITE_EMAIL_FROM)) {
+            console.error(
+                "RESEND_API_KEY and INVITE_EMAIL_FROM are required when INVITE_EMAIL_ENABLED=true",
+            )
+            if (process.env.NODE_ENV === "test") {
+                throw new Error(
+                    "RESEND_API_KEY and INVITE_EMAIL_FROM are required when INVITE_EMAIL_ENABLED=true",
+                )
+            }
+            process.exit(1)
+        }
+
+        if (this.NODE_ENV === "production" && this.INVITE_RETURN_ACCEPT_URL) {
+            console.error("INVITE_RETURN_ACCEPT_URL cannot be enabled in production")
+            process.exit(1)
+        }
+    }
+
+    /**
+     * Local/dev fallback: include acceptUrl on create/resend.
+     * Never honored in production, even if the flag is set.
+     */
+    returnsInviteAcceptUrl(): boolean {
+        return this.INVITE_RETURN_ACCEPT_URL && this.NODE_ENV !== "production"
     }
 
     /** Xendit Components requires HTTPS origins (API validation). */

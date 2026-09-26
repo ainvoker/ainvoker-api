@@ -318,6 +318,13 @@ export const memberListItemSchema = z
     })
     .meta({ id: "MemberListItem" })
 
+export const inviteDeliverySchema = z
+    .object({
+        channel: z.enum(["email", "manual"]),
+        status: z.enum(["sent", "returned"]),
+    })
+    .meta({ id: "InviteDelivery" })
+
 export const inviteItemSchema = z
     .object({
         id: z.string(),
@@ -327,8 +334,12 @@ export const inviteItemSchema = z
         expiresAt: z.string(),
         createdAt: z.string(),
         invitedBy: memberUserSchema,
+        /**
+         * Present only when INVITE_RETURN_ACCEPT_URL=true (local/dev).
+         * Omitted after a successful email send. The raw token is never returned.
+         */
         acceptUrl: z.string().optional(),
-        token: z.string().optional(),
+        delivery: inviteDeliverySchema.optional(),
     })
     .meta({ id: "InviteItem" })
 

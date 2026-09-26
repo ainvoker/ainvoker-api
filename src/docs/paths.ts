@@ -807,7 +807,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         tags: ["Members"],
         summary: "Create an organization invite",
         description:
-            "Owner/admin only. Returns the invite plus a one-time token and acceptUrl. No email is sent.",
+            "Owner/admin only. Stores a hash of the invite token and emails the accept link to the invitee. The response has no raw token. acceptUrl is omitted when email delivery succeeds; it is returned only when INVITE_RETURN_ACCEPT_URL=true (local/dev).",
         security: bearerAuth,
         request: {
             params: orgIdParamsSchema,
@@ -818,7 +818,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         },
         responses: {
             201: {
-                description: "Invite created with plaintext token",
+                description: "Invite created. Email delivery status is included; the accept secret is not.",
                 content: {
                     "application/json": { schema: dataEnvelope(inviteItemSchema) },
                 },
@@ -870,12 +870,13 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         path: "/api/v1/organizations/{orgId}/invites/{inviteId}/resend",
         tags: ["Members"],
         summary: "Rotate invite token",
-        description: "Owner/admin only. Issues a new token and acceptUrl without sending email.",
+        description:
+            "Owner/admin only. Rotates the stored token hash and emails a new accept link. The response has no raw token. acceptUrl is omitted when email delivery succeeds.",
         security: bearerAuth,
         request: { params: inviteIdParamsSchema },
         responses: {
             200: {
-                description: "Invite resent with new token",
+                description: "Invite resent. Email delivery status is included; the accept secret is not.",
                 content: {
                     "application/json": { schema: dataEnvelope(inviteItemSchema) },
                 },

@@ -1,5 +1,30 @@
 import request from "supertest"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+
+type CapturedInviteEmail = {
+    to: string
+    organizationName: string
+    role: string
+    acceptUrl: string
+    expiresAt: Date
+}
+
+const { sentInvites, sendInviteEmail } = vi.hoisted(() => {
+    const sentInvites: CapturedInviteEmail[] = []
+    const sendInviteEmail = vi.fn(async (input: CapturedInviteEmail) => {
+        sentInvites.push(input)
+    })
+    return { sentInvites, sendInviteEmail }
+})
+
+vi.mock("../../src/modules/members/mail.js", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../../src/modules/members/mail.js")>()
+    return {
+        ...actual,
+        sendInviteEmail,
+    }
+})
+
 import app from "../../src/app.js"
 import { PLAN_NAMES } from "../../src/modules/billing/catalog.js"
 import { hashInviteToken, INVITE_TTL_MS } from "../../src/modules/members/token.js"
@@ -12,6 +37,24 @@ import {
     type SeededAuthUser,
 } from "../helpers/db.js"
 import { useTestAuthUser } from "../helpers/fixtures.js"
+
+function tokenFromAcceptUrl(acceptUrl: string) {
+    const token = new URL(acceptUrl).searchParams.get("token")
+    if (!token) throw new Error("Invite email is missing an accept token")
+    return token
+}
+
+function lastInviteToken() {
+    const last = sentInvites.at(-1)
+    expect(last?.acceptUrl).toContain("/invites/accept?token=")
+    return tokenFromAcceptUrl(last!.acceptUrl)
+}
+
+function expectSecretOmitted(data: Record<string, unknown>) {
+    expect(data.token).toBeUndefined()
+    expect(data.acceptUrl).toBeUndefined()
+    expect(data.delivery).toEqual({ channel: "email", status: "sent" })
+}
 
 async function createTeamOrg(headers: Record<string, string>, name: string) {
     const res = await request(app.express)
@@ -31,6 +74,12 @@ describe("Members / invites", () => {
     let adminUser: SeededAuthUser | null = null
 
     beforeEach(async () => {
+        sentInvites.length = 0
+        sendInviteEmail.mockReset()
+        sendInviteEmail.mockImplementation(async (input: CapturedInviteEmail) => {
+            sentInvites.push(input)
+        })
+
         invitee = await seedUserWithPersonalOrg(testUserId(), {
             email: "invitee@example.com",
             firstName: "Invite",
@@ -91,7 +140,8 @@ describe("Members / invites", () => {
             .set(authUser.headers())
             .send({ email: "invitee@example.com", role: "member" })
         expect(created.status).toBe(201)
-        const token = created.body.data.token as string
+        expectSecretOmitted(created.body.data)
+        const token = lastInviteToken()
 
         const accepted = await request(app.express)
             .post("/api/v1/invites/accept")
@@ -126,8 +176,10 @@ describe("Members / invites", () => {
             role: "admin",
             status: "PENDING",
         })
-        expect(created.body.data.token).toBeTruthy()
-        expect(created.body.data.acceptUrl).toContain("/invites/accept?token=")
+        expectSecretOmitted(created.body.data)
+        expect(lastInviteToken()).toBeTruthy()
+        expect(sentInvites.at(-1)?.to).toBe("newperson@example.com")
+        expect(sentInvites.at(-1)?.role).toBe("admin")
 
         const listed = await request(app.express)
             .get(`/api/v1/organizations/${orgId}/invites`)
@@ -135,6 +187,8 @@ describe("Members / invites", () => {
         expect(listed.status).toBe(200)
         expect(listed.body.data).toHaveLength(1)
         expect(listed.body.data[0].token).toBeUndefined()
+        expect(listed.body.data[0].acceptUrl).toBeUndefined()
+        expect(listed.body.data[0].delivery).toBeUndefined()
 
         const revoked = await request(app.express)
             .delete(`/api/v1/organizations/${orgId}/invites/${created.body.data.id}`)
@@ -179,7 +233,8 @@ describe("Members / invites", () => {
             .set(authUser.headers())
             .send({ email: "invitee@example.com", role: "member" })
         expect(created.status).toBe(201)
-        const token = created.body.data.token as string
+        expectSecretOmitted(created.body.data)
+        const token = lastInviteToken()
 
         const preview = await request(app.express)
             .get("/api/v1/invites/preview")
@@ -224,7 +279,7 @@ describe("Members / invites", () => {
             .set(authUser.headers())
             .send({ email: "invitee@example.com", role: "member" })
         expect(created.status).toBe(201)
-        const token = created.body.data.token as string
+        const token = lastInviteToken()
         const inviteId = created.body.data.id as string
 
         await prismaClient.organizationInvite.update({
@@ -255,7 +310,7 @@ describe("Members / invites", () => {
         await request(app.express)
             .post("/api/v1/invites/accept")
             .set(authHeader(adminUser!.userId))
-            .send({ token: adminInvite.body.data.token })
+            .send({ token: lastInviteToken() })
 
         const memberInvite = await request(app.express)
             .post(`/api/v1/organizations/${orgId}/invites`)
@@ -265,7 +320,7 @@ describe("Members / invites", () => {
         await request(app.express)
             .post("/api/v1/invites/accept")
             .set(authHeader(invitee!.userId))
-            .send({ token: memberInvite.body.data.token })
+            .send({ token: lastInviteToken() })
 
         const members = await request(app.express)
             .get(`/api/v1/organizations/${orgId}/members`)
@@ -361,7 +416,7 @@ describe("Members / invites", () => {
         await request(app.express)
             .post("/api/v1/invites/accept")
             .set(authHeader(invitee!.userId))
-            .send({ token: memberInvite.body.data.token })
+            .send({ token: lastInviteToken() })
 
         const adminInvite = await request(app.express)
             .post(`/api/v1/organizations/${orgId}/invites`)
@@ -370,7 +425,7 @@ describe("Members / invites", () => {
         await request(app.express)
             .post("/api/v1/invites/accept")
             .set(authHeader(adminUser!.userId))
-            .send({ token: adminInvite.body.data.token })
+            .send({ token: lastInviteToken() })
 
         const left = await request(app.express)
             .post(`/api/v1/organizations/${orgId}/leave`)
@@ -385,7 +440,7 @@ describe("Members / invites", () => {
         await request(app.express)
             .post("/api/v1/invites/accept")
             .set(authHeader(invitee!.userId))
-            .send({ token: reinvite.body.data.token })
+            .send({ token: lastInviteToken() })
 
         const members = await request(app.express)
             .get(`/api/v1/organizations/${orgId}/members`)
@@ -411,15 +466,16 @@ describe("Members / invites", () => {
             .post(`/api/v1/organizations/${orgId}/invites`)
             .set(authUser.headers())
             .send({ email: "invitee@example.com", role: "member" })
-        const oldToken = created.body.data.token as string
+        const oldToken = lastInviteToken()
         const inviteId = created.body.data.id as string
 
         const resent = await request(app.express)
             .post(`/api/v1/organizations/${orgId}/invites/${inviteId}/resend`)
             .set(authUser.headers())
         expect(resent.status).toBe(200)
-        expect(resent.body.data.token).toBeTruthy()
-        expect(resent.body.data.token).not.toBe(oldToken)
+        expectSecretOmitted(resent.body.data)
+        const newToken = lastInviteToken()
+        expect(newToken).not.toBe(oldToken)
 
         const oldHash = hashInviteToken(oldToken)
         const row = await prismaClient.organizationInvite.findUniqueOrThrow({
@@ -431,7 +487,30 @@ describe("Members / invites", () => {
         const accepted = await request(app.express)
             .post("/api/v1/invites/accept")
             .set(authHeader(invitee!.userId))
-            .send({ token: resent.body.data.token })
+            .send({ token: newToken })
         expect(accepted.status).toBe(200)
+    })
+
+    it("rolls back a create when email delivery fails", async () => {
+        const orgId = await createTeamOrg(
+            authUser.headers(),
+            `MailFail ${authUser.auth.userId.slice(-6)}`,
+        )
+
+        sendInviteEmail.mockRejectedValueOnce(new Error("provider down"))
+
+        const created = await request(app.express)
+            .post(`/api/v1/organizations/${orgId}/invites`)
+            .set(authUser.headers())
+            .send({ email: "undelivered@example.com", role: "member" })
+        expect(created.status).toBe(502)
+        expect(created.body.error.code).toBe("INVITE_DELIVERY_FAILED")
+        expect(created.body.data).toBeUndefined()
+
+        const listed = await request(app.express)
+            .get(`/api/v1/organizations/${orgId}/invites`)
+            .set(authUser.headers())
+        expect(listed.status).toBe(200)
+        expect(listed.body.data).toHaveLength(0)
     })
 })
