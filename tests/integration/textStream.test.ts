@@ -810,6 +810,99 @@ describe("POST /v1/text/stream", () => {
             })
         })
 
+        it("joins a Gemini thought signature that arrives in a later stream chunk", async () => {
+            const chunks = [
+                {
+                    candidates: [
+                        {
+                            content: {
+                                role: "model",
+                                parts: [{ functionCall: { name: "get_weather", args: { city: "Manila" } } }],
+                            },
+                        },
+                    ],
+                },
+                {
+                    candidates: [
+                        {
+                            content: {
+                                role: "model",
+                                parts: [{ thoughtSignature: "sig-later" }],
+                            },
+                        },
+                    ],
+                    usageMetadata: { promptTokenCount: 8, candidatesTokenCount: 4, totalTokenCount: 12 },
+                },
+            ]
+            fetchSpy.mockImplementation(async () =>
+                sseFetchResponse(chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join("")),
+            )
+
+            const res = await request(app.express)
+                .post("/v1/text/stream")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.geminiModelSlug,
+                    messages: [{ role: "user", content: "Weather in Manila?" }],
+                    tools: [weatherTool],
+                })
+
+            const events = parseSseEvents(res.text)
+            expect(events.map((e) => e.event)).toEqual(["meta", "tool_call", "done"])
+            expect(events[1]?.data).toEqual({
+                id: "call_0",
+                name: "get_weather",
+                arguments: { city: "Manila" },
+                providerMetadata: { gemini: { thoughtSignature: "sig-later" } },
+            })
+            expect(events[2]?.data).toMatchObject({
+                message: { content: "", toolCalls: [events[1]?.data] },
+            })
+        })
+
+        it("keeps a Gemini thought signature that arrives before the function call", async () => {
+            const chunks = [
+                {
+                    candidates: [
+                        {
+                            content: {
+                                role: "model",
+                                parts: [{ thoughtSignature: "sig-early" }],
+                            },
+                        },
+                    ],
+                },
+                {
+                    candidates: [
+                        {
+                            content: {
+                                role: "model",
+                                parts: [{ functionCall: { name: "get_weather", args: { city: "Manila" } } }],
+                            },
+                        },
+                    ],
+                    usageMetadata: { promptTokenCount: 8, candidatesTokenCount: 4, totalTokenCount: 12 },
+                },
+            ]
+            fetchSpy.mockImplementation(async () =>
+                sseFetchResponse(chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join("")),
+            )
+
+            const res = await request(app.express)
+                .post("/v1/text/stream")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.geminiModelSlug,
+                    messages: [{ role: "user", content: "Weather in Manila?" }],
+                    tools: [weatherTool],
+                })
+
+            const events = parseSseEvents(res.text)
+            expect(events[1]?.data).toMatchObject({
+                providerMetadata: { gemini: { thoughtSignature: "sig-early" } },
+            })
+        })
+
         it("keeps the text-only done shape when no tools are sent", async () => {
             const res = await request(app.express)
                 .post("/v1/text/stream")

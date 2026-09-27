@@ -127,31 +127,102 @@ function partsText(parts: GeminiPart[]): string {
         .join("")
 }
 
-/**
- * Complete function calls in these parts. Gemini may omit ids, so the gateway assigns
- * call_${index} counting from firstIndex; callers send that id back with the tool result.
- */
-function partsToolCalls(parts: GeminiPart[], firstIndex: number): ToolCall[] {
-    const calls: ToolCall[] = []
-    for (const part of parts) {
-        const call = part.functionCall
-        if (!call?.name) {
-            continue
-        }
-        const index = firstIndex + calls.length
-        calls.push({
-            id: call.id || `call_${index}`,
-            name: call.name,
-            arguments:
-                call.args && typeof call.args === "object" && !Array.isArray(call.args)
-                    ? call.args
-                    : {},
-            ...(part.thoughtSignature
-                ? { providerMetadata: { gemini: { thoughtSignature: part.thoughtSignature } } }
-                : {}),
-        })
+type DraftCall = {
+    id?: string
+    name: string
+    arguments: Record<string, unknown>
+    thoughtSignature?: string
+}
+
+function argumentsOf(args: Record<string, unknown> | undefined): Record<string, unknown> {
+    if (args && typeof args === "object" && !Array.isArray(args)) {
+        return args
     }
-    return calls
+    return {}
+}
+
+/**
+ * Function calls for one model turn.
+ * Gemini 3 streaming often sends `functionCall` and `thoughtSignature` in different
+ * chunks, or puts the signature on a thought part beside the call. Both have to be
+ * joined before the call is returned, or the next request is rejected.
+ */
+class TurnCalls {
+    private readonly calls: DraftCall[] = []
+    /** Signatures seen before the function call they belong to. */
+    private waiting: string[] = []
+
+    absorb(parts: GeminiPart[]): void {
+        let mayContinue = this.calls.length > 0
+        for (const part of parts) {
+            const name = part.functionCall?.name
+            if (!name) {
+                if (part.thoughtSignature) {
+                    this.placeSignature(part.thoughtSignature)
+                }
+                continue
+            }
+
+            const args = argumentsOf(part.functionCall?.args)
+            const last = this.calls[this.calls.length - 1]
+            if (
+                mayContinue &&
+                last &&
+                last.name === name &&
+                JSON.stringify(last.arguments) === JSON.stringify(args)
+            ) {
+                mayContinue = false
+                if (part.thoughtSignature && !last.thoughtSignature) {
+                    last.thoughtSignature = part.thoughtSignature
+                }
+                continue
+            }
+            mayContinue = false
+
+            const draft: DraftCall = { name, arguments: args }
+            if (part.functionCall?.id) {
+                draft.id = part.functionCall.id
+            }
+            if (part.thoughtSignature) {
+                draft.thoughtSignature = part.thoughtSignature
+            } else if (this.waiting.length > 0) {
+                draft.thoughtSignature = this.waiting.shift()
+            }
+            this.calls.push(draft)
+        }
+    }
+
+    private placeSignature(signature: string): void {
+        const open = this.calls.find((call) => !call.thoughtSignature)
+        if (open) {
+            open.thoughtSignature = signature
+            return
+        }
+        this.waiting.push(signature)
+    }
+
+    /**
+     * Gemini may omit ids, so the gateway assigns call_${index} counting from
+     * firstIndex. Callers send that id back with the tool result.
+     */
+    toToolCalls(firstIndex: number): ToolCall[] {
+        for (const signature of this.waiting) {
+            const open = this.calls.find((call) => !call.thoughtSignature)
+            if (!open) {
+                break
+            }
+            open.thoughtSignature = signature
+        }
+        this.waiting = []
+        return this.calls.map((call, index) => ({
+            id: call.id || `call_${firstIndex + index}`,
+            name: call.name,
+            arguments: call.arguments,
+            ...(call.thoughtSignature
+                ? { providerMetadata: { gemini: { thoughtSignature: call.thoughtSignature } } }
+                : {}),
+        }))
+    }
 }
 
 function mapUsage(meta: GeminiGenerateResponse["usageMetadata"]): ChatCompletionUsage | null {
@@ -263,7 +334,9 @@ class GeminiChatProvider implements ChatProvider {
 
         const parts = raw?.candidates?.[0]?.content?.parts ?? []
         const content = partsText(parts)
-        const toolCalls = partsToolCalls(parts, 0)
+        const turn = new TurnCalls()
+        turn.absorb(parts)
+        const toolCalls = turn.toToolCalls(0)
 
         if (!content && toolCalls.length === 0) {
             throw new AppError(502, "UPSTREAM_ERROR", "Gemini returned no assistant message")
@@ -327,7 +400,7 @@ class GeminiChatProvider implements ChatProvider {
         const stream: ChatStream = {
             rawChunks,
             async *[Symbol.asyncIterator](): AsyncGenerator<ChatStreamEvent> {
-                let toolCallCount = 0
+                const turn = new TurnCalls()
                 for await (const payload of parseSseDataPayloads(responseBody, signal)) {
                     let chunk: GeminiGenerateResponse
                     try {
@@ -343,21 +416,21 @@ class GeminiChatProvider implements ChatProvider {
                     }
 
                     const parts = chunk.candidates?.[0]?.content?.parts ?? []
+                    turn.absorb(parts)
                     const content = partsText(parts)
 
                     if (content.length > 0) {
                         yield { type: "delta", content }
                     }
 
-                    for (const call of partsToolCalls(parts, toolCallCount)) {
-                        toolCallCount += 1
-                        yield { type: "tool_call", ...call }
-                    }
-
                     const usage = mapUsage(chunk.usageMetadata)
                     if (usage) {
                         yield { type: "usage", usage }
                     }
+                }
+
+                for (const call of turn.toToolCalls(0)) {
+                    yield { type: "tool_call", ...call }
                 }
             },
         }

@@ -1016,6 +1016,49 @@ describe("POST /v1/text/chat", () => {
             ])
         })
 
+        it("copies a thought signature from a sibling part onto the function call", async () => {
+            fetchSpy.mockImplementation(async () =>
+                new Response(
+                    JSON.stringify({
+                        candidates: [
+                            {
+                                content: {
+                                    role: "model",
+                                    parts: [
+                                        { thoughtSignature: "sig-sibling" },
+                                        {
+                                            functionCall: { name: "get_weather", args: { city: "Manila" } },
+                                        },
+                                    ],
+                                },
+                            },
+                        ],
+                        usageMetadata: { promptTokenCount: 8, candidatesTokenCount: 4, totalTokenCount: 12 },
+                    }),
+                    { status: 200, headers: { "Content-Type": "application/json" } },
+                ),
+            )
+
+            const res = await request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.geminiModelSlug,
+                    messages: [{ role: "user", content: "Weather in Manila?" }],
+                    tools: [weatherTool],
+                })
+
+            expect(res.status).toBe(200)
+            expect(res.body.data.message.toolCalls).toEqual([
+                {
+                    id: "call_0",
+                    name: "get_weather",
+                    arguments: { city: "Manila" },
+                    providerMetadata: { gemini: { thoughtSignature: "sig-sibling" } },
+                },
+            ])
+        })
+
         it("replays providerMetadata.gemini.thoughtSignature on the functionCall part", async () => {
             const [user, assistant, tool] = priorToolTurn as [
                 Record<string, unknown>,
