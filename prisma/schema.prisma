@@ -234,6 +234,7 @@ model Project {
   usageAnalytics  UsageAnalytics[]
   webhooks        Webhook[]
   allowedOrigins  ProjectAllowedOrigin[]
+  modelAllows     ProjectModelAllow[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -258,6 +259,25 @@ model ProjectAllowedOrigin {
   @@unique([projectId, origin])
   @@index([origin])
   @@index([projectId])
+}
+
+/// Explicit project–model allowlist. Missing rows do not mean “allow all”.
+model ProjectModelAllow {
+  id String @id @default(cuid())
+
+  projectId String
+  modelId   Int
+  enabled   Boolean @default(true)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  model   AIModel @relation(fields: [modelId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, modelId])
+  @@index([projectId])
+  @@index([modelId])
 }
 
 // ── API keys ────────────────────────────────────────────────────────────────
@@ -314,8 +334,9 @@ model AIModel {
   /// When true, orgs on the Free plan may call this model.
   freeEligible  Boolean       @default(false)
 
-  provider AIProvider  @relation(fields: [providerId], references: [id], onDelete: Restrict)
-  requests AIRequest[]
+  provider    AIProvider          @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  requests    AIRequest[]
+  projectAllows ProjectModelAllow[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

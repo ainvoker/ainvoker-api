@@ -37,7 +37,7 @@ describe("ai requests endpoints", () => {
         apiKeyId = key.id
 
         const model = await prismaClient.aIModel.findFirstOrThrow({
-            where: { name: "gemini-2.5-flash", provider: { name: "gemini" } },
+            where: { name: "gemini-3.6-flash", provider: { name: "gemini" } },
         })
         modelId = model.id
 
@@ -49,7 +49,7 @@ describe("ai requests endpoints", () => {
                 serviceType: "TEXT",
                 requestStatus: "SUCCESS",
                 requestPayload: {
-                    model: "gemini/gemini-2.5-flash",
+                    model: "gemini/gemini-3.6-flash",
                     messages: [{ role: "user", content: "Hi" }],
                 },
                 responsePayload: {
@@ -77,7 +77,7 @@ describe("ai requests endpoints", () => {
         expect(listRes.body.data.total).toBeGreaterThanOrEqual(1)
         expect(listRes.body.data.items[0]).toMatchObject({
             projectId,
-            model: "gemini/gemini-2.5-flash",
+            model: "gemini/gemini-3.6-flash",
             serviceType: "TEXT",
             requestStatus: "SUCCESS",
             inputTokens: 3,
@@ -96,9 +96,9 @@ describe("ai requests endpoints", () => {
         expect(getRes.body.data).toMatchObject({
             id: requestId,
             projectId,
-            model: "gemini/gemini-2.5-flash",
+            model: "gemini/gemini-3.6-flash",
             requestPayload: {
-                model: "gemini/gemini-2.5-flash",
+                model: "gemini/gemini-3.6-flash",
                 messages: [{ role: "user", content: "Hi" }],
             },
             responsePayload: {

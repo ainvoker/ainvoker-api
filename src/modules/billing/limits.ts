@@ -28,8 +28,18 @@ export type ReservePendingTextRequestInput = {
     organizationId: string
     projectId: string
     apiKeyId: string
+    /** Must already pass assertModelAllowedForPlan; a missing allow row is created enabled. */
     modelId: number
     requestPayload: Prisma.InputJsonValue
+    /** Prompt-token ceiling counted against the monthly cap while the row is PENDING. */
+    reservedInputTokens: number
+    /** Completion-token ceiling. May shrink to the remaining budget when allowOutputShrink is set. */
+    reservedOutputTokens: number
+    /**
+     * True when the caller omitted maxTokens. The output hold can shrink to whatever
+     * monthly budget remains. An explicit maxTokens that does not fit is rejected.
+     */
+    allowOutputShrink: boolean
 }
 
 export async function expireLapsedSubscriptions(organizationId: string) {
@@ -88,6 +98,13 @@ export async function expireLapsedSubscriptions(organizationId: string) {
 
 export async function getActiveSubscriptionWithPlan(organizationId: string) {
     await ensureBillingCatalog()
+
+    // Hot path (every gateway call): skip the expiry writes while the newest subscription is live.
+    const current = await findLatestSubscriptionPlan(prismaClient, organizationId)
+    if (current && isEntitlementUnexpired(current.expiresAt)) {
+        return current
+    }
+
     await expireLapsedSubscriptions(organizationId)
     return loadActiveSubscriptionPlan(prismaClient, organizationId)
 }
@@ -134,8 +151,8 @@ export function assertModelAllowedForPlan(
  * Enforce monthly quotas for FIXED_MONTHLY plans.
  * For METERED, only enforce when requestLimit/tokenLimit are > 0 (safety ceilings).
  *
- * Token caps use pre-call aggregates: PENDING rows usually have null totalTokens, so
- * concurrent in-flight calls can still pass a token ceiling until usage is written.
+ * Callers that insert a request must also reserve that request's tokens on the row.
+ * This check only rejects orgs that are already at the cap.
  */
 function enforcePlanQuota(
     plan: Pick<Plan, "name" | "billingMode" | "requestLimit" | "tokenLimit">,
@@ -171,8 +188,8 @@ function enforcePlanQuota(
     }
 }
 
-async function loadActiveSubscriptionPlan(db: DbClient, organizationId: string) {
-    const subscription = await db.subscription.findFirst({
+function findLatestSubscriptionPlan(db: DbClient, organizationId: string) {
+    return db.subscription.findFirst({
         where: {
             organizationId,
             status: { in: ["ACTIVE", "PAST_DUE"] },
@@ -180,6 +197,10 @@ async function loadActiveSubscriptionPlan(db: DbClient, organizationId: string) 
         include: { plan: true },
         orderBy: { startedAt: "desc" },
     })
+}
+
+async function loadActiveSubscriptionPlan(db: DbClient, organizationId: string) {
+    const subscription = await findLatestSubscriptionPlan(db, organizationId)
 
     if (!subscription || !isEntitlementUnexpired(subscription.expiresAt)) {
         throw new AppError(
@@ -225,23 +246,90 @@ export async function assertWithinPlanLimits(organizationId: string): Promise<Qu
     return enforcePlanQuota(subscription.plan, period)
 }
 
+function tokenLimitApplies(plan: Pick<Plan, "billingMode" | "tokenLimit">): boolean {
+    return plan.billingMode === "FIXED_MONTHLY" || plan.tokenLimit > 0
+}
+
 /**
- * Atomically check org quota and insert a PENDING AIRequest.
+ * Fit this call's token hold into the remaining monthly budget.
+ * Explicit maxTokens that does not fit is rejected. An omitted maxTokens shrinks
+ * to whatever output budget remains after the input hold.
+ */
+function fitTokenHold(
+    plan: Pick<Plan, "billingMode" | "tokenLimit">,
+    tokensUsed: number,
+    input: Pick<
+        ReservePendingTextRequestInput,
+        "reservedInputTokens" | "reservedOutputTokens" | "allowOutputShrink"
+    >,
+): { inputTokens: number; outputTokens: number } {
+    const inputTokens = input.reservedInputTokens
+    let outputTokens = input.reservedOutputTokens
+
+    if (!tokenLimitApplies(plan) || plan.tokenLimit <= 0) {
+        return { inputTokens, outputTokens }
+    }
+
+    const remaining = plan.tokenLimit - tokensUsed
+    if (inputTokens + outputTokens <= remaining) {
+        return { inputTokens, outputTokens }
+    }
+
+    const outputBudget = remaining - inputTokens
+    if (input.allowOutputShrink && outputBudget >= 1) {
+        return { inputTokens, outputTokens: outputBudget }
+    }
+
+    throw new AppError(
+        429,
+        "RATE_LIMIT_EXCEEDED",
+        `Monthly token limit of ${plan.tokenLimit} exceeded`,
+    )
+}
+
+/**
+ * Atomically check org quota and insert a PENDING AIRequest with a token hold.
  * Locks the Organization row (FOR UPDATE) so concurrent chats across API
- * instances cannot TOCTOU past monthly request/token caps. Hold the lock only
- * for check + insert — call providers after commit.
+ * instances cannot TOCTOU past monthly request/token caps. The hold is stored
+ * on totalTokens so the next caller sees it. Hold the lock only for check +
+ * insert — call providers after commit, capped at the reserved output.
  */
 export async function reservePendingTextRequest(input: ReservePendingTextRequestInput): Promise<{
     aiRequest: { id: string }
     quota: QuotaSnapshot
+    tokenHold: { inputTokens: number; outputTokens: number }
 }> {
     return prismaClient.$transaction(async (tx) => {
         // Serialize quota check+insert per org across API processes (TOCTOU / multi-instance).
         await tx.$queryRaw`SELECT id FROM "Organization" WHERE id = ${input.organizationId} FOR UPDATE`
 
+        // Default-enabled backfill for this model only; skipDuplicates keeps a disabled row disabled.
+        await tx.projectModelAllow.createMany({
+            data: [{ projectId: input.projectId, modelId: input.modelId, enabled: true }],
+            skipDuplicates: true,
+        })
+
+        const allow = await tx.projectModelAllow.findUnique({
+            where: {
+                projectId_modelId: {
+                    projectId: input.projectId,
+                    modelId: input.modelId,
+                },
+            },
+            select: { enabled: true },
+        })
+        if (!allow || !allow.enabled) {
+            throw new AppError(
+                403,
+                "MODEL_DISABLED",
+                "This model is disabled for the project",
+            )
+        }
+
         const subscription = await loadActiveSubscriptionPlan(tx, input.organizationId)
         const period = await aggregateOrgQuotaUsage(tx, input.organizationId)
         const quota = enforcePlanQuota(subscription.plan, period)
+        const tokenHold = fitTokenHold(subscription.plan, period.tokensUsed, input)
 
         const aiRequest = await tx.aIRequest.create({
             data: {
@@ -251,11 +339,14 @@ export async function reservePendingTextRequest(input: ReservePendingTextRequest
                 serviceType: "TEXT",
                 requestPayload: input.requestPayload,
                 requestStatus: "PENDING",
+                inputTokens: tokenHold.inputTokens,
+                outputTokens: tokenHold.outputTokens,
+                totalTokens: tokenHold.inputTokens + tokenHold.outputTokens,
             },
             select: { id: true },
         })
 
-        return { aiRequest, quota }
+        return { aiRequest, quota, tokenHold }
     })
 }
 

@@ -282,6 +282,7 @@ export type AIModelWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string
   provider?: Prisma.XOR<Prisma.AIProviderScalarRelationFilter, Prisma.AIProviderWhereInput>
   requests?: Prisma.AIRequestListRelationFilter
+  projectAllows?: Prisma.ProjectModelAllowListRelationFilter
 }
 
 export type AIModelOrderByWithRelationInput = {
@@ -298,6 +299,7 @@ export type AIModelOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   provider?: Prisma.AIProviderOrderByWithRelationInput
   requests?: Prisma.AIRequestOrderByRelationAggregateInput
+  projectAllows?: Prisma.ProjectModelAllowOrderByRelationAggregateInput
 }
 
 export type AIModelWhereUniqueInput = Prisma.AtLeast<{
@@ -318,6 +320,7 @@ export type AIModelWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string
   provider?: Prisma.XOR<Prisma.AIProviderScalarRelationFilter, Prisma.AIProviderWhereInput>
   requests?: Prisma.AIRequestListRelationFilter
+  projectAllows?: Prisma.ProjectModelAllowListRelationFilter
 }, "id" | "providerId_name">
 
 export type AIModelOrderByWithAggregationInput = {
@@ -368,6 +371,7 @@ export type AIModelCreateInput = {
   updatedAt?: Date | string
   provider: Prisma.AIProviderCreateNestedOneWithoutModelsInput
   requests?: Prisma.AIRequestCreateNestedManyWithoutModelInput
+  projectAllows?: Prisma.ProjectModelAllowCreateNestedManyWithoutModelInput
 }
 
 export type AIModelUncheckedCreateInput = {
@@ -383,6 +387,7 @@ export type AIModelUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   requests?: Prisma.AIRequestUncheckedCreateNestedManyWithoutModelInput
+  projectAllows?: Prisma.ProjectModelAllowUncheckedCreateNestedManyWithoutModelInput
 }
 
 export type AIModelUpdateInput = {
@@ -397,6 +402,7 @@ export type AIModelUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   provider?: Prisma.AIProviderUpdateOneRequiredWithoutModelsNestedInput
   requests?: Prisma.AIRequestUpdateManyWithoutModelNestedInput
+  projectAllows?: Prisma.ProjectModelAllowUpdateManyWithoutModelNestedInput
 }
 
 export type AIModelUncheckedUpdateInput = {
@@ -412,6 +418,7 @@ export type AIModelUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   requests?: Prisma.AIRequestUncheckedUpdateManyWithoutModelNestedInput
+  projectAllows?: Prisma.ProjectModelAllowUncheckedUpdateManyWithoutModelNestedInput
 }
 
 export type AIModelCreateManyInput = {
@@ -452,6 +459,11 @@ export type AIModelUncheckedUpdateManyInput = {
   freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type AIModelScalarRelationFilter = {
+  is?: Prisma.AIModelWhereInput
+  isNot?: Prisma.AIModelWhereInput
 }
 
 export type AIModelListRelationFilter = {
@@ -527,9 +539,18 @@ export type AIModelSumOrderByAggregateInput = {
   outputPrice?: Prisma.SortOrder
 }
 
-export type AIModelScalarRelationFilter = {
-  is?: Prisma.AIModelWhereInput
-  isNot?: Prisma.AIModelWhereInput
+export type AIModelCreateNestedOneWithoutProjectAllowsInput = {
+  create?: Prisma.XOR<Prisma.AIModelCreateWithoutProjectAllowsInput, Prisma.AIModelUncheckedCreateWithoutProjectAllowsInput>
+  connectOrCreate?: Prisma.AIModelCreateOrConnectWithoutProjectAllowsInput
+  connect?: Prisma.AIModelWhereUniqueInput
+}
+
+export type AIModelUpdateOneRequiredWithoutProjectAllowsNestedInput = {
+  create?: Prisma.XOR<Prisma.AIModelCreateWithoutProjectAllowsInput, Prisma.AIModelUncheckedCreateWithoutProjectAllowsInput>
+  connectOrCreate?: Prisma.AIModelCreateOrConnectWithoutProjectAllowsInput
+  upsert?: Prisma.AIModelUpsertWithoutProjectAllowsInput
+  connect?: Prisma.AIModelWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AIModelUpdateToOneWithWhereWithoutProjectAllowsInput, Prisma.AIModelUpdateWithoutProjectAllowsInput>, Prisma.AIModelUncheckedUpdateWithoutProjectAllowsInput>
 }
 
 export type AIModelCreateNestedManyWithoutProviderInput = {
@@ -586,10 +607,6 @@ export type DecimalFieldUpdateOperationsInput = {
   divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type AIModelCreateNestedOneWithoutRequestsInput = {
   create?: Prisma.XOR<Prisma.AIModelCreateWithoutRequestsInput, Prisma.AIModelUncheckedCreateWithoutRequestsInput>
   connectOrCreate?: Prisma.AIModelCreateOrConnectWithoutRequestsInput
@@ -604,6 +621,80 @@ export type AIModelUpdateOneRequiredWithoutRequestsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AIModelUpdateToOneWithWhereWithoutRequestsInput, Prisma.AIModelUpdateWithoutRequestsInput>, Prisma.AIModelUncheckedUpdateWithoutRequestsInput>
 }
 
+export type AIModelCreateWithoutProjectAllowsInput = {
+  name: string
+  type: $Enums.AIModelType
+  contextWindow: number
+  inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: $Enums.CatalogStatus
+  freeEligible?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  provider: Prisma.AIProviderCreateNestedOneWithoutModelsInput
+  requests?: Prisma.AIRequestCreateNestedManyWithoutModelInput
+}
+
+export type AIModelUncheckedCreateWithoutProjectAllowsInput = {
+  id?: number
+  providerId: number
+  name: string
+  type: $Enums.AIModelType
+  contextWindow: number
+  inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: $Enums.CatalogStatus
+  freeEligible?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  requests?: Prisma.AIRequestUncheckedCreateNestedManyWithoutModelInput
+}
+
+export type AIModelCreateOrConnectWithoutProjectAllowsInput = {
+  where: Prisma.AIModelWhereUniqueInput
+  create: Prisma.XOR<Prisma.AIModelCreateWithoutProjectAllowsInput, Prisma.AIModelUncheckedCreateWithoutProjectAllowsInput>
+}
+
+export type AIModelUpsertWithoutProjectAllowsInput = {
+  update: Prisma.XOR<Prisma.AIModelUpdateWithoutProjectAllowsInput, Prisma.AIModelUncheckedUpdateWithoutProjectAllowsInput>
+  create: Prisma.XOR<Prisma.AIModelCreateWithoutProjectAllowsInput, Prisma.AIModelUncheckedCreateWithoutProjectAllowsInput>
+  where?: Prisma.AIModelWhereInput
+}
+
+export type AIModelUpdateToOneWithWhereWithoutProjectAllowsInput = {
+  where?: Prisma.AIModelWhereInput
+  data: Prisma.XOR<Prisma.AIModelUpdateWithoutProjectAllowsInput, Prisma.AIModelUncheckedUpdateWithoutProjectAllowsInput>
+}
+
+export type AIModelUpdateWithoutProjectAllowsInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumAIModelTypeFieldUpdateOperationsInput | $Enums.AIModelType
+  contextWindow?: Prisma.IntFieldUpdateOperationsInput | number
+  inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus
+  freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  provider?: Prisma.AIProviderUpdateOneRequiredWithoutModelsNestedInput
+  requests?: Prisma.AIRequestUpdateManyWithoutModelNestedInput
+}
+
+export type AIModelUncheckedUpdateWithoutProjectAllowsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  providerId?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumAIModelTypeFieldUpdateOperationsInput | $Enums.AIModelType
+  contextWindow?: Prisma.IntFieldUpdateOperationsInput | number
+  inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus
+  freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  requests?: Prisma.AIRequestUncheckedUpdateManyWithoutModelNestedInput
+}
+
 export type AIModelCreateWithoutProviderInput = {
   name: string
   type: $Enums.AIModelType
@@ -615,6 +706,7 @@ export type AIModelCreateWithoutProviderInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   requests?: Prisma.AIRequestCreateNestedManyWithoutModelInput
+  projectAllows?: Prisma.ProjectModelAllowCreateNestedManyWithoutModelInput
 }
 
 export type AIModelUncheckedCreateWithoutProviderInput = {
@@ -629,6 +721,7 @@ export type AIModelUncheckedCreateWithoutProviderInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   requests?: Prisma.AIRequestUncheckedCreateNestedManyWithoutModelInput
+  projectAllows?: Prisma.ProjectModelAllowUncheckedCreateNestedManyWithoutModelInput
 }
 
 export type AIModelCreateOrConnectWithoutProviderInput = {
@@ -685,6 +778,7 @@ export type AIModelCreateWithoutRequestsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   provider: Prisma.AIProviderCreateNestedOneWithoutModelsInput
+  projectAllows?: Prisma.ProjectModelAllowCreateNestedManyWithoutModelInput
 }
 
 export type AIModelUncheckedCreateWithoutRequestsInput = {
@@ -699,6 +793,7 @@ export type AIModelUncheckedCreateWithoutRequestsInput = {
   freeEligible?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  projectAllows?: Prisma.ProjectModelAllowUncheckedCreateNestedManyWithoutModelInput
 }
 
 export type AIModelCreateOrConnectWithoutRequestsInput = {
@@ -728,6 +823,7 @@ export type AIModelUpdateWithoutRequestsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   provider?: Prisma.AIProviderUpdateOneRequiredWithoutModelsNestedInput
+  projectAllows?: Prisma.ProjectModelAllowUpdateManyWithoutModelNestedInput
 }
 
 export type AIModelUncheckedUpdateWithoutRequestsInput = {
@@ -742,6 +838,7 @@ export type AIModelUncheckedUpdateWithoutRequestsInput = {
   freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  projectAllows?: Prisma.ProjectModelAllowUncheckedUpdateManyWithoutModelNestedInput
 }
 
 export type AIModelCreateManyProviderInput = {
@@ -768,6 +865,7 @@ export type AIModelUpdateWithoutProviderInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   requests?: Prisma.AIRequestUpdateManyWithoutModelNestedInput
+  projectAllows?: Prisma.ProjectModelAllowUpdateManyWithoutModelNestedInput
 }
 
 export type AIModelUncheckedUpdateWithoutProviderInput = {
@@ -782,6 +880,7 @@ export type AIModelUncheckedUpdateWithoutProviderInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   requests?: Prisma.AIRequestUncheckedUpdateManyWithoutModelNestedInput
+  projectAllows?: Prisma.ProjectModelAllowUncheckedUpdateManyWithoutModelNestedInput
 }
 
 export type AIModelUncheckedUpdateManyWithoutProviderInput = {
@@ -804,10 +903,12 @@ export type AIModelUncheckedUpdateManyWithoutProviderInput = {
 
 export type AIModelCountOutputType = {
   requests: number
+  projectAllows: number
 }
 
 export type AIModelCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   requests?: boolean | AIModelCountOutputTypeCountRequestsArgs
+  projectAllows?: boolean | AIModelCountOutputTypeCountProjectAllowsArgs
 }
 
 /**
@@ -827,6 +928,13 @@ export type AIModelCountOutputTypeCountRequestsArgs<ExtArgs extends runtime.Type
   where?: Prisma.AIRequestWhereInput
 }
 
+/**
+ * AIModelCountOutputType without action
+ */
+export type AIModelCountOutputTypeCountProjectAllowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProjectModelAllowWhereInput
+}
+
 
 export type AIModelSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -842,6 +950,7 @@ export type AIModelSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   updatedAt?: boolean
   provider?: boolean | Prisma.AIProviderDefaultArgs<ExtArgs>
   requests?: boolean | Prisma.AIModel$requestsArgs<ExtArgs>
+  projectAllows?: boolean | Prisma.AIModel$projectAllowsArgs<ExtArgs>
   _count?: boolean | Prisma.AIModelCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["aIModel"]>
 
@@ -893,6 +1002,7 @@ export type AIModelOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
 export type AIModelInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   provider?: boolean | Prisma.AIProviderDefaultArgs<ExtArgs>
   requests?: boolean | Prisma.AIModel$requestsArgs<ExtArgs>
+  projectAllows?: boolean | Prisma.AIModel$projectAllowsArgs<ExtArgs>
   _count?: boolean | Prisma.AIModelCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AIModelIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -907,6 +1017,7 @@ export type $AIModelPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   objects: {
     provider: Prisma.$AIProviderPayload<ExtArgs>
     requests: Prisma.$AIRequestPayload<ExtArgs>[]
+    projectAllows: Prisma.$ProjectModelAllowPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1319,6 +1430,7 @@ export interface Prisma__AIModelClient<T, Null = never, ExtArgs extends runtime.
   readonly [Symbol.toStringTag]: "PrismaPromise"
   provider<T extends Prisma.AIProviderDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AIProviderDefaultArgs<ExtArgs>>): Prisma.Prisma__AIProviderClient<runtime.Types.Result.GetResult<Prisma.$AIProviderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   requests<T extends Prisma.AIModel$requestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AIModel$requestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AIRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  projectAllows<T extends Prisma.AIModel$projectAllowsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AIModel$projectAllowsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProjectModelAllowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1781,6 +1893,30 @@ export type AIModel$requestsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.AIRequestScalarFieldEnum | Prisma.AIRequestScalarFieldEnum[]
+}
+
+/**
+ * AIModel.projectAllows
+ */
+export type AIModel$projectAllowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProjectModelAllow
+   */
+  select?: Prisma.ProjectModelAllowSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProjectModelAllow
+   */
+  omit?: Prisma.ProjectModelAllowOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProjectModelAllowInclude<ExtArgs> | null
+  where?: Prisma.ProjectModelAllowWhereInput
+  orderBy?: Prisma.ProjectModelAllowOrderByWithRelationInput | Prisma.ProjectModelAllowOrderByWithRelationInput[]
+  cursor?: Prisma.ProjectModelAllowWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ProjectModelAllowScalarFieldEnum | Prisma.ProjectModelAllowScalarFieldEnum[]
 }
 
 /**

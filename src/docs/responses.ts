@@ -114,6 +114,19 @@ export const allowedOriginSchema = z
     })
     .meta({ id: "AllowedOrigin" })
 
+export const projectModelSchema = z
+    .object({
+        id: z.number().int(),
+        provider: z.string(),
+        name: z.string(),
+        slug: z.string(),
+        contextWindow: z.number().int(),
+        freeEligible: z.boolean(),
+        enabled: z.boolean(),
+        locked: z.boolean(),
+    })
+    .meta({ id: "ProjectModel" })
+
 export const deletedResponseSchema = z
     .object({
         deleted: z.literal(true),
@@ -275,10 +288,28 @@ export const projectUsageSchema = z
     })
     .meta({ id: "ProjectUsage" })
 
+const providerMetadataSchema = z
+    .record(z.string(), z.unknown())
+    .optional()
+    .describe(
+        "Opaque vendor data (for example the Gemini thought signature). Send it back unchanged with the call.",
+    )
+
+export const chatToolCallSchema = z
+    .object({
+        id: z.string(),
+        name: z.string(),
+        arguments: z.record(z.string(), z.unknown()),
+        providerMetadata: providerMetadataSchema,
+    })
+    .meta({ id: "ChatToolCall" })
+
+/** Assistant reply. content is "" on a tool-only reply; text-only replies omit toolCalls. */
 export const chatMessageSchema = z
     .object({
-        role: z.enum(["system", "user", "assistant"]),
+        role: z.literal("assistant"),
         content: z.string(),
+        toolCalls: z.array(chatToolCallSchema).optional(),
     })
     .meta({ id: "ChatMessage" })
 
@@ -298,6 +329,42 @@ export const textChatResponseSchema = z
         usage: chatUsageSchema.nullable(),
     })
     .meta({ id: "TextChatResponse" })
+
+export const textStreamMetaEventSchema = z
+    .object({
+        id: z.string(),
+        model: z.string(),
+    })
+    .meta({ id: "TextStreamMetaEvent" })
+
+export const textStreamDeltaEventSchema = z
+    .object({
+        content: z.string(),
+    })
+    .meta({ id: "TextStreamDeltaEvent" })
+
+export const textStreamToolCallEventSchema = z
+    .object({
+        id: z.string(),
+        name: z.string(),
+        arguments: z.record(z.string(), z.unknown()),
+        providerMetadata: providerMetadataSchema,
+    })
+    .meta({ id: "TextStreamToolCallEvent" })
+
+export const textStreamDoneEventSchema = z
+    .object({
+        message: chatMessageSchema,
+        usage: chatUsageSchema.nullable(),
+    })
+    .meta({ id: "TextStreamDoneEvent" })
+
+export const textStreamErrorEventSchema = z
+    .object({
+        code: z.string(),
+        message: z.string(),
+    })
+    .meta({ id: "TextStreamErrorEvent" })
 
 export const memberUserSchema = z
     .object({

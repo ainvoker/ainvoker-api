@@ -49,6 +49,10 @@ export function buildOpenApiDocument() {
                 name: "Allowed Origins",
                 description: "Browser origins allowed to call the SDK gateway for a project",
             },
+            {
+                name: "Project Models",
+                description: "Per-project text model allowlist",
+            },
             { name: "AI Requests", description: "Logged gateway invocations for a project" },
             { name: "Usage", description: "Organization and project usage dashboards" },
             { name: "Gateway", description: "Data-plane model invocation (API key auth)" },

@@ -213,6 +213,7 @@ export type ProjectWhereInput = {
   usageAnalytics?: Prisma.UsageAnalyticsListRelationFilter
   webhooks?: Prisma.WebhookListRelationFilter
   allowedOrigins?: Prisma.ProjectAllowedOriginListRelationFilter
+  modelAllows?: Prisma.ProjectModelAllowListRelationFilter
 }
 
 export type ProjectOrderByWithRelationInput = {
@@ -231,6 +232,7 @@ export type ProjectOrderByWithRelationInput = {
   usageAnalytics?: Prisma.UsageAnalyticsOrderByRelationAggregateInput
   webhooks?: Prisma.WebhookOrderByRelationAggregateInput
   allowedOrigins?: Prisma.ProjectAllowedOriginOrderByRelationAggregateInput
+  modelAllows?: Prisma.ProjectModelAllowOrderByRelationAggregateInput
 }
 
 export type ProjectWhereUniqueInput = Prisma.AtLeast<{
@@ -253,6 +255,7 @@ export type ProjectWhereUniqueInput = Prisma.AtLeast<{
   usageAnalytics?: Prisma.UsageAnalyticsListRelationFilter
   webhooks?: Prisma.WebhookListRelationFilter
   allowedOrigins?: Prisma.ProjectAllowedOriginListRelationFilter
+  modelAllows?: Prisma.ProjectModelAllowListRelationFilter
 }, "id" | "organizationId_name">
 
 export type ProjectOrderByWithAggregationInput = {
@@ -298,6 +301,7 @@ export type ProjectCreateInput = {
   usageAnalytics?: Prisma.UsageAnalyticsCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateInput = {
@@ -315,6 +319,7 @@ export type ProjectUncheckedCreateInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUpdateInput = {
@@ -332,6 +337,7 @@ export type ProjectUpdateInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateInput = {
@@ -349,6 +355,7 @@ export type ProjectUncheckedUpdateInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateManyInput = {
@@ -500,6 +507,20 @@ export type ProjectUpdateOneRequiredWithoutAllowedOriginsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ProjectUpdateToOneWithWhereWithoutAllowedOriginsInput, Prisma.ProjectUpdateWithoutAllowedOriginsInput>, Prisma.ProjectUncheckedUpdateWithoutAllowedOriginsInput>
 }
 
+export type ProjectCreateNestedOneWithoutModelAllowsInput = {
+  create?: Prisma.XOR<Prisma.ProjectCreateWithoutModelAllowsInput, Prisma.ProjectUncheckedCreateWithoutModelAllowsInput>
+  connectOrCreate?: Prisma.ProjectCreateOrConnectWithoutModelAllowsInput
+  connect?: Prisma.ProjectWhereUniqueInput
+}
+
+export type ProjectUpdateOneRequiredWithoutModelAllowsNestedInput = {
+  create?: Prisma.XOR<Prisma.ProjectCreateWithoutModelAllowsInput, Prisma.ProjectUncheckedCreateWithoutModelAllowsInput>
+  connectOrCreate?: Prisma.ProjectCreateOrConnectWithoutModelAllowsInput
+  upsert?: Prisma.ProjectUpsertWithoutModelAllowsInput
+  connect?: Prisma.ProjectWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProjectUpdateToOneWithWhereWithoutModelAllowsInput, Prisma.ProjectUpdateWithoutModelAllowsInput>, Prisma.ProjectUncheckedUpdateWithoutModelAllowsInput>
+}
+
 export type ProjectCreateNestedOneWithoutApiKeysInput = {
   create?: Prisma.XOR<Prisma.ProjectCreateWithoutApiKeysInput, Prisma.ProjectUncheckedCreateWithoutApiKeysInput>
   connectOrCreate?: Prisma.ProjectCreateOrConnectWithoutApiKeysInput
@@ -584,6 +605,7 @@ export type ProjectCreateWithoutOrganizationInput = {
   usageAnalytics?: Prisma.UsageAnalyticsCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutOrganizationInput = {
@@ -600,6 +622,7 @@ export type ProjectUncheckedCreateWithoutOrganizationInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutOrganizationInput = {
@@ -656,6 +679,7 @@ export type ProjectCreateWithoutAllowedOriginsInput = {
   aiRequests?: Prisma.AIRequestCreateNestedManyWithoutProjectInput
   usageAnalytics?: Prisma.UsageAnalyticsCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutAllowedOriginsInput = {
@@ -672,6 +696,7 @@ export type ProjectUncheckedCreateWithoutAllowedOriginsInput = {
   aiRequests?: Prisma.AIRequestUncheckedCreateNestedManyWithoutProjectInput
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutAllowedOriginsInput = {
@@ -704,6 +729,7 @@ export type ProjectUpdateWithoutAllowedOriginsInput = {
   aiRequests?: Prisma.AIRequestUpdateManyWithoutProjectNestedInput
   usageAnalytics?: Prisma.UsageAnalyticsUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutAllowedOriginsInput = {
@@ -720,6 +746,91 @@ export type ProjectUncheckedUpdateWithoutAllowedOriginsInput = {
   aiRequests?: Prisma.AIRequestUncheckedUpdateManyWithoutProjectNestedInput
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedUpdateManyWithoutProjectNestedInput
+}
+
+export type ProjectCreateWithoutModelAllowsInput = {
+  id?: string
+  name: string
+  description?: string | null
+  environment: $Enums.ProjectEnvironment
+  status?: $Enums.ProjectStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organization: Prisma.OrganizationCreateNestedOneWithoutProjectsInput
+  apiKeys?: Prisma.ApiKeyCreateNestedManyWithoutProjectInput
+  actions?: Prisma.ActionCreateNestedManyWithoutProjectInput
+  aiRequests?: Prisma.AIRequestCreateNestedManyWithoutProjectInput
+  usageAnalytics?: Prisma.UsageAnalyticsCreateNestedManyWithoutProjectInput
+  webhooks?: Prisma.WebhookCreateNestedManyWithoutProjectInput
+  allowedOrigins?: Prisma.ProjectAllowedOriginCreateNestedManyWithoutProjectInput
+}
+
+export type ProjectUncheckedCreateWithoutModelAllowsInput = {
+  id?: string
+  organizationId: string
+  name: string
+  description?: string | null
+  environment: $Enums.ProjectEnvironment
+  status?: $Enums.ProjectStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  apiKeys?: Prisma.ApiKeyUncheckedCreateNestedManyWithoutProjectInput
+  actions?: Prisma.ActionUncheckedCreateNestedManyWithoutProjectInput
+  aiRequests?: Prisma.AIRequestUncheckedCreateNestedManyWithoutProjectInput
+  usageAnalytics?: Prisma.UsageAnalyticsUncheckedCreateNestedManyWithoutProjectInput
+  webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutProjectInput
+  allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedCreateNestedManyWithoutProjectInput
+}
+
+export type ProjectCreateOrConnectWithoutModelAllowsInput = {
+  where: Prisma.ProjectWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProjectCreateWithoutModelAllowsInput, Prisma.ProjectUncheckedCreateWithoutModelAllowsInput>
+}
+
+export type ProjectUpsertWithoutModelAllowsInput = {
+  update: Prisma.XOR<Prisma.ProjectUpdateWithoutModelAllowsInput, Prisma.ProjectUncheckedUpdateWithoutModelAllowsInput>
+  create: Prisma.XOR<Prisma.ProjectCreateWithoutModelAllowsInput, Prisma.ProjectUncheckedCreateWithoutModelAllowsInput>
+  where?: Prisma.ProjectWhereInput
+}
+
+export type ProjectUpdateToOneWithWhereWithoutModelAllowsInput = {
+  where?: Prisma.ProjectWhereInput
+  data: Prisma.XOR<Prisma.ProjectUpdateWithoutModelAllowsInput, Prisma.ProjectUncheckedUpdateWithoutModelAllowsInput>
+}
+
+export type ProjectUpdateWithoutModelAllowsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  environment?: Prisma.EnumProjectEnvironmentFieldUpdateOperationsInput | $Enums.ProjectEnvironment
+  status?: Prisma.EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutProjectsNestedInput
+  apiKeys?: Prisma.ApiKeyUpdateManyWithoutProjectNestedInput
+  actions?: Prisma.ActionUpdateManyWithoutProjectNestedInput
+  aiRequests?: Prisma.AIRequestUpdateManyWithoutProjectNestedInput
+  usageAnalytics?: Prisma.UsageAnalyticsUpdateManyWithoutProjectNestedInput
+  webhooks?: Prisma.WebhookUpdateManyWithoutProjectNestedInput
+  allowedOrigins?: Prisma.ProjectAllowedOriginUpdateManyWithoutProjectNestedInput
+}
+
+export type ProjectUncheckedUpdateWithoutModelAllowsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  environment?: Prisma.EnumProjectEnvironmentFieldUpdateOperationsInput | $Enums.ProjectEnvironment
+  status?: Prisma.EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  apiKeys?: Prisma.ApiKeyUncheckedUpdateManyWithoutProjectNestedInput
+  actions?: Prisma.ActionUncheckedUpdateManyWithoutProjectNestedInput
+  aiRequests?: Prisma.AIRequestUncheckedUpdateManyWithoutProjectNestedInput
+  usageAnalytics?: Prisma.UsageAnalyticsUncheckedUpdateManyWithoutProjectNestedInput
+  webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutProjectNestedInput
+  allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateWithoutApiKeysInput = {
@@ -736,6 +847,7 @@ export type ProjectCreateWithoutApiKeysInput = {
   usageAnalytics?: Prisma.UsageAnalyticsCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutApiKeysInput = {
@@ -752,6 +864,7 @@ export type ProjectUncheckedCreateWithoutApiKeysInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutApiKeysInput = {
@@ -784,6 +897,7 @@ export type ProjectUpdateWithoutApiKeysInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutApiKeysInput = {
@@ -800,6 +914,7 @@ export type ProjectUncheckedUpdateWithoutApiKeysInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateWithoutAiRequestsInput = {
@@ -816,6 +931,7 @@ export type ProjectCreateWithoutAiRequestsInput = {
   usageAnalytics?: Prisma.UsageAnalyticsCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutAiRequestsInput = {
@@ -832,6 +948,7 @@ export type ProjectUncheckedCreateWithoutAiRequestsInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutAiRequestsInput = {
@@ -864,6 +981,7 @@ export type ProjectUpdateWithoutAiRequestsInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutAiRequestsInput = {
@@ -880,6 +998,7 @@ export type ProjectUncheckedUpdateWithoutAiRequestsInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateWithoutActionsInput = {
@@ -896,6 +1015,7 @@ export type ProjectCreateWithoutActionsInput = {
   usageAnalytics?: Prisma.UsageAnalyticsCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutActionsInput = {
@@ -912,6 +1032,7 @@ export type ProjectUncheckedCreateWithoutActionsInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutActionsInput = {
@@ -944,6 +1065,7 @@ export type ProjectUpdateWithoutActionsInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutActionsInput = {
@@ -960,6 +1082,7 @@ export type ProjectUncheckedUpdateWithoutActionsInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateWithoutUsageAnalyticsInput = {
@@ -976,6 +1099,7 @@ export type ProjectCreateWithoutUsageAnalyticsInput = {
   aiRequests?: Prisma.AIRequestCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutUsageAnalyticsInput = {
@@ -992,6 +1116,7 @@ export type ProjectUncheckedCreateWithoutUsageAnalyticsInput = {
   aiRequests?: Prisma.AIRequestUncheckedCreateNestedManyWithoutProjectInput
   webhooks?: Prisma.WebhookUncheckedCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutUsageAnalyticsInput = {
@@ -1024,6 +1149,7 @@ export type ProjectUpdateWithoutUsageAnalyticsInput = {
   aiRequests?: Prisma.AIRequestUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutUsageAnalyticsInput = {
@@ -1040,6 +1166,7 @@ export type ProjectUncheckedUpdateWithoutUsageAnalyticsInput = {
   aiRequests?: Prisma.AIRequestUncheckedUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateWithoutWebhooksInput = {
@@ -1056,6 +1183,7 @@ export type ProjectCreateWithoutWebhooksInput = {
   aiRequests?: Prisma.AIRequestCreateNestedManyWithoutProjectInput
   usageAnalytics?: Prisma.UsageAnalyticsCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutWebhooksInput = {
@@ -1072,6 +1200,7 @@ export type ProjectUncheckedCreateWithoutWebhooksInput = {
   aiRequests?: Prisma.AIRequestUncheckedCreateNestedManyWithoutProjectInput
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedCreateNestedManyWithoutProjectInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedCreateNestedManyWithoutProjectInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutWebhooksInput = {
@@ -1104,6 +1233,7 @@ export type ProjectUpdateWithoutWebhooksInput = {
   aiRequests?: Prisma.AIRequestUpdateManyWithoutProjectNestedInput
   usageAnalytics?: Prisma.UsageAnalyticsUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutWebhooksInput = {
@@ -1120,6 +1250,7 @@ export type ProjectUncheckedUpdateWithoutWebhooksInput = {
   aiRequests?: Prisma.AIRequestUncheckedUpdateManyWithoutProjectNestedInput
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateManyOrganizationInput = {
@@ -1146,6 +1277,7 @@ export type ProjectUpdateWithoutOrganizationInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutOrganizationInput = {
@@ -1162,6 +1294,7 @@ export type ProjectUncheckedUpdateWithoutOrganizationInput = {
   usageAnalytics?: Prisma.UsageAnalyticsUncheckedUpdateManyWithoutProjectNestedInput
   webhooks?: Prisma.WebhookUncheckedUpdateManyWithoutProjectNestedInput
   allowedOrigins?: Prisma.ProjectAllowedOriginUncheckedUpdateManyWithoutProjectNestedInput
+  modelAllows?: Prisma.ProjectModelAllowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateManyWithoutOrganizationInput = {
@@ -1186,6 +1319,7 @@ export type ProjectCountOutputType = {
   usageAnalytics: number
   webhooks: number
   allowedOrigins: number
+  modelAllows: number
 }
 
 export type ProjectCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1195,6 +1329,7 @@ export type ProjectCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   usageAnalytics?: boolean | ProjectCountOutputTypeCountUsageAnalyticsArgs
   webhooks?: boolean | ProjectCountOutputTypeCountWebhooksArgs
   allowedOrigins?: boolean | ProjectCountOutputTypeCountAllowedOriginsArgs
+  modelAllows?: boolean | ProjectCountOutputTypeCountModelAllowsArgs
 }
 
 /**
@@ -1249,6 +1384,13 @@ export type ProjectCountOutputTypeCountAllowedOriginsArgs<ExtArgs extends runtim
   where?: Prisma.ProjectAllowedOriginWhereInput
 }
 
+/**
+ * ProjectCountOutputType without action
+ */
+export type ProjectCountOutputTypeCountModelAllowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProjectModelAllowWhereInput
+}
+
 
 export type ProjectSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1266,6 +1408,7 @@ export type ProjectSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   usageAnalytics?: boolean | Prisma.Project$usageAnalyticsArgs<ExtArgs>
   webhooks?: boolean | Prisma.Project$webhooksArgs<ExtArgs>
   allowedOrigins?: boolean | Prisma.Project$allowedOriginsArgs<ExtArgs>
+  modelAllows?: boolean | Prisma.Project$modelAllowsArgs<ExtArgs>
   _count?: boolean | Prisma.ProjectCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["project"]>
 
@@ -1313,6 +1456,7 @@ export type ProjectInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   usageAnalytics?: boolean | Prisma.Project$usageAnalyticsArgs<ExtArgs>
   webhooks?: boolean | Prisma.Project$webhooksArgs<ExtArgs>
   allowedOrigins?: boolean | Prisma.Project$allowedOriginsArgs<ExtArgs>
+  modelAllows?: boolean | Prisma.Project$modelAllowsArgs<ExtArgs>
   _count?: boolean | Prisma.ProjectCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ProjectIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1332,6 +1476,7 @@ export type $ProjectPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     usageAnalytics: Prisma.$UsageAnalyticsPayload<ExtArgs>[]
     webhooks: Prisma.$WebhookPayload<ExtArgs>[]
     allowedOrigins: Prisma.$ProjectAllowedOriginPayload<ExtArgs>[]
+    modelAllows: Prisma.$ProjectModelAllowPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1743,6 +1888,7 @@ export interface Prisma__ProjectClient<T, Null = never, ExtArgs extends runtime.
   usageAnalytics<T extends Prisma.Project$usageAnalyticsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Project$usageAnalyticsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UsageAnalyticsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   webhooks<T extends Prisma.Project$webhooksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Project$webhooksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WebhookPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   allowedOrigins<T extends Prisma.Project$allowedOriginsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Project$allowedOriginsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProjectAllowedOriginPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  modelAllows<T extends Prisma.Project$modelAllowsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Project$modelAllowsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProjectModelAllowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2322,6 +2468,30 @@ export type Project$allowedOriginsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.ProjectAllowedOriginScalarFieldEnum | Prisma.ProjectAllowedOriginScalarFieldEnum[]
+}
+
+/**
+ * Project.modelAllows
+ */
+export type Project$modelAllowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProjectModelAllow
+   */
+  select?: Prisma.ProjectModelAllowSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProjectModelAllow
+   */
+  omit?: Prisma.ProjectModelAllowOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProjectModelAllowInclude<ExtArgs> | null
+  where?: Prisma.ProjectModelAllowWhereInput
+  orderBy?: Prisma.ProjectModelAllowOrderByWithRelationInput | Prisma.ProjectModelAllowOrderByWithRelationInput[]
+  cursor?: Prisma.ProjectModelAllowWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ProjectModelAllowScalarFieldEnum | Prisma.ProjectModelAllowScalarFieldEnum[]
 }
 
 /**

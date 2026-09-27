@@ -53,6 +53,11 @@ export type Project = Prisma.ProjectModel
  */
 export type ProjectAllowedOrigin = Prisma.ProjectAllowedOriginModel
 /**
+ * Model ProjectModelAllow
+ * Explicit project–model allowlist. Missing rows do not mean “allow all”.
+ */
+export type ProjectModelAllow = Prisma.ProjectModelAllowModel
+/**
  * Model ApiKey
  * 
  */

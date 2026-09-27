@@ -70,6 +70,12 @@ export async function cleanupTestUser(userId: string) {
                 })
                 await prismaClient.webhook.deleteMany({ where: { projectId: { in: projectIds } } })
                 await prismaClient.apiKey.deleteMany({ where: { projectId: { in: projectIds } } })
+                await prismaClient.projectModelAllow.deleteMany({
+                    where: { projectId: { in: projectIds } },
+                })
+                await prismaClient.projectAllowedOrigin.deleteMany({
+                    where: { projectId: { in: projectIds } },
+                })
                 await prismaClient.project.deleteMany({ where: { id: { in: projectIds } } })
             }
 

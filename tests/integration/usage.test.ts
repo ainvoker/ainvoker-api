@@ -37,7 +37,7 @@ describe("usage endpoints", () => {
         apiKeyId = key.id
 
         const model = await prismaClient.aIModel.findFirstOrThrow({
-            where: { name: "gemini-2.5-flash", provider: { name: "gemini" } },
+            where: { name: "gemini-3.6-flash", provider: { name: "gemini" } },
         })
         modelId = model.id
 
@@ -49,7 +49,7 @@ describe("usage endpoints", () => {
                 serviceType: "TEXT",
                 requestStatus: "SUCCESS",
                 requestPayload: {
-                    model: "gemini/gemini-2.5-flash",
+                    model: "gemini/gemini-3.6-flash",
                     messages: [{ role: "user", content: "Hi" }],
                 },
                 responsePayload: {
@@ -70,7 +70,7 @@ describe("usage endpoints", () => {
                 serviceType: "TEXT",
                 requestStatus: "FAILED",
                 requestPayload: {
-                    model: "gemini/gemini-2.5-flash",
+                    model: "gemini/gemini-3.6-flash",
                     messages: [{ role: "user", content: "Fail" }],
                 },
                 responsePayload: null,
@@ -123,7 +123,7 @@ describe("usage endpoints", () => {
         expect(res.body.data.recentRequests[0]).toMatchObject({
             projectId,
             projectName: expect.any(String),
-            model: "gemini/gemini-2.5-flash",
+            model: "gemini/gemini-3.6-flash",
         })
 
         const todayUtc = new Date()
@@ -193,7 +193,7 @@ describe("usage endpoints", () => {
         expect(res.body.data.keys).toEqual({ total: 1, active: 1 })
         expect(res.body.data.byModel.length).toBeGreaterThanOrEqual(1)
         expect(res.body.data.byModel[0]).toMatchObject({
-            model: "gemini/gemini-2.5-flash",
+            model: "gemini/gemini-3.6-flash",
             requestsUsed: 2,
             tokensUsed: 6,
         })

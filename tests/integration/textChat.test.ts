@@ -3,6 +3,10 @@ import request from "supertest"
 import app from "../../src/app.js"
 import { ensureBillingCatalog, getPlanByName, PLAN_NAMES } from "../../src/modules/billing/catalog.js"
 import { ensureTextCatalog, textCatalogDefaults } from "../../src/modules/text/catalog.js"
+import {
+    DEFAULT_OUTPUT_TOKEN_HOLD,
+    estimateTextTokenHold,
+} from "../../src/modules/text/tokens.js"
 import apiKeyHasher from "../../src/platform/hash.js"
 import prismaClient from "../../src/platform/prisma.js"
 import { cleanupTestUser, seedUserWithPersonalOrg, testUserId } from "../helpers/db.js"
@@ -125,6 +129,7 @@ describe("POST /v1/text/chat", () => {
             },
         })
         expect(typeof res.body.data.id).toBe("string")
+        expect(res.body.data.message).not.toHaveProperty("toolCalls")
         expect(res.headers["x-ratelimit-limit-requests"]).toBe("300")
 
         expect(fetchSpy).toHaveBeenCalled()
@@ -197,8 +202,8 @@ describe("POST /v1/text/chat", () => {
             .post("/v1/text/chat")
             .set({ Authorization: `Bearer ${plaintextKey}` })
             .send({
-                model: "gpt-4o-mini",
-                messages: [{ role: "user", content: "Hi" }],
+                model: "openai/gpt-4o-mini",
+                messages: [],
             })
         expect(res.status).toBe(400)
         expect(res.body.error.code).toBe("VALIDATION_ERROR")
@@ -324,6 +329,109 @@ describe("POST /v1/text/chat", () => {
             await prismaClient.plan.update({
                 where: { id: free.id },
                 data: { requestLimit: 300 },
+            })
+        }
+    })
+
+    it("returns 429 when the monthly token limit cannot fit another hold", async () => {
+        const free = await getPlanByName(PLAN_NAMES.free)
+        const hold = estimateTextTokenHold([{ content: "Hi" }], undefined)
+        await prismaClient.plan.update({
+            where: { id: free.id },
+            data: { tokenLimit: hold.inputTokens },
+        })
+
+        try {
+            const res = await request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.modelSlug,
+                    messages: [{ role: "user", content: "Hi" }],
+                })
+
+            expect(res.status).toBe(429)
+            expect(res.body.error.code).toBe("RATE_LIMIT_EXCEEDED")
+            expect(fetchSpy).not.toHaveBeenCalled()
+        } finally {
+            await prismaClient.plan.update({
+                where: { id: free.id },
+                data: { tokenLimit: 50_000 },
+            })
+        }
+    })
+
+    it("does not exceed monthly token limit under concurrent chats", async () => {
+        const message = "Hi"
+        const hold = estimateTextTokenHold([{ content: message }], undefined)
+        const reservation = hold.inputTokens + hold.outputTokens
+        const admitted = 2
+        const parallel = 5
+        const free = await getPlanByName(PLAN_NAMES.free)
+        await prismaClient.plan.update({
+            where: { id: free.id },
+            data: { tokenLimit: reservation * admitted },
+        })
+
+        // Hold the provider call open so the other chats reserve while this one
+        // is still in flight. Usage matches the hold so a finished chat does not
+        // free budget for the rest of the batch.
+        const previousFetch = fetchSpy.getMockImplementation()
+        fetchSpy.mockImplementation(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 1500))
+            return new Response(
+                JSON.stringify({
+                    choices: [{ message: { role: "assistant", content: "Hello from mock" } }],
+                    usage: {
+                        prompt_tokens: hold.inputTokens,
+                        completion_tokens: hold.outputTokens,
+                        total_tokens: reservation,
+                    },
+                }),
+                { status: 200, headers: { "Content-Type": "application/json" } },
+            )
+        })
+
+        try {
+            const results = await Promise.all(
+                Array.from({ length: parallel }, () =>
+                    request(app.express)
+                        .post("/v1/text/chat")
+                        .set({ Authorization: `Bearer ${plaintextKey}` })
+                        .send({
+                            model: textCatalogDefaults.modelSlug,
+                            messages: [{ role: "user", content: message }],
+                        }),
+                ),
+            )
+
+            const successes = results.filter((res) => res.status === 200)
+            const rateLimited = results.filter((res) => res.status === 429)
+
+            expect(successes).toHaveLength(admitted)
+            expect(rateLimited).toHaveLength(parallel - admitted)
+            for (const res of rateLimited) {
+                expect(res.body.error.code).toBe("RATE_LIMIT_EXCEEDED")
+            }
+            expect(fetchSpy).toHaveBeenCalledTimes(admitted)
+
+            const providerBody = JSON.parse(String(fetchSpy.mock.calls[0]?.[1]?.body)) as {
+                max_tokens?: number
+            }
+            expect(providerBody.max_tokens).toBe(DEFAULT_OUTPUT_TOKEN_HOLD)
+
+            const used = await prismaClient.aIRequest.aggregate({
+                where: { project: { organizationId } },
+                _sum: { totalTokens: true },
+            })
+            expect(used._sum.totalTokens).toBe(reservation * admitted)
+        } finally {
+            if (previousFetch) {
+                fetchSpy.mockImplementation(previousFetch)
+            }
+            await prismaClient.plan.update({
+                where: { id: free.id },
+                data: { tokenLimit: 50_000 },
             })
         }
     })
@@ -532,5 +640,471 @@ describe("POST /v1/text/chat", () => {
             })
 
         expect(denied.headers["access-control-allow-origin"]).toBeUndefined()
+    })
+
+    it("resolves a unique bare model name", async () => {
+        const res = await request(app.express)
+            .post("/v1/text/chat")
+            .set({ Authorization: `Bearer ${plaintextKey}` })
+            .send({
+                model: "gpt-4o-mini",
+                messages: [{ role: "user", content: "Hi" }],
+            })
+
+        expect(res.status).toBe(200)
+        expect(res.body.data.model).toBe(textCatalogDefaults.modelSlug)
+    })
+
+    it("rejects an ambiguous bare model name", async () => {
+        await ensureTextCatalog()
+        const gemini = await prismaClient.aIProvider.findUniqueOrThrow({
+            where: { name: "gemini" },
+        })
+        await prismaClient.aIModel.upsert({
+            where: {
+                providerId_name: { providerId: gemini.id, name: "gpt-4o-mini" },
+            },
+            create: {
+                providerId: gemini.id,
+                name: "gpt-4o-mini",
+                type: "TEXT",
+                contextWindow: 128000,
+                inputPrice: 0,
+                outputPrice: 0,
+                status: "ACTIVE",
+                freeEligible: true,
+            },
+            update: {
+                status: "ACTIVE",
+                freeEligible: true,
+            },
+        })
+
+        const res = await request(app.express)
+            .post("/v1/text/chat")
+            .set({ Authorization: `Bearer ${plaintextKey}` })
+            .send({
+                model: "gpt-4o-mini",
+                messages: [{ role: "user", content: "Hi" }],
+            })
+
+        expect(res.status).toBe(400)
+        expect(res.body.error.code).toBe("VALIDATION_ERROR")
+        expect(String(res.body.error.message)).toMatch(/ambiguous/i)
+        expect(fetchSpy).not.toHaveBeenCalled()
+
+        await prismaClient.aIModel.delete({
+            where: {
+                providerId_name: { providerId: gemini.id, name: "gpt-4o-mini" },
+            },
+        })
+    })
+
+    it("returns 404 for an unknown bare model name", async () => {
+        const res = await request(app.express)
+            .post("/v1/text/chat")
+            .set({ Authorization: `Bearer ${plaintextKey}` })
+            .send({
+                model: "not-a-real-model",
+                messages: [{ role: "user", content: "Hi" }],
+            })
+
+        expect(res.status).toBe(404)
+        expect(res.body.error.code).toBe("NOT_FOUND")
+        expect(fetchSpy).not.toHaveBeenCalled()
+    })
+
+    it("rejects a disabled project model even when the plan allows it", async () => {
+        await ensureTextCatalog()
+        const openai = await prismaClient.aIProvider.findUniqueOrThrow({
+            where: { name: "openai" },
+        })
+        const model = await prismaClient.aIModel.findUniqueOrThrow({
+            where: {
+                providerId_name: { providerId: openai.id, name: "gpt-4o-mini" },
+            },
+        })
+
+        await prismaClient.projectModelAllow.upsert({
+            where: {
+                projectId_modelId: { projectId, modelId: model.id },
+            },
+            create: {
+                projectId,
+                modelId: model.id,
+                enabled: false,
+            },
+            update: { enabled: false },
+        })
+
+        const res = await request(app.express)
+            .post("/v1/text/chat")
+            .set({ Authorization: `Bearer ${plaintextKey}` })
+            .send({
+                model: textCatalogDefaults.modelSlug,
+                messages: [{ role: "user", content: "Hi" }],
+            })
+
+        expect(res.status).toBe(403)
+        expect(res.body.error.code).toBe("MODEL_DISABLED")
+        expect(fetchSpy).not.toHaveBeenCalled()
+    })
+
+    describe("tool calling", () => {
+        const weatherTool = {
+            name: "get_weather",
+            description: "Current weather for a city",
+            parameters: {
+                type: "object",
+                properties: { city: { type: "string" } },
+                required: ["city"],
+            },
+        }
+
+        const priorToolTurn = [
+            { role: "user", content: "Weather in Manila?" },
+            {
+                role: "assistant",
+                content: "",
+                toolCalls: [
+                    { id: "call_abc", name: "get_weather", arguments: { city: "Manila" } },
+                ],
+            },
+            {
+                role: "tool",
+                toolCallId: "call_abc",
+                name: "get_weather",
+                content: '{"tempC":31}',
+            },
+        ]
+
+        it("returns toolCalls with empty content and stores them", async () => {
+            fetchSpy.mockImplementation(async () =>
+                new Response(
+                    JSON.stringify({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: null,
+                                    tool_calls: [
+                                        {
+                                            id: "call_abc",
+                                            type: "function",
+                                            function: {
+                                                name: "get_weather",
+                                                arguments: '{"city":"Manila"}',
+                                            },
+                                        },
+                                    ],
+                                },
+                                finish_reason: "tool_calls",
+                            },
+                        ],
+                        usage: { prompt_tokens: 20, completion_tokens: 7, total_tokens: 27 },
+                    }),
+                    { status: 200, headers: { "Content-Type": "application/json" } },
+                ),
+            )
+
+            const res = await request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.modelSlug,
+                    messages: [{ role: "user", content: "Weather in Manila?" }],
+                    tools: [weatherTool],
+                })
+
+            expect(res.status).toBe(200)
+            expect(res.body.data.message).toEqual({
+                role: "assistant",
+                content: "",
+                toolCalls: [{ id: "call_abc", name: "get_weather", arguments: { city: "Manila" } }],
+            })
+
+            const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit]
+            const upstream = JSON.parse(String(init.body)) as { tools: unknown }
+            expect(upstream.tools).toEqual([
+                {
+                    type: "function",
+                    function: {
+                        name: weatherTool.name,
+                        description: weatherTool.description,
+                        parameters: weatherTool.parameters,
+                    },
+                },
+            ])
+
+            const stored = await prismaClient.aIRequest.findUniqueOrThrow({
+                where: { id: res.body.data.id as string },
+            })
+            expect(stored.requestStatus).toBe("SUCCESS")
+            expect(stored.requestPayload).toMatchObject({ tools: [weatherTool] })
+            expect(stored.responsePayload).toMatchObject({
+                message: {
+                    content: "",
+                    toolCalls: [{ id: "call_abc", name: "get_weather" }],
+                },
+            })
+        })
+
+        it("forwards a prior assistant tool call and tool result to OpenAI", async () => {
+            const res = await request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.modelSlug,
+                    messages: priorToolTurn,
+                    tools: [weatherTool],
+                })
+
+            expect(res.status).toBe(200)
+            expect(res.body.data.message).toEqual({ role: "assistant", content: "Hello from mock" })
+
+            const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit]
+            const upstream = JSON.parse(String(init.body)) as { messages: unknown[] }
+            expect(upstream.messages).toEqual([
+                { role: "user", content: "Weather in Manila?" },
+                {
+                    role: "assistant",
+                    content: "",
+                    tool_calls: [
+                        {
+                            id: "call_abc",
+                            type: "function",
+                            function: { name: "get_weather", arguments: '{"city":"Manila"}' },
+                        },
+                    ],
+                },
+                { role: "tool", tool_call_id: "call_abc", content: '{"tempC":31}' },
+            ])
+        })
+
+        it("forwards a prior tool call and tool result to Gemini", async () => {
+            const res = await request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.geminiModelSlug,
+                    messages: priorToolTurn,
+                    tools: [weatherTool],
+                    reasoning: "low",
+                })
+
+            expect(res.status).toBe(200)
+
+            const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit]
+            const upstream = JSON.parse(String(init.body)) as {
+                contents: unknown[]
+                tools: unknown
+                generationConfig: { thinkingConfig?: unknown }
+            }
+            expect(upstream.contents).toEqual([
+                { role: "user", parts: [{ text: "Weather in Manila?" }] },
+                {
+                    role: "model",
+                    parts: [{ functionCall: { name: "get_weather", args: { city: "Manila" } } }],
+                },
+                {
+                    role: "user",
+                    parts: [
+                        {
+                            functionResponse: {
+                                name: "get_weather",
+                                response: { result: '{"tempC":31}' },
+                            },
+                        },
+                    ],
+                },
+            ])
+            expect(upstream.tools).toEqual([
+                {
+                    functionDeclarations: [
+                        {
+                            name: weatherTool.name,
+                            description: weatherTool.description,
+                            parametersJsonSchema: weatherTool.parameters,
+                        },
+                    ],
+                },
+            ])
+            expect(upstream.generationConfig.thinkingConfig).toEqual({ thinkingLevel: "low" })
+        })
+
+        it("assigns call_${index} ids when Gemini omits them", async () => {
+            fetchSpy.mockImplementation(async () =>
+                new Response(
+                    JSON.stringify({
+                        candidates: [
+                            {
+                                content: {
+                                    role: "model",
+                                    parts: [
+                                        { functionCall: { name: "get_weather", args: { city: "Manila" } } },
+                                        { functionCall: { name: "get_weather", args: { city: "Cebu" } } },
+                                    ],
+                                },
+                            },
+                        ],
+                        usageMetadata: { promptTokenCount: 8, candidatesTokenCount: 4, totalTokenCount: 12 },
+                    }),
+                    { status: 200, headers: { "Content-Type": "application/json" } },
+                ),
+            )
+
+            const res = await request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.geminiModelSlug,
+                    messages: [{ role: "user", content: "Weather in Manila and Cebu?" }],
+                    tools: [weatherTool],
+                })
+
+            expect(res.status).toBe(200)
+            expect(res.body.data.message).toEqual({
+                role: "assistant",
+                content: "",
+                toolCalls: [
+                    { id: "call_0", name: "get_weather", arguments: { city: "Manila" } },
+                    { id: "call_1", name: "get_weather", arguments: { city: "Cebu" } },
+                ],
+            })
+        })
+
+        it("returns the Gemini thought signature as providerMetadata", async () => {
+            fetchSpy.mockImplementation(async () =>
+                new Response(
+                    JSON.stringify({
+                        candidates: [
+                            {
+                                content: {
+                                    role: "model",
+                                    parts: [
+                                        {
+                                            functionCall: { id: "g1", name: "get_weather", args: { city: "Manila" } },
+                                            thoughtSignature: "sig-abc",
+                                        },
+                                    ],
+                                },
+                            },
+                        ],
+                        usageMetadata: { promptTokenCount: 8, candidatesTokenCount: 4, totalTokenCount: 12 },
+                    }),
+                    { status: 200, headers: { "Content-Type": "application/json" } },
+                ),
+            )
+
+            const res = await request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.geminiModelSlug,
+                    messages: [{ role: "user", content: "Weather in Manila?" }],
+                    tools: [weatherTool],
+                })
+
+            expect(res.status).toBe(200)
+            expect(res.body.data.message.toolCalls).toEqual([
+                {
+                    id: "g1",
+                    name: "get_weather",
+                    arguments: { city: "Manila" },
+                    providerMetadata: { gemini: { thoughtSignature: "sig-abc" } },
+                },
+            ])
+        })
+
+        it("replays providerMetadata.gemini.thoughtSignature on the functionCall part", async () => {
+            const [user, assistant, tool] = priorToolTurn as [
+                Record<string, unknown>,
+                { toolCalls: Record<string, unknown>[] } & Record<string, unknown>,
+                Record<string, unknown>,
+            ]
+            const res = await request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.geminiModelSlug,
+                    messages: [
+                        user,
+                        {
+                            ...assistant,
+                            toolCalls: assistant.toolCalls.map((call) => ({
+                                ...call,
+                                providerMetadata: { gemini: { thoughtSignature: "sig-abc" } },
+                            })),
+                        },
+                        tool,
+                    ],
+                    tools: [weatherTool],
+                })
+
+            expect(res.status).toBe(200)
+            const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit]
+            const upstream = JSON.parse(String(init.body)) as { contents: unknown[] }
+            expect(upstream.contents[1]).toEqual({
+                role: "model",
+                parts: [
+                    {
+                        functionCall: { name: "get_weather", args: { city: "Manila" } },
+                        thoughtSignature: "sig-abc",
+                    },
+                ],
+            })
+        })
+
+        it("rejects a duplicate tool name", async () => {
+            const res = await request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.modelSlug,
+                    messages: [{ role: "user", content: "Hi" }],
+                    tools: [weatherTool, weatherTool],
+                })
+
+            expect(res.status).toBe(400)
+            expect(res.body.error.code).toBe("VALIDATION_ERROR")
+            expect(String(res.body.error.message)).toMatch(/duplicate tool name/)
+            expect(fetchSpy).not.toHaveBeenCalled()
+        })
+
+        it("rejects an assistant message with empty content and no toolCalls", async () => {
+            const res = await request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.modelSlug,
+                    messages: [
+                        { role: "user", content: "Hi" },
+                        { role: "assistant", content: "" },
+                        { role: "user", content: "Hello?" },
+                    ],
+                })
+
+            expect(res.status).toBe(400)
+            expect(res.body.error.code).toBe("VALIDATION_ERROR")
+            expect(fetchSpy).not.toHaveBeenCalled()
+        })
+
+        it("rejects a tool message missing toolCallId", async () => {
+            const res = await request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: textCatalogDefaults.modelSlug,
+                    messages: [
+                        priorToolTurn[0],
+                        priorToolTurn[1],
+                        { role: "tool", name: "get_weather", content: '{"tempC":31}' },
+                    ],
+                })
+
+            expect(res.status).toBe(400)
+            expect(res.body.error.code).toBe("VALIDATION_ERROR")
+            expect(fetchSpy).not.toHaveBeenCalled()
+        })
     })
 })

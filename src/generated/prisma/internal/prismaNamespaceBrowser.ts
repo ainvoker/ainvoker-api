@@ -58,6 +58,7 @@ export const ModelName = {
   OrganizationInvite: 'OrganizationInvite',
   Project: 'Project',
   ProjectAllowedOrigin: 'ProjectAllowedOrigin',
+  ProjectModelAllow: 'ProjectModelAllow',
   ApiKey: 'ApiKey',
   AIProvider: 'AIProvider',
   AIModel: 'AIModel',
@@ -182,6 +183,18 @@ export const ProjectAllowedOriginScalarFieldEnum = {
 } as const
 
 export type ProjectAllowedOriginScalarFieldEnum = (typeof ProjectAllowedOriginScalarFieldEnum)[keyof typeof ProjectAllowedOriginScalarFieldEnum]
+
+
+export const ProjectModelAllowScalarFieldEnum = {
+  id: 'id',
+  projectId: 'projectId',
+  modelId: 'modelId',
+  enabled: 'enabled',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProjectModelAllowScalarFieldEnum = (typeof ProjectModelAllowScalarFieldEnum)[keyof typeof ProjectModelAllowScalarFieldEnum]
 
 
 export const ApiKeyScalarFieldEnum = {

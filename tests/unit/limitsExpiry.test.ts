@@ -76,7 +76,7 @@ describe("getActiveSubscriptionWithPlan expiry", () => {
         expect(prisma.subscription.updateMany).toHaveBeenCalledWith({
             where: {
                 organizationId: "org_1",
-                status: "ACTIVE",
+                status: { in: ["ACTIVE", "PAST_DUE"] },
                 expiresAt: { lte: expect.any(Date) },
             },
             data: { status: "EXPIRED" },

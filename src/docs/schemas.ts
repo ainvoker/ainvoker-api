@@ -11,6 +11,10 @@ export {
 export * from "../modules/users/schemas.js"
 export { textChatSchema } from "../modules/text/schemas.js"
 export {
+    projectModelParamsSchema,
+    toggleProjectModelSchema,
+} from "../modules/text/projectModels.js"
+export {
     aiRequestParamsSchema,
     listAiRequestsQuerySchema,
 } from "../modules/aiRequests/schemas.js"

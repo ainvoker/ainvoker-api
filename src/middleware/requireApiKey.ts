@@ -5,6 +5,8 @@ import { tryNormalizeOrigin } from "../platform/origin.js"
 import prismaClient from "../platform/prisma.js"
 import allowedOriginsService from "../modules/allowedOrigins/service.js"
 
+const LAST_USED_THROTTLE_MS = 60_000
+
 class ApiKeyMiddleware {
     constructor() {
         this.handle = this.handle.bind(this)
@@ -78,10 +80,13 @@ class ApiKeyMiddleware {
                 organizationId: apiKey.project.organizationId,
             }
 
-            await prismaClient.apiKey.update({
-                where: { id: apiKey.id },
-                data: { lastUsed: new Date() },
-            })
+            const now = Date.now()
+            if (!apiKey.lastUsed || now - apiKey.lastUsed.getTime() >= LAST_USED_THROTTLE_MS) {
+                // Off the request path: lastUsed is informational and minute-granular.
+                void prismaClient.apiKey
+                    .update({ where: { id: apiKey.id }, data: { lastUsed: new Date(now) } })
+                    .catch(() => {})
+            }
 
             next()
         } catch (err) {

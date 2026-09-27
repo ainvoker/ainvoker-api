@@ -124,7 +124,7 @@ describe("projects endpoints", () => {
         })
 
         const model = await prismaClient.aIModel.findFirstOrThrow({
-            where: { name: "gemini-2.5-flash", provider: { name: "gemini" } },
+            where: { name: "gemini-3.6-flash", provider: { name: "gemini" } },
         })
 
         const action = await prismaClient.action.create({

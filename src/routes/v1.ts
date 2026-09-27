@@ -6,6 +6,7 @@ import billingRoutes from "../modules/billing/routes.js"
 import membersRoutes from "../modules/members/routes.js"
 import organizationsRoutes from "../modules/organizations/routes.js"
 import projectsRoutes from "../modules/projects/routes.js"
+import projectModelsRoutes from "../modules/text/projectModelsRoutes.js"
 import usageRoutes from "../modules/usage/routes.js"
 import usersRoutes from "../modules/users/routes.js"
 
@@ -20,6 +21,7 @@ class ApiV1Routes {
         this.router.use(projectsRoutes.router)
         this.router.use(apiKeysRoutes.router)
         this.router.use(allowedOriginsRoutes.router)
+        this.router.use(projectModelsRoutes.router)
         this.router.use(aiRequestsRoutes.router)
         this.router.use(usageRoutes.router)
     }

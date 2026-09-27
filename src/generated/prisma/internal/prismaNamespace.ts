@@ -391,6 +391,7 @@ export const ModelName = {
   OrganizationInvite: 'OrganizationInvite',
   Project: 'Project',
   ProjectAllowedOrigin: 'ProjectAllowedOrigin',
+  ProjectModelAllow: 'ProjectModelAllow',
   ApiKey: 'ApiKey',
   AIProvider: 'AIProvider',
   AIModel: 'AIModel',
@@ -418,7 +419,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "role" | "organization" | "organizationMember" | "organizationInvite" | "project" | "projectAllowedOrigin" | "apiKey" | "aIProvider" | "aIModel" | "aIRequest" | "action" | "actionInvocation" | "usageAnalytics" | "webhook" | "plan" | "subscription" | "transaction" | "activityLog"
+    modelProps: "user" | "role" | "organization" | "organizationMember" | "organizationInvite" | "project" | "projectAllowedOrigin" | "projectModelAllow" | "apiKey" | "aIProvider" | "aIModel" | "aIRequest" | "action" | "actionInvocation" | "usageAnalytics" | "webhook" | "plan" | "subscription" | "transaction" | "activityLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -937,6 +938,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.ProjectAllowedOriginCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ProjectAllowedOriginCountAggregateOutputType> | number
+        }
+      }
+    }
+    ProjectModelAllow: {
+      payload: Prisma.$ProjectModelAllowPayload<ExtArgs>
+      fields: Prisma.ProjectModelAllowFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProjectModelAllowFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModelAllowPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProjectModelAllowFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModelAllowPayload>
+        }
+        findFirst: {
+          args: Prisma.ProjectModelAllowFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModelAllowPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProjectModelAllowFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModelAllowPayload>
+        }
+        findMany: {
+          args: Prisma.ProjectModelAllowFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModelAllowPayload>[]
+        }
+        create: {
+          args: Prisma.ProjectModelAllowCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModelAllowPayload>
+        }
+        createMany: {
+          args: Prisma.ProjectModelAllowCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProjectModelAllowCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModelAllowPayload>[]
+        }
+        delete: {
+          args: Prisma.ProjectModelAllowDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModelAllowPayload>
+        }
+        update: {
+          args: Prisma.ProjectModelAllowUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModelAllowPayload>
+        }
+        deleteMany: {
+          args: Prisma.ProjectModelAllowDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProjectModelAllowUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProjectModelAllowUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModelAllowPayload>[]
+        }
+        upsert: {
+          args: Prisma.ProjectModelAllowUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModelAllowPayload>
+        }
+        aggregate: {
+          args: Prisma.ProjectModelAllowAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProjectModelAllow>
+        }
+        groupBy: {
+          args: Prisma.ProjectModelAllowGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProjectModelAllowGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProjectModelAllowCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProjectModelAllowCountAggregateOutputType> | number
         }
       }
     }
@@ -1963,6 +2038,18 @@ export const ProjectAllowedOriginScalarFieldEnum = {
 export type ProjectAllowedOriginScalarFieldEnum = (typeof ProjectAllowedOriginScalarFieldEnum)[keyof typeof ProjectAllowedOriginScalarFieldEnum]
 
 
+export const ProjectModelAllowScalarFieldEnum = {
+  id: 'id',
+  projectId: 'projectId',
+  modelId: 'modelId',
+  enabled: 'enabled',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProjectModelAllowScalarFieldEnum = (typeof ProjectModelAllowScalarFieldEnum)[keyof typeof ProjectModelAllowScalarFieldEnum]
+
+
 export const ApiKeyScalarFieldEnum = {
   id: 'id',
   projectId: 'projectId',
@@ -2316,6 +2403,13 @@ export type ListEnumProjectStatusFieldRefInput<$PrismaModel> = FieldRefInputType
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
  * Reference to a field of type 'Json'
  */
 export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
@@ -2382,13 +2476,6 @@ export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
  * Reference to a field of type 'Decimal[]'
  */
 export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -2634,6 +2721,7 @@ export type GlobalOmitConfig = {
   organizationInvite?: Prisma.OrganizationInviteOmit
   project?: Prisma.ProjectOmit
   projectAllowedOrigin?: Prisma.ProjectAllowedOriginOmit
+  projectModelAllow?: Prisma.ProjectModelAllowOmit
   apiKey?: Prisma.ApiKeyOmit
   aIProvider?: Prisma.AIProviderOmit
   aIModel?: Prisma.AIModelOmit

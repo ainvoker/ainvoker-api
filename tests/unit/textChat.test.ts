@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { parseModelSlug, textChatSchema } from "../../src/modules/text/schemas.js"
+import { isModelSlug, parseModelSlug, textChatSchema } from "../../src/modules/text/schemas.js"
 import chatProviderRegistry from "../../src/providers/registry.js"
 import { AppError } from "../../src/platform/errors.js"
 
@@ -13,11 +13,31 @@ describe("textChatSchema", () => {
         expect(parsed.messages).toHaveLength(1)
     })
 
-    it("rejects model without provider slash", () => {
+    it("accepts a bare model name", () => {
+        const parsed = textChatSchema.parse({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: "Hi" }],
+        })
+        expect(parsed.model).toBe("gpt-4o-mini")
+    })
+
+    it("accepts each reasoning level", () => {
+        for (const reasoning of ["minimal", "low", "medium", "high"] as const) {
+            const parsed = textChatSchema.parse({
+                model: "gemini/gemini-3.6-flash",
+                messages: [{ role: "user", content: "Hi" }],
+                reasoning,
+            })
+            expect(parsed.reasoning).toBe(reasoning)
+        }
+    })
+
+    it("rejects an unknown reasoning level", () => {
         expect(() =>
             textChatSchema.parse({
-                model: "gpt-4o-mini",
+                model: "gemini/gemini-3.6-flash",
                 messages: [{ role: "user", content: "Hi" }],
+                reasoning: "extreme",
             }),
         ).toThrow()
     })
@@ -38,6 +58,13 @@ describe("parseModelSlug", () => {
             providerName: "openai",
             modelName: "gpt-4o-mini",
         })
+    })
+})
+
+describe("isModelSlug", () => {
+    it("detects slugs vs bare names", () => {
+        expect(isModelSlug("openai/gpt-4o-mini")).toBe(true)
+        expect(isModelSlug("gpt-4o-mini")).toBe(false)
     })
 })
 

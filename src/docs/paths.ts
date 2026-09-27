@@ -21,6 +21,8 @@ import {
     bootstrapProfileSchema,
     updateProfileSchema,
     textChatSchema,
+    projectModelParamsSchema,
+    toggleProjectModelSchema,
     aiRequestParamsSchema,
     listAiRequestsQuerySchema,
     inviteIdParamsSchema,
@@ -46,10 +48,16 @@ import {
     memberListItemSchema,
     organizationListItemSchema,
     organizationUsageSchema,
+    projectModelSchema,
     projectSchema,
     projectUsageSchema,
     rootMessageSchema,
     textChatResponseSchema,
+    textStreamDeltaEventSchema,
+    textStreamDoneEventSchema,
+    textStreamErrorEventSchema,
+    textStreamMetaEventSchema,
+    textStreamToolCallEventSchema,
     userSchema,
 } from "./responses.js"
 
@@ -679,6 +687,54 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
 
     registry.registerPath({
         method: "get",
+        path: "/api/v1/projects/{projectId}/models",
+        tags: ["Project Models"],
+        summary: "List text models for a project",
+        description:
+            "Returns the curated text catalog with per-project enabled flags. Plan-forbidden models are locked.",
+        security: bearerAuth,
+        request: {
+            params: projectIdParamsSchema,
+        },
+        responses: {
+            200: {
+                description: "Project model allowlist",
+                content: {
+                    "application/json": { schema: dataEnvelope(z.array(projectModelSchema)) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "patch",
+        path: "/api/v1/projects/{projectId}/models/{modelId}",
+        tags: ["Project Models"],
+        summary: "Enable or disable a project model",
+        description:
+            "Owner or admin only. Locked (plan-forbidden) models cannot be toggled.",
+        security: bearerAuth,
+        request: {
+            params: projectModelParamsSchema,
+            body: {
+                required: true,
+                content: {
+                    "application/json": { schema: toggleProjectModelSchema },
+                },
+            },
+        },
+        responses: {
+            200: {
+                description: "Updated project model",
+                content: { "application/json": { schema: dataEnvelope(projectModelSchema) } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
         path: "/api/v1/projects/{projectId}/ai-requests",
         tags: ["AI Requests"],
         summary: "List AI requests for a project",
@@ -749,7 +805,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         tags: ["Gateway"],
         summary: "Text chat completion",
         description:
-            "Invoke a text chat model via the data plane. Authenticate with a project API key (`Authorization: Bearer ain_…`). Model must be a `provider/model` slug (e.g. `openai/gpt-4o-mini` or `gemini/gemini-3.6-flash`). Free plans may only call `freeEligible` catalog models and are subject to monthly request/token caps.",
+            "Invoke a text chat model via the data plane. Authenticate with a project API key (`Authorization: Bearer ain_…`). Model may be a `provider/model` slug (e.g. `openai/gpt-4o-mini`) or a bare model name when exactly one ACTIVE catalog row matches. Free plans may only call `freeEligible` catalog models. The project allowlist must enable the model. Subject to monthly request/token caps. Optional `tools` (max 32) are forwarded to the vendor; tool calls come back on `message.toolCalls` with `content` \"\" on a tool-only reply. The gateway does not run tools: the caller runs them and sends the result as a `tool` message on the next request.",
         security: apiKeyAuth,
         request: {
             body: {
@@ -763,6 +819,53 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
                 description: "Assistant message",
                 content: {
                     "application/json": { schema: dataEnvelope(textChatResponseSchema) },
+                },
+            },
+            402: {
+                description: "Organization has no active subscription",
+                content: { "application/json": { schema: errorResponseSchema } },
+            },
+            429: {
+                description: "Monthly plan request or token limit exceeded",
+                content: { "application/json": { schema: errorResponseSchema } },
+            },
+            501: {
+                description: "Provider adapter not implemented",
+                content: { "application/json": { schema: errorResponseSchema } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/v1/text/stream",
+        tags: ["Gateway"],
+        summary: "Text chat streaming (SSE)",
+        description:
+            "Same request body, catalog resolution, plan gates, project allowlist, and quota reserve as `POST /v1/text/chat`. On success returns `text/event-stream` (not a `{ data }` JSON envelope). SSE events use an `event:` name and JSON on `data:`: `meta` once (`{ id, model }`), zero or more `delta` (`{ content }`), one `tool_call` (`{ id, name, arguments }`) per complete tool call, then `done` (`{ message, usage }`, where `message.toolCalls` repeats the emitted calls). The gateway does not run tools; the caller runs them and sends a `tool` message on the next request. Failures after headers are sent use `error` (`{ code, message }`) then close. Pre-stream failures (invalid body, unknown model, plan/allowlist/quota) return the normal JSON `{ error }` envelope before any SSE headers. Sets the same `X-RateLimit-*` headers as chat before the first event.",
+        security: apiKeyAuth,
+        request: {
+            body: {
+                content: {
+                    "application/json": { schema: textChatSchema },
+                },
+            },
+        },
+        responses: {
+            200: {
+                description:
+                    "Server-Sent Events stream. Event names: meta, delta, tool_call, done, error. Payloads match TextStream* schemas (no wrapping `type` field on the wire).",
+                content: {
+                    "text/event-stream": {
+                        schema: z.union([
+                            textStreamMetaEventSchema,
+                            textStreamDeltaEventSchema,
+                            textStreamToolCallEventSchema,
+                            textStreamDoneEventSchema,
+                            textStreamErrorEventSchema,
+                        ]),
+                    },
                 },
             },
             402: {

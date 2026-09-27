@@ -2,6 +2,7 @@ import { Prisma } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
 import { assertOrgCanMutateResources } from "../billing/limits.js"
+import { listPlanAllowedRoutableModelIds } from "../text/allowlist.js"
 import type { z } from "zod"
 import type { createProjectSchema, updateProjectSchema } from "./schemas.js"
 
@@ -75,13 +76,29 @@ class ProjectService {
         await assertOrgCanMutateResources(organizationId)
 
         try {
-            const project = await prismaClient.project.create({
-                data: {
-                    organizationId,
-                    name: input.name,
-                    description: input.description ?? null,
-                    environment: input.environment,
-                },
+            // Resolve catalog + plan outside the write transaction (remote DB latency).
+            const modelIds = await listPlanAllowedRoutableModelIds(organizationId)
+
+            const project = await prismaClient.$transaction(async (tx) => {
+                const created = await tx.project.create({
+                    data: {
+                        organizationId,
+                        name: input.name,
+                        description: input.description ?? null,
+                        environment: input.environment,
+                    },
+                })
+                if (modelIds.length > 0) {
+                    await tx.projectModelAllow.createMany({
+                        data: modelIds.map((modelId) => ({
+                            projectId: created.id,
+                            modelId,
+                            enabled: true,
+                        })),
+                        skipDuplicates: true,
+                    })
+                }
+                return created
             })
             return this.serializeProject(project)
         } catch (err) {
@@ -166,6 +183,7 @@ class ProjectService {
                 await tx.usageAnalytics.deleteMany({ where: { projectId } })
                 await tx.webhook.deleteMany({ where: { projectId } })
                 await tx.projectAllowedOrigin.deleteMany({ where: { projectId } })
+                await tx.projectModelAllow.deleteMany({ where: { projectId } })
                 await tx.project.delete({ where: { id: projectId } })
             })
         } catch (err) {
