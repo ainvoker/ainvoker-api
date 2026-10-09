@@ -204,6 +204,86 @@ describe("usage endpoints", () => {
         expect(res.body.data.recentRequests[0].projectName).toBeUndefined()
     })
 
+    it("returns 401 without Authorization for project analytics", async () => {
+        const res = await request(app.express).get(`/api/v1/projects/${projectId}/analytics`)
+        expect(res.status).toBe(401)
+    })
+
+    it("returns project analytics for the billing month by default", async () => {
+        const res = await request(app.express)
+            .get(`/api/v1/projects/${projectId}/analytics`)
+            .set(authUser.headers())
+
+        expect(res.status).toBe(200)
+        const data = res.body.data
+        expect(data.range).toBe("billing_month")
+        expect(data.period).toMatchObject({
+            requestsUsed: 2,
+            tokensUsed: 6,
+            inputTokens: 4,
+            outputTokens: 2,
+            successfulRequests: 1,
+            failedRequests: 1,
+            totalCost: expect.any(String),
+        })
+        expect(data.latency).toEqual({ avg: 120, p50: 120, p95: 120 })
+        expect(data.organizationPeriod.requestsUsed).toBeGreaterThanOrEqual(2)
+        expect(data.byModel[0]).toMatchObject({
+            model: "gemini/gemini-3.6-flash",
+            requestsUsed: 2,
+            tokensUsed: 6,
+        })
+        expect(data.byApiKey).toEqual([
+            {
+                apiKeyId,
+                keyName: "Usage Key",
+                keyPrefix: expect.any(String),
+                requestsUsed: 2,
+                tokensUsed: 6,
+            },
+        ])
+        expect(data.daily).toHaveLength(new Date().getUTCDate())
+        expect(data.dailyByModel[0]).toMatchObject({ requestsUsed: 2, tokensUsed: 6 })
+        expect(data.dailyByApiKey[0]).toMatchObject({
+            id: apiKeyId,
+            name: "Usage Key",
+            requestsUsed: 2,
+        })
+        expect(data.recentRequests).toHaveLength(2)
+    })
+
+    it("returns rolling ranges with one daily point per day", async () => {
+        for (const [range, days] of [
+            ["7d", 7],
+            ["30d", 30],
+        ] as const) {
+            const res = await request(app.express)
+                .get(`/api/v1/projects/${projectId}/analytics?range=${range}`)
+                .set(authUser.headers())
+
+            expect(res.status).toBe(200)
+            expect(res.body.data.range).toBe(range)
+            expect(res.body.data.daily).toHaveLength(days)
+            expect(res.body.data.period.requestsUsed).toBe(2)
+        }
+    })
+
+    it("rejects an unknown analytics range", async () => {
+        const res = await request(app.express)
+            .get(`/api/v1/projects/${projectId}/analytics?range=1y`)
+            .set(authUser.headers())
+
+        expect(res.status).toBe(400)
+    })
+
+    it("returns 404 for unknown project analytics", async () => {
+        const res = await request(app.express)
+            .get(`/api/v1/projects/does-not-exist/analytics`)
+            .set(authUser.headers())
+
+        expect(res.status).toBe(404)
+    })
+
     it("returns 404 for unknown project usage", async () => {
         const res = await request(app.express)
             .get(`/api/v1/projects/does-not-exist/usage`)

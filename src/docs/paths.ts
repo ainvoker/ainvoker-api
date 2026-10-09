@@ -25,6 +25,7 @@ import {
     toggleProjectModelSchema,
     aiRequestParamsSchema,
     listAiRequestsQuerySchema,
+    projectAnalyticsQuerySchema,
     inviteIdParamsSchema,
     memberIdParamsSchema,
     previewInviteQuerySchema,
@@ -48,6 +49,7 @@ import {
     memberListItemSchema,
     organizationListItemSchema,
     organizationUsageSchema,
+    projectAnalyticsSchema,
     projectModelSchema,
     projectSchema,
     projectUsageSchema,
@@ -772,6 +774,29 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
                 description: "Project usage snapshot",
                 content: {
                     "application/json": { schema: dataEnvelope(projectUsageSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/projects/{projectId}/analytics",
+        tags: ["Usage"],
+        summary: "Get project analytics",
+        description:
+            "Returns project usage for a UTC range (current billing month, or rolling 7 or 30 days ending today): totals with token split and cost, latency avg/p50/p95, workspace totals for the same range, per-model and per-API-key breakdowns, daily series with stacked segments, and recent AI requests in the range.",
+        security: bearerAuth,
+        request: {
+            params: projectIdParamsSchema,
+            query: projectAnalyticsQuerySchema,
+        },
+        responses: {
+            200: {
+                description: "Project analytics snapshot",
+                content: {
+                    "application/json": { schema: dataEnvelope(projectAnalyticsSchema) },
                 },
             },
             ...errorResponses,

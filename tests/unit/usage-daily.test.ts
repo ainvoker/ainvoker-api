@@ -1,9 +1,26 @@
 import { describe, expect, it } from "vitest"
 import {
     fillDailySeries,
+    startOfAnalyticsRange,
     startOfNextUtcDay,
     startOfUtcMonth,
 } from "../../src/modules/usage/aggregate.js"
+
+describe("startOfAnalyticsRange", () => {
+    const now = new Date(Date.UTC(2026, 8, 3, 15, 30, 0)) // Sep 3
+
+    it("uses the UTC month start for billing_month", () => {
+        expect(startOfAnalyticsRange("billing_month", now).toISOString()).toBe(
+            "2026-09-01T00:00:00.000Z",
+        )
+    })
+
+    it("counts today as the last day of rolling ranges, crossing months", () => {
+        expect(startOfAnalyticsRange("7d", now).toISOString()).toBe("2026-08-28T00:00:00.000Z")
+        expect(startOfAnalyticsRange("30d", now).toISOString()).toBe("2026-08-05T00:00:00.000Z")
+        expect(fillDailySeries(startOfAnalyticsRange("7d", now), new Map(), now)).toHaveLength(7)
+    })
+})
 
 describe("startOfNextUtcDay", () => {
     it("returns the exclusive upper bound after today UTC", () => {

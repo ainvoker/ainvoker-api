@@ -9,6 +9,9 @@ export const QUOTA_STATUSES = ["PENDING", "SUCCESS", "FAILED"] as const
 export type PeriodUsage = {
     requestsUsed: number
     tokensUsed: number
+    inputTokens: number
+    outputTokens: number
+    totalCost: string
     successfulRequests: number
     failedRequests: number
     periodStart: Date
@@ -17,6 +20,15 @@ export type PeriodUsage = {
 export type ProjectPeriodUsage = PeriodUsage & {
     avgLatency: number | null
 }
+
+export type LatencyStats = {
+    avg: number | null
+    p50: number | null
+    p95: number | null
+}
+
+export const ANALYTICS_RANGES = ["billing_month", "7d", "30d"] as const
+export type AnalyticsRange = (typeof ANALYTICS_RANGES)[number]
 
 export type UsageDailyPoint = {
     date: string
@@ -40,6 +52,18 @@ function formatUtcDate(date: Date): string {
 
 function nextUtcDay(date: Date): Date {
     return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 0, 0, 0, 0))
+}
+
+/** Inclusive start of an analytics range; rolling ranges include today as the last day. */
+export function startOfAnalyticsRange(range: AnalyticsRange, now = new Date()): Date {
+    if (range === "billing_month") {
+        return startOfUtcMonth(now)
+    }
+    const days = range === "7d" ? 7 : 30
+    const today = startOfUtcDay(now)
+    return new Date(
+        Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - (days - 1)),
+    )
 }
 
 /** Exclusive upper bound: usage counted through end of today (UTC), not future-dated rows. */
@@ -103,7 +127,7 @@ export async function aggregatePeriodUsage(
                 requestStatus: { in: [...QUOTA_STATUSES] },
             },
             _count: { _all: true },
-            _sum: { totalTokens: true },
+            _sum: { totalTokens: true, inputTokens: true, outputTokens: true, requestCost: true },
         }),
         prismaClient.aIRequest.count({
             where: { ...where, requestStatus: "SUCCESS" },
@@ -116,6 +140,9 @@ export async function aggregatePeriodUsage(
     return {
         requestsUsed: quotaAgg._count._all,
         tokensUsed: quotaAgg._sum.totalTokens ?? 0,
+        inputTokens: quotaAgg._sum.inputTokens ?? 0,
+        outputTokens: quotaAgg._sum.outputTokens ?? 0,
+        totalCost: (quotaAgg._sum.requestCost ?? new Prisma.Decimal(0)).toString(),
         successfulRequests,
         failedRequests,
         periodStart,
@@ -146,6 +173,37 @@ export async function aggregateProjectPeriodUsage(
         ...period,
         avgLatency: avg == null ? null : Math.round(avg),
     }
+}
+
+type LatencyRawRow = {
+    avg: number | null
+    p50: number | null
+    p95: number | null
+}
+
+/** Latency over successful requests in the range (ms, rounded). */
+export async function aggregateProjectLatency(
+    projectId: string,
+    periodStart = startOfUtcMonth(),
+    now = new Date(),
+): Promise<LatencyStats> {
+    const periodEnd = startOfNextUtcDay(now)
+    const [row] = await prismaClient.$queryRaw<LatencyRawRow[]>`
+        SELECT
+            AVG(r.latency)::float8 AS avg,
+            percentile_cont(0.5) WITHIN GROUP (ORDER BY r.latency)::float8 AS p50,
+            percentile_cont(0.95) WITHIN GROUP (ORDER BY r.latency)::float8 AS p95
+        FROM "AIRequest" r
+        WHERE r."projectId" = ${projectId}
+          AND r."requestStatus" = 'SUCCESS'
+          AND r.latency IS NOT NULL
+          AND r."createdAt" >= ${periodStart}
+          AND r."createdAt" < ${periodEnd}
+    `
+
+    const round = (value: number | null | undefined) =>
+        value == null ? null : Math.round(value)
+    return { avg: round(row?.avg), p50: round(row?.p50), p95: round(row?.p95) }
 }
 
 export type ProjectUsageRow = {
@@ -263,6 +321,51 @@ export async function aggregateProjectUsageByModel(
     return rows.map((row) => ({
         modelId: row.modelId,
         model: modelById.get(row.modelId) ?? `model:${row.modelId}`,
+        requestsUsed: row._count._all,
+        tokensUsed: row._sum.totalTokens ?? 0,
+    }))
+}
+
+export type ApiKeyUsageRow = {
+    apiKeyId: string
+    keyName: string
+    keyPrefix: string
+    requestsUsed: number
+    tokensUsed: number
+}
+
+/** Per-API-key request/token totals for a single project (quota statuses only). */
+export async function aggregateProjectUsageByApiKey(
+    projectId: string,
+    periodStart = startOfUtcMonth(),
+    now = new Date(),
+): Promise<ApiKeyUsageRow[]> {
+    const rows = await prismaClient.aIRequest.groupBy({
+        by: ["apiKeyId"],
+        where: {
+            projectId,
+            createdAt: { gte: periodStart, lt: startOfNextUtcDay(now) },
+            requestStatus: { in: [...QUOTA_STATUSES] },
+        },
+        _count: { _all: true },
+        _sum: { totalTokens: true },
+        orderBy: { _sum: { totalTokens: "desc" } },
+    })
+
+    if (rows.length === 0) {
+        return []
+    }
+
+    const keys = await prismaClient.apiKey.findMany({
+        where: { id: { in: rows.map((row) => row.apiKeyId) } },
+        select: { id: true, keyName: true, keyPrefix: true },
+    })
+    const keyById = new Map(keys.map((key) => [key.id, key] as const))
+
+    return rows.map((row) => ({
+        apiKeyId: row.apiKeyId,
+        keyName: keyById.get(row.apiKeyId)?.keyName ?? "Deleted key",
+        keyPrefix: keyById.get(row.apiKeyId)?.keyPrefix ?? "",
         requestsUsed: row._count._all,
         tokensUsed: row._sum.totalTokens ?? 0,
     }))
@@ -393,12 +496,16 @@ type DailyModelRawRow = {
     tokens_used: bigint | number
 }
 
-/** Per-day × model usage for stacked charts (org scope, quota statuses). */
+/** Per-day × model usage for stacked charts (quota statuses). */
 export async function aggregateDailyUsageByModel(
-    organizationId: string,
+    scope: { organizationId: string } | { projectId: string },
     periodStart = startOfUtcMonth(),
     now = new Date(),
 ): Promise<UsageDailySegmentPoint[]> {
+    const scopeFilter =
+        "organizationId" in scope
+            ? Prisma.sql`p."organizationId" = ${scope.organizationId}`
+            : Prisma.sql`r."projectId" = ${scope.projectId}`
     const periodEnd = startOfNextUtcDay(now)
     const rows = await prismaClient.$queryRaw<DailyModelRawRow[]>`
         SELECT
@@ -411,7 +518,7 @@ export async function aggregateDailyUsageByModel(
             COALESCE(SUM(r."totalTokens"), 0)::bigint AS tokens_used
         FROM "AIRequest" r
         INNER JOIN "Project" p ON p.id = r."projectId"
-        WHERE p."organizationId" = ${organizationId}
+        WHERE ${scopeFilter}
           AND r."createdAt" >= ${periodStart}
           AND r."createdAt" < ${periodEnd}
           AND r."requestStatus" IN ('PENDING', 'SUCCESS', 'FAILED')
@@ -429,6 +536,42 @@ export async function aggregateDailyUsageByModel(
         date: row.day,
         id: String(row.model_id),
         name: modelById.get(row.model_id) ?? `model:${row.model_id}`,
+        requestsUsed: toInt(row.requests_used),
+        tokensUsed: toInt(row.tokens_used),
+    }))
+}
+
+/** Per-day × API key usage for stacked charts (project scope, quota statuses). */
+export async function aggregateDailyUsageByApiKey(
+    projectId: string,
+    periodStart = startOfUtcMonth(),
+    now = new Date(),
+): Promise<UsageDailySegmentPoint[]> {
+    const periodEnd = startOfNextUtcDay(now)
+    const rows = await prismaClient.$queryRaw<DailySegmentRawRow[]>`
+        SELECT
+            to_char(
+                date_trunc('day', r."createdAt" AT TIME ZONE 'UTC'),
+                'YYYY-MM-DD'
+            ) AS day,
+            r."apiKeyId" AS segment_id,
+            k."keyName" AS segment_name,
+            COUNT(*)::bigint AS requests_used,
+            COALESCE(SUM(r."totalTokens"), 0)::bigint AS tokens_used
+        FROM "AIRequest" r
+        INNER JOIN "ApiKey" k ON k.id = r."apiKeyId"
+        WHERE r."projectId" = ${projectId}
+          AND r."createdAt" >= ${periodStart}
+          AND r."createdAt" < ${periodEnd}
+          AND r."requestStatus" IN ('PENDING', 'SUCCESS', 'FAILED')
+        GROUP BY 1, 2, 3
+        ORDER BY 1 ASC
+    `
+
+    return rows.map((row) => ({
+        date: row.day,
+        id: row.segment_id,
+        name: row.segment_name,
         requestsUsed: toInt(row.requests_used),
         tokensUsed: toInt(row.tokens_used),
     }))

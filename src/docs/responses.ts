@@ -288,6 +288,53 @@ export const projectUsageSchema = z
     })
     .meta({ id: "ProjectUsage" })
 
+export const projectAnalyticsPeriodSchema = usagePeriodSchema
+    .extend({
+        inputTokens: z.number().int(),
+        outputTokens: z.number().int(),
+        totalCost: z.string().describe("Decimal string, sum of request costs in USD"),
+    })
+    .meta({ id: "ProjectAnalyticsPeriod" })
+
+export const projectLatencyStatsSchema = z
+    .object({
+        avg: z.number().int().nullable(),
+        p50: z.number().int().nullable(),
+        p95: z.number().int().nullable(),
+    })
+    .meta({ id: "ProjectLatencyStats" })
+
+export const apiKeyUsageRowSchema = z
+    .object({
+        apiKeyId: z.string(),
+        keyName: z.string(),
+        keyPrefix: z.string(),
+        requestsUsed: z.number().int(),
+        tokensUsed: z.number().int(),
+    })
+    .meta({ id: "ApiKeyUsageRow" })
+
+export const projectAnalyticsSchema = z
+    .object({
+        range: z.enum(["billing_month", "7d", "30d"]),
+        project: z.object({
+            id: z.string(),
+            organizationId: z.string(),
+            name: z.string(),
+        }),
+        plan: usagePlanSnapshotSchema.nullable(),
+        period: projectAnalyticsPeriodSchema,
+        latency: projectLatencyStatsSchema,
+        organizationPeriod: usagePeriodSchema,
+        byModel: z.array(orgUsageByModelSchema),
+        byApiKey: z.array(apiKeyUsageRowSchema),
+        daily: z.array(usageDailyPointSchema),
+        dailyByModel: z.array(usageDailySegmentPointSchema),
+        dailyByApiKey: z.array(usageDailySegmentPointSchema),
+        recentRequests: z.array(aiRequestSummarySchema),
+    })
+    .meta({ id: "ProjectAnalytics" })
+
 const providerMetadataSchema = z
     .record(z.string(), z.unknown())
     .optional()
