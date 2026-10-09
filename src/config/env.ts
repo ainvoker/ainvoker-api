@@ -34,7 +34,10 @@ const envSchema = z.object({
         .enum(["true", "false"])
         .default("false")
         .transform((v) => v === "true"),
-    RESEND_API_KEY: z.string().min(1).optional(),
+    /** Cloudflare API token with Email Sending permission. */
+    CLOUDFLARE_API_TOKEN: z.string().min(1).optional(),
+    /** Cloudflare account ID (Dashboard → account → Overview). */
+    CLOUDFLARE_ACCOUNT_ID: z.string().min(1).optional(),
     /** From address for invite mail, e.g. `AInvoker <invites@yourdomain.com>`. */
     INVITE_EMAIL_FROM: z.string().min(1).optional(),
 })
@@ -54,7 +57,8 @@ class EnvConfig {
     readonly XENDIT_COMPONENTS_ORIGIN: string
     readonly INVITE_EMAIL_ENABLED: boolean
     readonly INVITE_RETURN_ACCEPT_URL: boolean
-    readonly RESEND_API_KEY: string | undefined
+    readonly CLOUDFLARE_API_TOKEN: string | undefined
+    readonly CLOUDFLARE_ACCOUNT_ID: string | undefined
     readonly INVITE_EMAIL_FROM: string | undefined
 
     constructor() {
@@ -82,7 +86,8 @@ class EnvConfig {
         this.XENDIT_COMPONENTS_ORIGIN = parsed.data.XENDIT_COMPONENTS_ORIGIN
         this.INVITE_EMAIL_ENABLED = parsed.data.INVITE_EMAIL_ENABLED
         this.INVITE_RETURN_ACCEPT_URL = parsed.data.INVITE_RETURN_ACCEPT_URL
-        this.RESEND_API_KEY = parsed.data.RESEND_API_KEY
+        this.CLOUDFLARE_API_TOKEN = parsed.data.CLOUDFLARE_API_TOKEN
+        this.CLOUDFLARE_ACCOUNT_ID = parsed.data.CLOUDFLARE_ACCOUNT_ID
         this.INVITE_EMAIL_FROM = parsed.data.INVITE_EMAIL_FROM
 
         if (this.BILLING_ENABLED && !this.XENDIT_SECRET_KEY) {
@@ -93,13 +98,16 @@ class EnvConfig {
             process.exit(1)
         }
 
-        if (this.INVITE_EMAIL_ENABLED && (!this.RESEND_API_KEY || !this.INVITE_EMAIL_FROM)) {
+        if (
+            this.INVITE_EMAIL_ENABLED &&
+            (!this.CLOUDFLARE_API_TOKEN || !this.CLOUDFLARE_ACCOUNT_ID || !this.INVITE_EMAIL_FROM)
+        ) {
             console.error(
-                "RESEND_API_KEY and INVITE_EMAIL_FROM are required when INVITE_EMAIL_ENABLED=true",
+                "CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, and INVITE_EMAIL_FROM are required when INVITE_EMAIL_ENABLED=true",
             )
             if (process.env.NODE_ENV === "test") {
                 throw new Error(
-                    "RESEND_API_KEY and INVITE_EMAIL_FROM are required when INVITE_EMAIL_ENABLED=true",
+                    "CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, and INVITE_EMAIL_FROM are required when INVITE_EMAIL_ENABLED=true",
                 )
             }
             process.exit(1)

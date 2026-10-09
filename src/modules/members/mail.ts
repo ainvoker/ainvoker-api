@@ -48,33 +48,42 @@ export function formatInviteEmail(input: InviteEmailInput): {
     return { subject, text, html }
 }
 
+type CloudflareSendEmailResponse = {
+    success?: boolean
+}
+
 /**
- * Sends the invite via Resend. Errors omit the accept link so callers can log them safely.
+ * Sends the invite via Cloudflare Email Sending REST API. Errors omit the accept link so callers can log them safely.
  */
 export async function sendInviteEmail(input: InviteEmailInput): Promise<void> {
-    const apiKey = env.RESEND_API_KEY
+    const apiToken = env.CLOUDFLARE_API_TOKEN
+    const accountId = env.CLOUDFLARE_ACCOUNT_ID
     const from = env.INVITE_EMAIL_FROM
-    if (!apiKey || !from) {
+    if (!apiToken || !accountId || !from) {
         throw new Error("Invite email is not configured")
     }
 
     const formatted = formatInviteEmail(input)
-    const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
+    const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/email/sending/send`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                from,
+                to: [input.to],
+                subject: formatted.subject,
+                text: formatted.text,
+                html: formatted.html,
+            }),
         },
-        body: JSON.stringify({
-            from,
-            to: [input.to],
-            subject: formatted.subject,
-            text: formatted.text,
-            html: formatted.html,
-        }),
-    })
+    )
 
-    if (!response.ok) {
+    const body = (await response.json()) as CloudflareSendEmailResponse
+    if (!response.ok || body.success === false) {
         throw new Error(`Invite email provider returned ${response.status}`)
     }
 }
