@@ -186,7 +186,10 @@ class TurnCalls {
             if (part.thoughtSignature) {
                 draft.thoughtSignature = part.thoughtSignature
             } else if (this.waiting.length > 0) {
-                draft.thoughtSignature = this.waiting.shift()
+                const signature = this.waiting.shift()
+                if (signature) {
+                    draft.thoughtSignature = signature
+                }
             }
             this.calls.push(draft)
         }
