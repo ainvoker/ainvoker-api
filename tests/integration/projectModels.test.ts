@@ -2,6 +2,7 @@ import request from "supertest"
 import { beforeEach, describe, expect, it } from "vitest"
 import app from "../../src/app.js"
 import { ensureBillingCatalog, getPlanByName, PLAN_NAMES } from "../../src/modules/billing/catalog.js"
+import { imageCatalogDefaults } from "../../src/modules/image/catalog.js"
 import { ensureTextCatalog, textCatalogDefaults } from "../../src/modules/text/catalog.js"
 import prismaClient from "../../src/platform/prisma.js"
 import {
@@ -52,6 +53,8 @@ describe("project models endpoints", () => {
         const gemini = rows.find((row) => row.slug === textCatalogDefaults.geminiModelSlug)
         expect(openai).toMatchObject({ enabled: true, locked: false, freeEligible: true })
         expect(gemini).toMatchObject({ enabled: true, locked: false, freeEligible: true })
+        const image = rows.find((row) => row.slug === imageCatalogDefaults.modelSlug)
+        expect(image).toMatchObject({ enabled: false, locked: true, freeEligible: false })
 
         const allows = await prismaClient.projectModelAllow.findMany({
             where: { projectId, enabled: true },
@@ -266,9 +269,10 @@ describe("project models on Pro", () => {
             .set(authUser.headers())
         expect(listRes.status).toBe(200)
 
-        const gpt4o = (listRes.body.data as Array<{ slug: string; enabled: boolean; locked: boolean }>).find(
-            (row) => row.slug === "openai/gpt-4o",
-        )
+        const rows = listRes.body.data as Array<{ slug: string; enabled: boolean; locked: boolean }>
+        const gpt4o = rows.find((row) => row.slug === "openai/gpt-4o")
         expect(gpt4o).toMatchObject({ enabled: true, locked: false })
+        const image = rows.find((row) => row.slug === imageCatalogDefaults.modelSlug)
+        expect(image).toMatchObject({ type: "IMAGE", enabled: true, locked: false })
     })
 })

@@ -1,20 +1,22 @@
 import { AppError } from "../platform/errors.js"
-import type { ChatProvider } from "./types.js"
+import type { ChatProvider, ImageProvider } from "./types.js"
 
-class ChatProviderRegistry {
-    private readonly providers = new Map<string, ChatProvider>()
+class ProviderRegistry<T> {
+    private readonly providers = new Map<string, T>()
 
-    register(name: string, provider: ChatProvider) {
+    constructor(private readonly kind: string) {}
+
+    register(name: string, provider: T) {
         this.providers.set(name, provider)
     }
 
-    get(name: string): ChatProvider {
+    get(name: string): T {
         const provider = this.providers.get(name)
         if (!provider) {
             throw new AppError(
                 501,
                 "PROVIDER_NOT_IMPLEMENTED",
-                `No chat adapter registered for provider "${name}"`,
+                `No ${this.kind} adapter registered for provider "${name}"`,
             )
         }
         return provider
@@ -25,4 +27,6 @@ class ChatProviderRegistry {
     }
 }
 
-export default new ChatProviderRegistry()
+export const imageProviderRegistry = new ProviderRegistry<ImageProvider>("image")
+
+export default new ProviderRegistry<ChatProvider>("chat")

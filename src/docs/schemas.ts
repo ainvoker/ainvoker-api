@@ -10,6 +10,7 @@ export {
 } from "../modules/projects/schemas.js"
 export * from "../modules/users/schemas.js"
 export { textChatSchema } from "../modules/text/schemas.js"
+export { imageGenerateSchema } from "../modules/image/schemas.js"
 export {
     projectModelParamsSchema,
     toggleProjectModelSchema,

@@ -1,4 +1,4 @@
-import type { AIModel, Plan, Prisma } from "../../generated/prisma/client.js"
+import type { AIModel, AIServiceType, Plan, Prisma } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
 import {
@@ -294,7 +294,21 @@ function fitTokenHold(
  * on totalTokens so the next caller sees it. Hold the lock only for check +
  * insert — call providers after commit, capped at the reserved output.
  */
-export async function reservePendingTextRequest(input: ReservePendingTextRequestInput): Promise<{
+export function reservePendingTextRequest(input: ReservePendingTextRequestInput) {
+    return reservePendingRequest("TEXT", input)
+}
+
+/** Same reserve as text. Image output size cannot be capped, so the hold never shrinks. */
+export function reservePendingImageRequest(
+    input: Omit<ReservePendingTextRequestInput, "allowOutputShrink">,
+) {
+    return reservePendingRequest("IMAGE", { ...input, allowOutputShrink: false })
+}
+
+async function reservePendingRequest(
+    serviceType: AIServiceType,
+    input: ReservePendingTextRequestInput,
+): Promise<{
     aiRequest: { id: string }
     quota: QuotaSnapshot
     tokenHold: { inputTokens: number; outputTokens: number }
@@ -336,7 +350,7 @@ export async function reservePendingTextRequest(input: ReservePendingTextRequest
                 projectId: input.projectId,
                 apiKeyId: input.apiKeyId,
                 modelId: input.modelId,
-                serviceType: "TEXT",
+                serviceType,
                 requestPayload: input.requestPayload,
                 requestStatus: "PENDING",
                 inputTokens: tokenHold.inputTokens,

@@ -98,3 +98,36 @@ export interface ChatProvider {
      */
     openStream(input: ChatCompletionInput, options?: ChatStreamOptions): Promise<ChatStream>
 }
+
+export type ImageSize = "1024x1024" | "1024x1536" | "1536x1024" | "auto"
+export type ImageQuality = "low" | "medium" | "high" | "xhigh" | "max" | "auto"
+export type ImageOutputFormat = "png" | "jpeg" | "webp"
+
+export type ImageGenerationInput = {
+    /** Vendor model id, e.g. "gpt-image-2.5-flare" */
+    model: string
+    prompt: string
+    n: number
+    size?: ImageSize
+    quality?: ImageQuality
+    outputFormat?: ImageOutputFormat
+    /** From AIProvider.baseUrl */
+    baseUrl: string
+}
+
+export type GeneratedImage = {
+    base64: string
+    mimeType: string
+    revisedPrompt?: string | undefined
+}
+
+export type ImageGenerationResult = {
+    images: GeneratedImage[]
+    usage: ChatCompletionUsage | null
+    /** Vendor response with image bytes removed, for AIRequest.responsePayload.raw */
+    raw: unknown
+}
+
+export interface ImageProvider {
+    generate(input: ImageGenerationInput): Promise<ImageGenerationResult>
+}

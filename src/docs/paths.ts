@@ -21,6 +21,7 @@ import {
     bootstrapProfileSchema,
     updateProfileSchema,
     textChatSchema,
+    imageGenerateSchema,
     projectModelParamsSchema,
     toggleProjectModelSchema,
     aiRequestParamsSchema,
@@ -43,6 +44,7 @@ import {
     deletedResponseSchema,
     errorResponseSchema,
     healthSchema,
+    imageGenerateResponseSchema,
     inviteItemSchema,
     invitePreviewSchema,
     meResponseSchema,
@@ -691,9 +693,9 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         method: "get",
         path: "/api/v1/projects/{projectId}/models",
         tags: ["Project Models"],
-        summary: "List text models for a project",
+        summary: "List models for a project",
         description:
-            "Returns the curated text catalog with per-project enabled flags. Plan-forbidden models are locked.",
+            "Returns the curated text and image catalog with per-project enabled flags. Plan-forbidden models are locked.",
         security: bearerAuth,
         request: {
             params: projectIdParamsSchema,
@@ -891,6 +893,44 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
                             textStreamErrorEventSchema,
                         ]),
                     },
+                },
+            },
+            402: {
+                description: "Organization has no active subscription",
+                content: { "application/json": { schema: errorResponseSchema } },
+            },
+            429: {
+                description: "Monthly plan request or token limit exceeded",
+                content: { "application/json": { schema: errorResponseSchema } },
+            },
+            501: {
+                description: "Provider adapter not implemented",
+                content: { "application/json": { schema: errorResponseSchema } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/v1/image/generate",
+        tags: ["Gateway"],
+        summary: "Image generation",
+        description:
+            "Generate images from a text prompt. Authenticate with a project API key (`Authorization: Bearer ain_…`). Model resolution, project allowlist, and monthly request/token caps work the same as `POST /v1/text/chat`. No image model is available on the Free plan (`403 MODEL_NOT_ALLOWED_ON_PLAN`). Images come back base64-encoded; the gateway does not store image bytes. Each requested image reserves 8,000 output tokens against the monthly cap until the provider reports actual usage.",
+        security: apiKeyAuth,
+        request: {
+            body: {
+                content: {
+                    "application/json": { schema: imageGenerateSchema },
+                },
+            },
+        },
+        responses: {
+            200: {
+                description: "Generated images",
+                content: {
+                    "application/json": { schema: dataEnvelope(imageGenerateResponseSchema) },
                 },
             },
             402: {

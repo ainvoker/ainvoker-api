@@ -120,6 +120,7 @@ export const projectModelSchema = z
         provider: z.string(),
         name: z.string(),
         slug: z.string(),
+        type: z.enum(["TEXT", "IMAGE"]),
         contextWindow: z.number().int(),
         freeEligible: z.boolean(),
         enabled: z.boolean(),
@@ -376,6 +377,23 @@ export const textChatResponseSchema = z
         usage: chatUsageSchema.nullable(),
     })
     .meta({ id: "TextChatResponse" })
+
+export const generatedImageSchema = z
+    .object({
+        base64: z.string().describe("Image bytes, base64-encoded (no data: prefix)"),
+        mimeType: z.string(),
+        revisedPrompt: z.string().optional(),
+    })
+    .meta({ id: "GeneratedImage" })
+
+export const imageGenerateResponseSchema = z
+    .object({
+        id: z.string(),
+        model: z.string(),
+        images: z.array(generatedImageSchema),
+        usage: chatUsageSchema.nullable(),
+    })
+    .meta({ id: "ImageGenerateResponse" })
 
 export const textStreamMetaEventSchema = z
     .object({

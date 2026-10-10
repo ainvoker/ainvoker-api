@@ -1,9 +1,12 @@
 import geminiChatProvider from "./gemini.js"
 import openaiChatProvider from "./openai.js"
-import chatProviderRegistry from "./registry.js"
+import openaiImageProvider from "./openaiImage.js"
+import chatProviderRegistry, { imageProviderRegistry } from "./registry.js"
 
 chatProviderRegistry.register("openai", openaiChatProvider)
 chatProviderRegistry.register("gemini", geminiChatProvider)
 
-export { chatProviderRegistry }
+imageProviderRegistry.register("openai", openaiImageProvider)
+
+export { chatProviderRegistry, imageProviderRegistry }
 export default chatProviderRegistry

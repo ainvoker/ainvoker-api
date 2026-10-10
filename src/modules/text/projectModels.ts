@@ -1,11 +1,15 @@
 import { z } from "zod"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
-import chatProviderRegistry from "../../providers/index.js"
 import { getActiveSubscriptionWithPlan } from "../billing/limits.js"
 import projectsService from "../projects/service.js"
-import { backfillProjectModelAllows, isModelAllowedOnPlan } from "./allowlist.js"
-import { ensureTextCatalog } from "./catalog.js"
+import {
+    backfillProjectModelAllows,
+    ensureRoutableCatalog,
+    hasModelAdapter,
+    isModelAllowedOnPlan,
+    ROUTABLE_MODEL_TYPES,
+} from "./allowlist.js"
 
 const MODEL_MANAGER_ROLES = new Set(["owner", "admin"])
 
@@ -23,6 +27,7 @@ export type ProjectModelListItem = {
     provider: string
     name: string
     slug: string
+    type: (typeof ROUTABLE_MODEL_TYPES)[number]
     contextWindow: number
     freeEligible: boolean
     enabled: boolean
@@ -45,7 +50,7 @@ class ProjectModelsService {
 
     async list(projectId: string, userId: string): Promise<ProjectModelListItem[]> {
         const project = await projectsService.getProjectForMember(projectId, userId)
-        await ensureTextCatalog()
+        await ensureRoutableCatalog()
         await backfillProjectModelAllows(project.id, project.organizationId)
 
         const subscription = await getActiveSubscriptionWithPlan(project.organizationId)
@@ -53,7 +58,7 @@ class ProjectModelsService {
 
         const models = await prismaClient.aIModel.findMany({
             where: {
-                type: "TEXT",
+                type: { in: ROUTABLE_MODEL_TYPES },
                 status: "ACTIVE",
                 provider: { status: "ACTIVE" },
             },
@@ -65,11 +70,11 @@ class ProjectModelsService {
                     take: 1,
                 },
             },
-            orderBy: [{ provider: { name: "asc" } }, { name: "asc" }],
+            orderBy: [{ type: "asc" }, { provider: { name: "asc" } }, { name: "asc" }],
         })
 
         return models
-            .filter((model) => chatProviderRegistry.has(model.provider.name))
+            .filter((model) => hasModelAdapter(model.type, model.provider.name))
             .map((model) => {
                 const locked = !isModelAllowedOnPlan(planName, model.freeEligible)
                 const allow = model.projectAllows[0]
@@ -79,6 +84,7 @@ class ProjectModelsService {
                     provider: model.provider.name,
                     name: model.name,
                     slug: `${model.provider.name}/${model.name}`,
+                    type: model.type as ProjectModelListItem["type"],
                     contextWindow: model.contextWindow,
                     freeEligible: model.freeEligible,
                     enabled,
@@ -103,7 +109,7 @@ class ProjectModelsService {
             )
         }
 
-        await ensureTextCatalog()
+        await ensureRoutableCatalog()
 
         const model = await prismaClient.aIModel.findUnique({
             where: { id: modelId },
@@ -112,9 +118,8 @@ class ProjectModelsService {
         if (
             !model ||
             model.status !== "ACTIVE" ||
-            model.type !== "TEXT" ||
             model.provider.status !== "ACTIVE" ||
-            !chatProviderRegistry.has(model.provider.name)
+            !hasModelAdapter(model.type, model.provider.name)
         ) {
             throw new AppError(404, "NOT_FOUND", "Model not found")
         }
@@ -150,6 +155,7 @@ class ProjectModelsService {
             provider: model.provider.name,
             name: model.name,
             slug: `${model.provider.name}/${model.name}`,
+            type: model.type as ProjectModelListItem["type"],
             contextWindow: model.contextWindow,
             freeEligible: model.freeEligible,
             enabled: input.enabled,

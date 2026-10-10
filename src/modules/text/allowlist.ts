@@ -1,27 +1,46 @@
-import type { Prisma } from "../../generated/prisma/client.js"
+import type { AIModelType, Prisma } from "../../generated/prisma/client.js"
 import prismaClient from "../../platform/prisma.js"
-import chatProviderRegistry from "../../providers/index.js"
+import { chatProviderRegistry, imageProviderRegistry } from "../../providers/index.js"
 import { getActiveSubscriptionWithPlan } from "../billing/limits.js"
 import { PLAN_NAMES } from "../billing/catalog.js"
-import { ensureTextCatalog } from "./catalog.js"
+import { ensureImageCatalog } from "../image/catalog.js"
 
 type DbClient = Prisma.TransactionClient | typeof prismaClient
 
+/** Model types the gateway can route. Seeds both catalogs. */
+export const ROUTABLE_MODEL_TYPES = ["TEXT", "IMAGE"] satisfies AIModelType[]
+
+export async function ensureRoutableCatalog(): Promise<void> {
+    // The image seed runs the text seed first.
+    await ensureImageCatalog()
+}
+
+/** True when an adapter is registered for this model's type and provider. */
+export function hasModelAdapter(type: AIModelType, providerName: string): boolean {
+    if (type === "TEXT") {
+        return chatProviderRegistry.has(providerName)
+    }
+    if (type === "IMAGE") {
+        return imageProviderRegistry.has(providerName)
+    }
+    return false
+}
+
 /**
- * ACTIVE text model ids the org plan may use that also have a chat adapter.
+ * ACTIVE text and image model ids the org plan may use that also have an adapter.
  */
 export async function listPlanAllowedRoutableModelIds(
     organizationId: string,
     db: DbClient = prismaClient,
 ): Promise<number[]> {
-    await ensureTextCatalog()
+    await ensureRoutableCatalog()
 
     const subscription = await getActiveSubscriptionWithPlan(organizationId)
     const planName = subscription.plan.name
 
     const models = await db.aIModel.findMany({
         where: {
-            type: "TEXT",
+            type: { in: ROUTABLE_MODEL_TYPES },
             status: "ACTIVE",
             provider: { status: "ACTIVE" },
             ...(planName === PLAN_NAMES.free ? { freeEligible: true } : {}),
@@ -30,13 +49,13 @@ export async function listPlanAllowedRoutableModelIds(
     })
 
     return models
-        .filter((model) => chatProviderRegistry.has(model.provider.name))
+        .filter((model) => hasModelAdapter(model.type, model.provider.name))
         .map((model) => model.id)
 }
 
 /**
- * Insert enabled:true allow rows for plan-allowed ACTIVE text models that have a
- * registered chat adapter. Never updates existing rows (owner disabled stays off).
+ * Insert enabled:true allow rows for plan-allowed ACTIVE models that have a
+ * registered adapter. Never updates existing rows (owner disabled stays off).
  */
 export async function backfillProjectModelAllows(
     projectId: string,
