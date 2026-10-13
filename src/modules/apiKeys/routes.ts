@@ -3,7 +3,12 @@ import type { Request, Response } from "express"
 import requireSession from "../../middleware/requireSession.js"
 import { BaseRoutes } from "../../platform/BaseRoutes.js"
 import http from "../../platform/http.js"
-import { apiKeyParamsSchema, createApiKeySchema, projectIdParamsSchema } from "./schemas.js"
+import {
+    apiKeyParamsSchema,
+    createApiKeySchema,
+    projectIdParamsSchema,
+    updateApiKeySchema,
+} from "./schemas.js"
 import ApiKeysService from "./service.js"
 
 class ApiKeysRoutes extends BaseRoutes {
@@ -14,6 +19,7 @@ class ApiKeysRoutes extends BaseRoutes {
 
         this.router.get("/projects/:projectId/api-keys", requireSession, this.bind(this.list))
         this.router.post("/projects/:projectId/api-keys", requireSession, this.bind(this.create))
+        this.router.patch("/projects/:projectId/api-keys/:keyId", requireSession, this.bind(this.update))
         this.router.post("/projects/:projectId/api-keys/:keyId/revoke", requireSession, this.bind(this.revoke))
         this.router.delete("/projects/:projectId/api-keys/:keyId", requireSession, this.bind(this.remove))
     }
@@ -33,6 +39,15 @@ class ApiKeysRoutes extends BaseRoutes {
         const data = await ApiKeysService.createApiKey(projectId, auth.userId, body)
 
         http.ok(res, data, 201)
+    }
+
+    private async update(req: Request, res: Response) {
+        const auth = this.requireAuth(req)
+        const { projectId, keyId } = apiKeyParamsSchema.parse(req.params)
+        const body = updateApiKeySchema.parse(req.body)
+        const data = await ApiKeysService.updateApiKey(projectId, keyId, auth.userId, body)
+
+        http.ok(res, data)
     }
 
     private async revoke(req: Request, res: Response) {

@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { apiKeyPermissionsSchema } from "../modules/apiKeys/permissions.js"
 
 export const errorResponseSchema = z
     .object({
@@ -89,7 +90,11 @@ export const apiKeySchema = z
         projectId: z.string(),
         keyName: z.string(),
         keyPrefix: z.string(),
-        permissions: z.unknown().nullable(),
+        permissions: apiKeyPermissionsSchema
+            .nullable()
+            .describe(
+                "Gateway permissions. A category (`text`) grants all its features; a feature (`text.chat`) grants one endpoint. `null` means unrestricted.",
+            ),
         lastUsed: z.string().nullable(),
         expiresAt: z.string().nullable(),
         status: z.string(),
@@ -127,6 +132,41 @@ export const projectModelSchema = z
         locked: z.boolean(),
     })
     .meta({ id: "ProjectModel" })
+
+const catalogStatusSchema = z.enum(["ACTIVE", "INACTIVE", "DEPRECATED"])
+
+export const adminProviderSchema = z
+    .object({
+        id: z.number().int(),
+        name: z.string(),
+        baseUrl: z.string(),
+        documentation: z.string().nullable(),
+        status: catalogStatusSchema,
+        hasTextAdapter: z.boolean(),
+        hasImageAdapter: z.boolean(),
+    })
+    .meta({ id: "AdminProvider" })
+
+export const adminModelSchema = z
+    .object({
+        id: z.number().int(),
+        providerId: z.number().int(),
+        provider: z.string(),
+        name: z.string(),
+        slug: z.string(),
+        type: z.enum(["TEXT", "IMAGE", "AUDIO", "MULTIMODAL", "EMBEDDING", "OTHER"]),
+        contextWindow: z.number().int(),
+        inputPrice: z.string().describe("USD per 1M input tokens (decimal string)"),
+        outputPrice: z.string().describe("USD per 1M output tokens (decimal string)"),
+        status: catalogStatusSchema,
+        freeEligible: z.boolean(),
+        routable: z
+            .boolean()
+            .describe("False when no provider adapter is deployed for this provider and type"),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+    })
+    .meta({ id: "AdminModel" })
 
 export const deletedResponseSchema = z
     .object({
@@ -186,9 +226,14 @@ export const usagePlanSnapshotSchema = z
         planName: z.string(),
         status: z.string(),
         billingMode: z.string(),
+        entitled: z
+            .boolean()
+            .describe("False for PENDING or lapsed plans; limits are then zero"),
         requestLimit: z.number().int(),
         tokenLimit: z.number().int(),
         expiresAt: z.string().nullable(),
+        periodStart: z.string().nullable().describe("Current billing period start"),
+        periodEnd: z.string().nullable().describe("Current billing period end (exclusive)"),
     })
     .meta({ id: "UsagePlanSnapshot" })
 
@@ -199,8 +244,14 @@ export const usagePeriodSchema = z
         successfulRequests: z.number().int(),
         failedRequests: z.number().int(),
         periodStart: z.string(),
+        periodEnd: z.string().describe("Exclusive end; may be in the future"),
     })
     .meta({ id: "UsagePeriod" })
+
+const usageRangeSchema = z.enum(["current_period", "7d", "30d", "calendar_month", "custom"])
+const availableMonthsSchema = z
+    .array(z.string())
+    .describe("UTC YYYY-MM months overlapping any paid or active subscription, newest first")
 
 export const orgUsageProjectSchema = z
     .object({
@@ -252,7 +303,12 @@ export const usageDailySegmentPointSchema = z
 export const organizationUsageSchema = z
     .object({
         plan: usagePlanSnapshotSchema.nullable(),
-        period: usagePeriodSchema,
+        range: usageRangeSchema,
+        availableMonths: availableMonthsSchema,
+        quota: usagePeriodSchema
+            .nullable()
+            .describe("Usage in the current billing period; null when the plan is not entitled"),
+        period: usagePeriodSchema.describe("Usage in the selected range"),
         projects: z.array(orgUsageProjectSchema),
         byModel: z.array(orgUsageByModelSchema),
         daily: z.array(usageDailyPointSchema),
@@ -317,7 +373,8 @@ export const apiKeyUsageRowSchema = z
 
 export const projectAnalyticsSchema = z
     .object({
-        range: z.enum(["billing_month", "7d", "30d"]),
+        range: usageRangeSchema,
+        availableMonths: availableMonthsSchema,
         project: z.object({
             id: z.string(),
             organizationId: z.string(),

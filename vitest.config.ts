@@ -7,6 +7,7 @@ export default defineConfig({
             "./tests/setup/env.ts",
             "./tests/setup/sessionMock.ts",
             "./tests/setup/cleanup.ts",
+            "./tests/setup/catalog.ts",
         ],
         fileParallelism: false,
         testTimeout: 30000,

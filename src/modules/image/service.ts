@@ -11,7 +11,6 @@ import { imageProviderRegistry } from "../../providers/index.js"
 import type { ChatCompletionUsage, GeneratedImage } from "../../providers/types.js"
 import type { ApiKeyContext } from "../../types/express.js"
 import { isModelSlug, parseModelSlug } from "../text/schemas.js"
-import { ensureImageCatalog } from "./catalog.js"
 import type { ImageGenerateBody } from "./schemas.js"
 
 /**
@@ -92,8 +91,6 @@ class ImageService {
     }
 
     async generate(apiKeyContext: ApiKeyContext, body: ImageGenerateBody): Promise<ImageGenerateResult> {
-        await ensureImageCatalog()
-
         const [modelResult, subscriptionResult] = await Promise.allSettled([
             this.resolveModel(body.model),
             getActiveSubscriptionWithPlan(apiKeyContext.organizationId),

@@ -40,6 +40,8 @@ const envSchema = z.object({
     CLOUDFLARE_ACCOUNT_ID: z.string().min(1).optional(),
     /** From address for invite mail, e.g. `AInvoker <invites@yourdomain.com>`. */
     INVITE_EMAIL_FROM: z.string().min(1).optional(),
+    /** Comma-separated Neon Auth user IDs allowed to manage the global model catalog. */
+    PLATFORM_ADMIN_USER_IDS: z.string().default(""),
 })
 
 class EnvConfig {
@@ -60,6 +62,7 @@ class EnvConfig {
     readonly CLOUDFLARE_API_TOKEN: string | undefined
     readonly CLOUDFLARE_ACCOUNT_ID: string | undefined
     readonly INVITE_EMAIL_FROM: string | undefined
+    readonly PLATFORM_ADMIN_USER_IDS: string[]
 
     constructor() {
         const parsed = envSchema.safeParse(process.env)
@@ -89,6 +92,9 @@ class EnvConfig {
         this.CLOUDFLARE_API_TOKEN = parsed.data.CLOUDFLARE_API_TOKEN
         this.CLOUDFLARE_ACCOUNT_ID = parsed.data.CLOUDFLARE_ACCOUNT_ID
         this.INVITE_EMAIL_FROM = parsed.data.INVITE_EMAIL_FROM
+        this.PLATFORM_ADMIN_USER_IDS = parsed.data.PLATFORM_ADMIN_USER_IDS.split(",")
+            .map((id) => id.trim())
+            .filter(Boolean)
 
         if (this.BILLING_ENABLED && !this.XENDIT_SECRET_KEY) {
             console.error("XENDIT_SECRET_KEY is required when BILLING_ENABLED=true")
@@ -125,6 +131,11 @@ class EnvConfig {
      */
     returnsInviteAcceptUrl(): boolean {
         return this.INVITE_RETURN_ACCEPT_URL && this.NODE_ENV !== "production"
+    }
+
+    /** Platform admins manage the global catalog; unrelated to org owner/admin/member roles. */
+    isPlatformAdmin(userId: string): boolean {
+        return this.PLATFORM_ADMIN_USER_IDS.includes(userId)
     }
 
     /** Xendit Components requires HTTPS origins (API validation). */

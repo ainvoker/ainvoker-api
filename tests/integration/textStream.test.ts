@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import request from "supertest"
 import app from "../../src/app.js"
 import { getPlanByName, PLAN_NAMES } from "../../src/modules/billing/catalog.js"
-import { ensureTextCatalog, textCatalogDefaults } from "../../src/modules/text/catalog.js"
+import { textCatalogDefaults } from "../../src/modules/catalog/seed.js"
 import apiKeyHasher from "../../src/platform/hash.js"
 import prismaClient from "../../src/platform/prisma.js"
 import { cleanupTestUser, seedUserWithPersonalOrg, testUserId } from "../helpers/db.js"
@@ -321,7 +321,6 @@ describe("POST /v1/text/stream", () => {
     })
 
     it("returns 403 MODEL_NOT_ALLOWED_ON_PLAN for Free + non-eligible", async () => {
-        await ensureTextCatalog()
         const openai = await prismaClient.aIProvider.findUniqueOrThrow({
             where: { name: "openai" },
         })
@@ -360,7 +359,6 @@ describe("POST /v1/text/stream", () => {
     })
 
     it("returns 403 MODEL_DISABLED when the project allowlist disables the model", async () => {
-        await ensureTextCatalog()
         const openai = await prismaClient.aIProvider.findUniqueOrThrow({
             where: { name: "openai" },
         })
@@ -396,7 +394,6 @@ describe("POST /v1/text/stream", () => {
     })
 
     it("returns 429 when Free monthly request limit is exceeded", async () => {
-        await ensureTextCatalog()
         const openai = await prismaClient.aIProvider.findUniqueOrThrow({
             where: { name: "openai" },
         })
@@ -446,7 +443,6 @@ describe("POST /v1/text/stream", () => {
     })
 
     it("does not exceed monthly request limit under concurrent streams", async () => {
-        await ensureTextCatalog()
         const openai = await prismaClient.aIProvider.findUniqueOrThrow({
             where: { name: "openai" },
         })

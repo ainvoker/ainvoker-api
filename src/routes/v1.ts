@@ -1,4 +1,5 @@
 import { Router } from "express"
+import adminCatalogRoutes from "../modules/catalog/adminRoutes.js"
 import allowedOriginsRoutes from "../modules/allowedOrigins/routes.js"
 import apiKeysRoutes from "../modules/apiKeys/routes.js"
 import aiRequestsRoutes from "../modules/aiRequests/routes.js"
@@ -24,6 +25,7 @@ class ApiV1Routes {
         this.router.use(projectModelsRoutes.router)
         this.router.use(aiRequestsRoutes.router)
         this.router.use(usageRoutes.router)
+        this.router.use("/admin", adminCatalogRoutes.router)
     }
 }
 

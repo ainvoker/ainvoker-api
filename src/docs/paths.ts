@@ -6,6 +6,7 @@ import {
     apiKeyParamsSchema,
     createAllowedOriginSchema,
     createApiKeySchema,
+    updateApiKeySchema,
     createInviteSchema,
     projectIdParamsSchema,
     orgIdParamsSchema,
@@ -27,14 +28,21 @@ import {
     aiRequestParamsSchema,
     listAiRequestsQuerySchema,
     projectAnalyticsQuerySchema,
+    usageRangeQuerySchema,
     inviteIdParamsSchema,
     memberIdParamsSchema,
     previewInviteQuerySchema,
     transferOwnershipSchema,
     updateMemberRoleSchema,
+    adminModelParamsSchema,
+    createAdminModelSchema,
+    listAdminModelsQuerySchema,
+    updateAdminModelSchema,
 } from "./schemas.js"
 import {
     acceptInviteResponseSchema,
+    adminModelSchema,
+    adminProviderSchema,
     allowedOriginSchema,
     apiKeySchema,
     aiRequestDetailSchema,
@@ -361,9 +369,9 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         tags: ["Usage"],
         summary: "Get organization usage dashboard",
         description:
-            "Returns plan snapshot (null-safe), current UTC-month usage, per-project and per-model breakdown, daily UTC series, and recent AI requests across the organization.",
+            "Returns plan snapshot (null-safe; zero limits unless entitled), current billing-period quota usage, and usage for the selected range (current billing period by default, rolling 7 or 30 days, a UTC calendar month, or a custom UTC day range): per-project and per-model breakdown, daily UTC series, and recent AI requests in the range.",
         security: bearerAuth,
-        request: { params: orgIdParamsSchema },
+        request: { params: orgIdParamsSchema, query: usageRangeQuerySchema },
         responses: {
             200: {
                 description: "Organization usage snapshot",
@@ -588,6 +596,32 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
     })
 
     registry.registerPath({
+        method: "patch",
+        path: "/api/v1/projects/{projectId}/api-keys/{keyId}",
+        tags: ["API Keys"],
+        summary: "Update API key capabilities",
+        description:
+            "Active keys only. Send `permissions: null` to allow every gateway capability. Expiry cannot be changed.",
+        security: bearerAuth,
+        request: {
+            params: apiKeyParamsSchema,
+            body: {
+                required: true,
+                content: {
+                    "application/json": { schema: updateApiKeySchema },
+                },
+            },
+        },
+        responses: {
+            200: {
+                description: "Updated API key",
+                content: { "application/json": { schema: dataEnvelope(apiKeySchema) } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
         method: "post",
         path: "/api/v1/projects/{projectId}/api-keys/{keyId}/revoke",
         tags: ["API Keys"],
@@ -739,6 +773,112 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
 
     registry.registerPath({
         method: "get",
+        path: "/api/v1/admin/providers",
+        tags: ["Admin Catalog"],
+        summary: "List AI providers",
+        description:
+            "Platform admin only. Providers are added by developers (adapter + seed); this list feeds the model form.",
+        security: bearerAuth,
+        responses: {
+            200: {
+                description: "Providers",
+                content: {
+                    "application/json": { schema: dataEnvelope(z.array(adminProviderSchema)) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/models",
+        tags: ["Admin Catalog"],
+        summary: "List catalog models",
+        description: "Platform admin only. Includes inactive, deprecated, and non-routable models.",
+        security: bearerAuth,
+        request: {
+            query: listAdminModelsQuerySchema,
+        },
+        responses: {
+            200: {
+                description: "Catalog models",
+                content: {
+                    "application/json": { schema: dataEnvelope(z.array(adminModelSchema)) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/admin/models",
+        tags: ["Admin Catalog"],
+        summary: "Create a catalog model",
+        description:
+            "Platform admin only. Prices are USD per 1M tokens. Image models cannot be freeEligible. The model routes only when its provider has a deployed adapter (see `routable`).",
+        security: bearerAuth,
+        request: {
+            body: {
+                required: true,
+                content: { "application/json": { schema: createAdminModelSchema } },
+            },
+        },
+        responses: {
+            201: {
+                description: "Created model",
+                content: { "application/json": { schema: dataEnvelope(adminModelSchema) } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/models/{modelId}",
+        tags: ["Admin Catalog"],
+        summary: "Get a catalog model",
+        description: "Platform admin only.",
+        security: bearerAuth,
+        request: {
+            params: adminModelParamsSchema,
+        },
+        responses: {
+            200: {
+                description: "Catalog model",
+                content: { "application/json": { schema: dataEnvelope(adminModelSchema) } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "patch",
+        path: "/api/v1/admin/models/{modelId}",
+        tags: ["Admin Catalog"],
+        summary: "Update a catalog model",
+        description:
+            "Platform admin only. Use `status` to retire a model (INACTIVE or DEPRECATED); models are never hard-deleted.",
+        security: bearerAuth,
+        request: {
+            params: adminModelParamsSchema,
+            body: {
+                required: true,
+                content: { "application/json": { schema: updateAdminModelSchema } },
+            },
+        },
+        responses: {
+            200: {
+                description: "Updated model",
+                content: { "application/json": { schema: dataEnvelope(adminModelSchema) } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
         path: "/api/v1/projects/{projectId}/ai-requests",
         tags: ["AI Requests"],
         summary: "List AI requests for a project",
@@ -788,7 +928,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         tags: ["Usage"],
         summary: "Get project analytics",
         description:
-            "Returns project usage for a UTC range (current billing month, or rolling 7 or 30 days ending today): totals with token split and cost, latency avg/p50/p95, workspace totals for the same range, per-model and per-API-key breakdowns, daily series with stacked segments, and recent AI requests in the range.",
+            "Returns project usage for a range (current billing period by default, rolling 7 or 30 days ending today, a UTC calendar month, or a custom UTC day range): totals with token split and cost, latency avg/p50/p95, workspace totals for the same range, per-model and per-API-key breakdowns, daily series with stacked segments, and recent AI requests in the range.",
         security: bearerAuth,
         request: {
             params: projectIdParamsSchema,

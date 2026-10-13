@@ -1,12 +1,12 @@
 import { ensureBillingCatalog } from "../src/modules/billing/catalog.js"
+import { ensureAiCatalog } from "../src/modules/catalog/seed.js"
 import organizationService from "../src/modules/organizations/service.js"
-import { ensureTextCatalog } from "../src/modules/text/catalog.js"
 import prismaClient from "../src/platform/prisma.js"
 
 async function main() {
     await organizationService.ensureRoles()
     await ensureBillingCatalog()
-    await ensureTextCatalog()
+    await ensureAiCatalog()
 
     const [roles, plans, providers, models] = await Promise.all([
         prismaClient.role.count(),

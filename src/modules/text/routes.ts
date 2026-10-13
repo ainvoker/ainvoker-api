@@ -4,6 +4,7 @@ import requireApiKey from "../../middleware/requireApiKey.js"
 import { BaseRoutes } from "../../platform/BaseRoutes.js"
 import { AppError } from "../../platform/errors.js"
 import http from "../../platform/http.js"
+import { assertApiKeyFeature, type ApiKeyFeature } from "../apiKeys/permissions.js"
 import { setRateLimitHeaders } from "../billing/headers.js"
 import { textChatSchema } from "./schemas.js"
 import textService from "./service.js"
@@ -21,15 +22,16 @@ class TextRoutes extends BaseRoutes {
         this.router.post("/stream", requireApiKey, this.bind(this.stream))
     }
 
-    private requireApiKeyContext(req: Request) {
+    private requireApiKeyContext(req: Request, feature: ApiKeyFeature) {
         if (!req.apiKeyContext) {
             throw new AppError(401, "UNAUTHORIZED", "API key required")
         }
+        assertApiKeyFeature(req.apiKeyContext.permissions, feature)
         return req.apiKeyContext
     }
 
     private async chat(req: Request, res: Response) {
-        const apiKeyContext = this.requireApiKeyContext(req)
+        const apiKeyContext = this.requireApiKeyContext(req, "text.chat")
         const body = textChatSchema.parse(req.body)
         const { quota, ...data } = await textService.chat(apiKeyContext, body)
         setRateLimitHeaders(res, quota)
@@ -37,7 +39,7 @@ class TextRoutes extends BaseRoutes {
     }
 
     private async stream(req: Request, res: Response) {
-        const apiKeyContext = this.requireApiKeyContext(req)
+        const apiKeyContext = this.requireApiKeyContext(req, "text.stream")
         const body = textChatSchema.parse(req.body)
 
         // openStream must succeed before any SSE headers so pre-stream errors stay JSON.

@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it } from "vitest"
 import app from "../../src/app.js"
 import apiKeyHasher from "../../src/platform/hash.js"
 import prismaClient from "../../src/platform/prisma.js"
-import { ensureTextCatalog } from "../../src/modules/text/catalog.js"
 import { useTestAuthUser } from "../helpers/fixtures.js"
 
 describe("ai requests endpoints", () => {
@@ -13,8 +12,6 @@ describe("ai requests endpoints", () => {
     let modelId = 0
 
     beforeEach(async () => {
-        await ensureTextCatalog()
-
         const project = await prismaClient.project.create({
             data: {
                 organizationId: authUser.auth.organizationId,

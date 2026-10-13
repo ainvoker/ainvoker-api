@@ -19,4 +19,10 @@ export {
     aiRequestParamsSchema,
     listAiRequestsQuerySchema,
 } from "../modules/aiRequests/schemas.js"
-export { projectAnalyticsQuerySchema } from "../modules/usage/schemas.js"
+export { projectAnalyticsQuerySchema, usageRangeQuerySchema } from "../modules/usage/schemas.js"
+export {
+    adminModelParamsSchema,
+    createAdminModelSchema,
+    listAdminModelsQuerySchema,
+    updateAdminModelSchema,
+} from "../modules/catalog/schemas.js"

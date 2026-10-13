@@ -15,7 +15,7 @@
  */
 import prismaClient from "../src/platform/prisma.js"
 import apiKeyHasher from "../src/platform/hash.js"
-import { ensureTextCatalog } from "../src/modules/text/catalog.js"
+import { ensureAiCatalog } from "../src/modules/catalog/seed.js"
 
 const SEED_TAG = "usage-demo"
 const YEAR = 2026
@@ -171,7 +171,7 @@ async function ensureApiKey(projectId: string): Promise<string> {
 }
 
 async function loadModels(): Promise<SeedModel[]> {
-    await ensureTextCatalog()
+    await ensureAiCatalog()
     const models = await prismaClient.aIModel.findMany({
         where: { status: "ACTIVE" },
         select: {

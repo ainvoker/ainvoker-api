@@ -5,7 +5,6 @@ import { getActiveSubscriptionWithPlan } from "../billing/limits.js"
 import projectsService from "../projects/service.js"
 import {
     backfillProjectModelAllows,
-    ensureRoutableCatalog,
     hasModelAdapter,
     isModelAllowedOnPlan,
     ROUTABLE_MODEL_TYPES,
@@ -50,7 +49,6 @@ class ProjectModelsService {
 
     async list(projectId: string, userId: string): Promise<ProjectModelListItem[]> {
         const project = await projectsService.getProjectForMember(projectId, userId)
-        await ensureRoutableCatalog()
         await backfillProjectModelAllows(project.id, project.organizationId)
 
         const subscription = await getActiveSubscriptionWithPlan(project.organizationId)
@@ -108,8 +106,6 @@ class ProjectModelsService {
                 "Only organization owners or admins can change project models",
             )
         }
-
-        await ensureRoutableCatalog()
 
         const model = await prismaClient.aIModel.findUnique({
             where: { id: modelId },

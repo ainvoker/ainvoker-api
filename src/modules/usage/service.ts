@@ -3,7 +3,11 @@ import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
 import { ensureBillingCatalog } from "../billing/catalog.js"
 import { expireLapsedSubscriptions } from "../billing/limits.js"
-import { isEntitlementUnexpired } from "../billing/period.js"
+import {
+    isEntitlementUnexpired,
+    monthsOverlapping,
+    quotaPeriodForSubscription,
+} from "../billing/period.js"
 import projectsService from "../projects/service.js"
 import {
     aggregateDailyUsage,
@@ -17,13 +21,12 @@ import {
     aggregateProjectPeriodUsage,
     aggregateProjectUsageByApiKey,
     aggregateProjectUsageByModel,
-    type AnalyticsRange,
     type ModelUsageRow,
     RECENT_REQUESTS_LIMIT,
-    startOfAnalyticsRange,
     startOfNextUtcDay,
-    startOfUtcMonth,
 } from "./aggregate.js"
+import type { UsageRangeQuery } from "./schemas.js"
+import { resolveUsageWindow, type UsageWindow } from "./window.js"
 
 const ANALYTICS_RECENT_REQUESTS_LIMIT = 25
 
@@ -96,19 +99,23 @@ function serializeRequestSummary(row: AiRequestWithRelations, includeProjectName
     }
 }
 
-function serializePeriod(period: {
-    requestsUsed: number
-    tokensUsed: number
-    successfulRequests: number
-    failedRequests: number
-    periodStart: Date
-}) {
+function serializePeriod(
+    period: {
+        requestsUsed: number
+        tokensUsed: number
+        successfulRequests: number
+        failedRequests: number
+        periodStart: Date
+    },
+    periodEnd: Date,
+) {
     return {
         requestsUsed: period.requestsUsed,
         tokensUsed: period.tokensUsed,
         successfulRequests: period.successfulRequests,
         failedRequests: period.failedRequests,
         periodStart: period.periodStart.toISOString(),
+        periodEnd: periodEnd.toISOString(),
     }
 }
 
@@ -127,8 +134,10 @@ function serializeModelRows(rows: ModelUsageRow[], tokenLimit: number) {
 
 /**
  * Soft plan snapshot for dashboards — never throws SUBSCRIPTION_REQUIRED.
+ * Limits are zero unless the subscription is entitled (PENDING and lapsed plans
+ * have no quota), and the current billing period anchors quota usage.
  */
-async function getPlanSnapshot(organizationId: string) {
+async function getBillingContext(organizationId: string, now = new Date()) {
     await ensureBillingCatalog()
     await expireLapsedSubscriptions(organizationId)
 
@@ -141,35 +150,52 @@ async function getPlanSnapshot(organizationId: string) {
         orderBy: { startedAt: "desc" },
     })
 
-    if (subscriptions.length === 0) {
-        return null
-    }
-
-    const unexpiredActive = subscriptions.find(
+    const entitled = subscriptions.find(
         (s) =>
             (s.status === "ACTIVE" || s.status === "PAST_DUE") &&
-            isEntitlementUnexpired(s.expiresAt),
+            isEntitlementUnexpired(s.expiresAt, now),
     )
     const pending = subscriptions.find((s) => s.status === "PENDING")
     const expired = subscriptions.find((s) => s.status === "EXPIRED")
-    const subscription = unexpiredActive ?? pending ?? expired ?? subscriptions[0]
+    const subscription = entitled ?? pending ?? expired ?? subscriptions[0]
+    const currentPeriod = entitled ? quotaPeriodForSubscription(entitled, now) : null
 
-    if (!subscription) {
-        return null
-    }
+    const availableMonths = monthsOverlapping(
+        subscriptions
+            .filter((s) => s.status !== "PENDING")
+            .map((s) => ({
+                start: s.startedAt,
+                end: s.expiresAt ?? (s.status === "EXPIRED" ? s.updatedAt : now),
+            })),
+    )
 
-    return {
-        planName: subscription.plan.name,
-        status: subscription.status,
-        billingMode: subscription.plan.billingMode,
-        requestLimit: subscription.plan.requestLimit,
-        tokenLimit: subscription.plan.tokenLimit,
-        expiresAt: subscription.expiresAt ? subscription.expiresAt.toISOString() : null,
-    }
+    const plan = subscription
+        ? {
+              planName: subscription.plan.name,
+              status: subscription.status,
+              billingMode: subscription.plan.billingMode,
+              entitled: entitled != null,
+              requestLimit: entitled ? subscription.plan.requestLimit : 0,
+              tokenLimit: entitled ? subscription.plan.tokenLimit : 0,
+              expiresAt: subscription.expiresAt ? subscription.expiresAt.toISOString() : null,
+              periodStart: currentPeriod?.periodStart.toISOString() ?? null,
+              periodEnd: currentPeriod?.periodEnd.toISOString() ?? null,
+          }
+        : null
+
+    return { plan, currentPeriod, availableMonths }
+}
+
+function windowCreatedAt(window: UsageWindow) {
+    return { gte: window.start, lt: startOfNextUtcDay(window.asOf) }
 }
 
 class UsageService {
-    async getOrganizationUsage(organizationId: string, userId: string) {
+    async getOrganizationUsage(
+        organizationId: string,
+        userId: string,
+        query: UsageRangeQuery = { range: "current_period" },
+    ) {
         const membership = await prismaClient.organizationMember.findUnique({
             where: {
                 organizationId_userId: { organizationId, userId },
@@ -179,23 +205,38 @@ class UsageService {
             throw new AppError(403, "FORBIDDEN", "You are not a member of this organization")
         }
 
-        const periodStart = startOfUtcMonth()
+        const now = new Date()
+        const billing = await getBillingContext(organizationId, now)
+        const window = resolveUsageWindow(query, billing.currentPeriod, now)
+        const { start, asOf } = window
+        const isCurrentPeriod = window.range === "current_period"
 
-        const [plan, period, projects, byProject, byModel, daily, dailyByProject, dailyByModel, recentRows] =
-            await Promise.all([
-            getPlanSnapshot(organizationId),
-            aggregatePeriodUsage({ organizationId }, periodStart),
+        const [
+            period,
+            otherQuotaPeriod,
+            projects,
+            byProject,
+            byModel,
+            daily,
+            dailyByProject,
+            dailyByModel,
+            recentRows,
+        ] = await Promise.all([
+            aggregatePeriodUsage({ organizationId }, start, asOf),
+            !isCurrentPeriod && billing.currentPeriod
+                ? aggregatePeriodUsage({ organizationId }, billing.currentPeriod.periodStart, now)
+                : null,
             prismaClient.project.findMany({
                 where: { organizationId },
                 orderBy: { createdAt: "desc" },
             }),
-            aggregateOrgUsageByProject(organizationId, periodStart),
-            aggregateOrgUsageByModel(organizationId, periodStart),
-            aggregateDailyUsage({ organizationId }, periodStart),
-            aggregateDailyUsageByProject(organizationId, periodStart),
-            aggregateDailyUsageByModel({ organizationId }, periodStart),
+            aggregateOrgUsageByProject(organizationId, start, asOf),
+            aggregateOrgUsageByModel(organizationId, start, asOf),
+            aggregateDailyUsage({ organizationId }, start, asOf),
+            aggregateDailyUsageByProject(organizationId, start, asOf),
+            aggregateDailyUsageByModel({ organizationId }, start, asOf),
             prismaClient.aIRequest.findMany({
-                where: { project: { organizationId } },
+                where: { project: { organizationId }, createdAt: windowCreatedAt(window) },
                 include: {
                     ...requestInclude,
                     project: { select: { name: true } },
@@ -205,12 +246,22 @@ class UsageService {
             }),
         ])
 
+        const quotaPeriod = billing.currentPeriod
+            ? (otherQuotaPeriod ?? period)
+            : null
         const usageByProjectId = new Map(byProject.map((row) => [row.projectId, row]))
+        const plan = billing.plan
         const tokenLimit = plan?.tokenLimit ?? 0
 
         return {
             plan,
-            period: serializePeriod(period),
+            range: window.range,
+            availableMonths: billing.availableMonths,
+            quota:
+                quotaPeriod && billing.currentPeriod
+                    ? serializePeriod(quotaPeriod, billing.currentPeriod.periodEnd)
+                    : null,
+            period: serializePeriod(period, window.end),
             projects: projects.map((project) => {
                 const usage = usageByProjectId.get(project.id)
                 return {
@@ -232,7 +283,10 @@ class UsageService {
 
     async getProjectUsage(projectId: string, userId: string) {
         const project = await projectsService.getProjectForMember(projectId, userId)
-        const periodStart = startOfUtcMonth()
+        const now = new Date()
+        const billing = await getBillingContext(project.organizationId, now)
+        const window = resolveUsageWindow({ range: "current_period" }, billing.currentPeriod, now)
+        const { start, asOf } = window
 
         const [
             period,
@@ -242,29 +296,25 @@ class UsageService {
             daily,
             organizationDaily,
             recentRows,
-            plan,
         ] = await Promise.all([
-            aggregateProjectPeriodUsage(projectId, periodStart),
-            aggregatePeriodUsage({ organizationId: project.organizationId }, periodStart),
+            aggregateProjectPeriodUsage(projectId, start, asOf),
+            aggregatePeriodUsage({ organizationId: project.organizationId }, start, asOf),
             prismaClient.apiKey.groupBy({
                 by: ["status"],
                 where: { projectId },
                 _count: { _all: true },
             }),
-            aggregateProjectUsageByModel(projectId, periodStart),
-            aggregateDailyUsage({ projectId }, periodStart),
-            aggregateDailyUsage(
-                { organizationId: project.organizationId },
-                periodStart,
-            ),
+            aggregateProjectUsageByModel(projectId, start, asOf),
+            aggregateDailyUsage({ projectId }, start, asOf),
+            aggregateDailyUsage({ organizationId: project.organizationId }, start, asOf),
             prismaClient.aIRequest.findMany({
                 where: { projectId },
                 include: requestInclude,
                 orderBy: { createdAt: "desc" },
                 take: RECENT_REQUESTS_LIMIT,
             }),
-            getPlanSnapshot(project.organizationId),
         ])
+        const plan = billing.plan
 
         let totalKeys = 0
         let activeKeys = 0
@@ -290,10 +340,10 @@ class UsageService {
             },
             plan,
             period: {
-                ...serializePeriod(period),
+                ...serializePeriod(period, window.end),
                 avgLatency: period.avgLatency,
             },
-            organizationPeriod: serializePeriod(organizationPeriod),
+            organizationPeriod: serializePeriod(organizationPeriod, window.end),
             keys: {
                 total: totalKeys,
                 active: activeKeys,
@@ -305,10 +355,12 @@ class UsageService {
         }
     }
 
-    async getProjectAnalytics(projectId: string, userId: string, range: AnalyticsRange) {
+    async getProjectAnalytics(projectId: string, userId: string, query: UsageRangeQuery) {
         const project = await projectsService.getProjectForMember(projectId, userId)
         const now = new Date()
-        const periodStart = startOfAnalyticsRange(range, now)
+        const billing = await getBillingContext(project.organizationId, now)
+        const window = resolveUsageWindow(query, billing.currentPeriod, now)
+        const { start, asOf } = window
 
         const [
             period,
@@ -320,30 +372,27 @@ class UsageService {
             dailyByModel,
             dailyByApiKey,
             recentRows,
-            plan,
         ] = await Promise.all([
-            aggregatePeriodUsage({ projectId }, periodStart, now),
-            aggregateProjectLatency(projectId, periodStart, now),
-            aggregatePeriodUsage({ organizationId: project.organizationId }, periodStart, now),
-            aggregateProjectUsageByModel(projectId, periodStart, now),
-            aggregateProjectUsageByApiKey(projectId, periodStart, now),
-            aggregateDailyUsage({ projectId }, periodStart, now),
-            aggregateDailyUsageByModel({ projectId }, periodStart, now),
-            aggregateDailyUsageByApiKey(projectId, periodStart, now),
+            aggregatePeriodUsage({ projectId }, start, asOf),
+            aggregateProjectLatency(projectId, start, asOf),
+            aggregatePeriodUsage({ organizationId: project.organizationId }, start, asOf),
+            aggregateProjectUsageByModel(projectId, start, asOf),
+            aggregateProjectUsageByApiKey(projectId, start, asOf),
+            aggregateDailyUsage({ projectId }, start, asOf),
+            aggregateDailyUsageByModel({ projectId }, start, asOf),
+            aggregateDailyUsageByApiKey(projectId, start, asOf),
             prismaClient.aIRequest.findMany({
-                where: {
-                    projectId,
-                    createdAt: { gte: periodStart, lt: startOfNextUtcDay(now) },
-                },
+                where: { projectId, createdAt: windowCreatedAt(window) },
                 include: requestInclude,
                 orderBy: { createdAt: "desc" },
                 take: ANALYTICS_RECENT_REQUESTS_LIMIT,
             }),
-            getPlanSnapshot(project.organizationId),
         ])
+        const plan = billing.plan
 
         return {
-            range,
+            range: window.range,
+            availableMonths: billing.availableMonths,
             project: {
                 id: project.id,
                 organizationId: project.organizationId,
@@ -351,13 +400,13 @@ class UsageService {
             },
             plan,
             period: {
-                ...serializePeriod(period),
+                ...serializePeriod(period, window.end),
                 inputTokens: period.inputTokens,
                 outputTokens: period.outputTokens,
                 totalCost: period.totalCost,
             },
             latency,
-            organizationPeriod: serializePeriod(organizationPeriod),
+            organizationPeriod: serializePeriod(organizationPeriod, window.end),
             byModel: serializeModelRows(byModel, plan?.tokenLimit ?? 0),
             byApiKey,
             daily,

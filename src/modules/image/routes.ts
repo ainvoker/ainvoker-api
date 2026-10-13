@@ -4,6 +4,7 @@ import requireApiKey from "../../middleware/requireApiKey.js"
 import { BaseRoutes } from "../../platform/BaseRoutes.js"
 import { AppError } from "../../platform/errors.js"
 import http from "../../platform/http.js"
+import { assertApiKeyFeature } from "../apiKeys/permissions.js"
 import { setRateLimitHeaders } from "../billing/headers.js"
 import { imageGenerateSchema } from "./schemas.js"
 import imageService from "./service.js"
@@ -20,6 +21,7 @@ class ImageRoutes extends BaseRoutes {
         if (!req.apiKeyContext) {
             throw new AppError(401, "UNAUTHORIZED", "API key required")
         }
+        assertApiKeyFeature(req.apiKeyContext.permissions, "image.generate")
         const body = imageGenerateSchema.parse(req.body)
         const { quota, ...data } = await imageService.generate(req.apiKeyContext, body)
         setRateLimitHeaders(res, quota)

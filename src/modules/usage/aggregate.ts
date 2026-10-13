@@ -27,7 +27,15 @@ export type LatencyStats = {
     p95: number | null
 }
 
-export const ANALYTICS_RANGES = ["billing_month", "7d", "30d"] as const
+/** `billing_month` is a deprecated alias for `current_period`. */
+export const ANALYTICS_RANGES = [
+    "current_period",
+    "billing_month",
+    "7d",
+    "30d",
+    "calendar_month",
+    "custom",
+] as const
 export type AnalyticsRange = (typeof ANALYTICS_RANGES)[number]
 
 export type UsageDailyPoint = {
@@ -42,7 +50,7 @@ export function startOfUtcMonth(now = new Date()): Date {
     return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0))
 }
 
-function startOfUtcDay(now = new Date()): Date {
+export function startOfUtcDay(now = new Date()): Date {
     return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0))
 }
 
@@ -54,11 +62,8 @@ function nextUtcDay(date: Date): Date {
     return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1, 0, 0, 0, 0))
 }
 
-/** Inclusive start of an analytics range; rolling ranges include today as the last day. */
-export function startOfAnalyticsRange(range: AnalyticsRange, now = new Date()): Date {
-    if (range === "billing_month") {
-        return startOfUtcMonth(now)
-    }
+/** Inclusive start of a rolling range; today counts as the last day. */
+export function startOfAnalyticsRange(range: "7d" | "30d", now = new Date()): Date {
     const days = range === "7d" ? 7 : 30
     const today = startOfUtcDay(now)
     return new Date(

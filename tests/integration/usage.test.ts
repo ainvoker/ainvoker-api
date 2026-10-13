@@ -1,10 +1,29 @@
 import request from "supertest"
 import { beforeEach, describe, expect, it } from "vitest"
 import app from "../../src/app.js"
+import { PLAN_NAMES } from "../../src/modules/billing/catalog.js"
+import { proRenewsAt } from "../../src/modules/billing/period.js"
 import apiKeyHasher from "../../src/platform/hash.js"
 import prismaClient from "../../src/platform/prisma.js"
-import { ensureTextCatalog } from "../../src/modules/text/catalog.js"
 import { useTestAuthUser } from "../helpers/fixtures.js"
+
+const DAY_MS = 86_400_000
+
+/** Number of UTC days from the period's start day through today, inclusive. */
+function daysThroughToday(periodStart: string): number {
+    const start = new Date(periodStart)
+    const now = new Date()
+    return (
+        (Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) -
+            Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())) /
+            DAY_MS +
+        1
+    )
+}
+
+function monthKey(date: Date): string {
+    return date.toISOString().slice(0, 7)
+}
 
 describe("usage endpoints", () => {
     const authUser = useTestAuthUser()
@@ -13,8 +32,6 @@ describe("usage endpoints", () => {
     let modelId = 0
 
     beforeEach(async () => {
-        await ensureTextCatalog()
-
         const project = await prismaClient.project.create({
             data: {
                 organizationId: authUser.auth.organizationId,
@@ -126,9 +143,12 @@ describe("usage endpoints", () => {
             model: "gemini/gemini-3.6-flash",
         })
 
-        const todayUtc = new Date()
-        const daysElapsed = todayUtc.getUTCDate()
-        expect(res.body.data.daily).toHaveLength(daysElapsed)
+        expect(res.body.data.range).toBe("current_period")
+        expect(res.body.data.quota).toMatchObject({
+            requestsUsed: res.body.data.period.requestsUsed,
+            periodStart: res.body.data.plan.periodStart,
+        })
+        expect(res.body.data.daily).toHaveLength(daysThroughToday(res.body.data.period.periodStart))
         expect(res.body.data.daily[0]).toMatchObject({
             date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
             requestsUsed: expect.any(Number),
@@ -197,7 +217,7 @@ describe("usage endpoints", () => {
             requestsUsed: 2,
             tokensUsed: 6,
         })
-        const daysElapsed = new Date().getUTCDate()
+        const daysElapsed = daysThroughToday(res.body.data.period.periodStart)
         expect(res.body.data.daily).toHaveLength(daysElapsed)
         expect(res.body.data.organizationDaily).toHaveLength(daysElapsed)
         expect(res.body.data.recentRequests.length).toBeGreaterThanOrEqual(2)
@@ -209,14 +229,14 @@ describe("usage endpoints", () => {
         expect(res.status).toBe(401)
     })
 
-    it("returns project analytics for the billing month by default", async () => {
+    it("returns project analytics for the current billing period by default", async () => {
         const res = await request(app.express)
             .get(`/api/v1/projects/${projectId}/analytics`)
             .set(authUser.headers())
 
         expect(res.status).toBe(200)
         const data = res.body.data
-        expect(data.range).toBe("billing_month")
+        expect(data.range).toBe("current_period")
         expect(data.period).toMatchObject({
             requestsUsed: 2,
             tokensUsed: 6,
@@ -242,7 +262,7 @@ describe("usage endpoints", () => {
                 tokensUsed: 6,
             },
         ])
-        expect(data.daily).toHaveLength(new Date().getUTCDate())
+        expect(data.daily).toHaveLength(daysThroughToday(data.period.periodStart))
         expect(data.dailyByModel[0]).toMatchObject({ requestsUsed: 2, tokensUsed: 6 })
         expect(data.dailyByApiKey[0]).toMatchObject({
             id: apiKeyId,
@@ -266,6 +286,147 @@ describe("usage endpoints", () => {
             expect(res.body.data.daily).toHaveLength(days)
             expect(res.body.data.period.requestsUsed).toBe(2)
         }
+    })
+
+    it("returns a past calendar month and a custom range for the organization", async () => {
+        await prismaClient.aIRequest.create({
+            data: {
+                projectId,
+                apiKeyId,
+                modelId,
+                serviceType: "TEXT",
+                requestStatus: "SUCCESS",
+                requestPayload: { model: "gemini/gemini-3.6-flash", messages: [] },
+                inputTokens: 10,
+                outputTokens: 10,
+                totalTokens: 20,
+                latency: 100,
+                createdAt: new Date("2025-03-10T12:00:00.000Z"),
+            },
+        })
+        const base = `/api/v1/organizations/${authUser.auth.organizationId}/usage`
+
+        const month = await request(app.express)
+            .get(`${base}?range=calendar_month&month=2025-03`)
+            .set(authUser.headers())
+        expect(month.status).toBe(200)
+        expect(month.body.data.range).toBe("calendar_month")
+        expect(month.body.data.period).toMatchObject({
+            requestsUsed: 1,
+            tokensUsed: 20,
+            periodStart: "2025-03-01T00:00:00.000Z",
+            periodEnd: "2025-04-01T00:00:00.000Z",
+        })
+        expect(month.body.data.daily).toHaveLength(31)
+        expect(month.body.data.quota.requestsUsed).toBe(2)
+
+        const custom = await request(app.express)
+            .get(`${base}?range=custom&from=2025-03-01&to=${new Date().toISOString().slice(0, 10)}`)
+            .set(authUser.headers())
+        expect(custom.status).toBe(200)
+        expect(custom.body.data.period).toMatchObject({ requestsUsed: 3, tokensUsed: 26 })
+    })
+
+    it("rejects incomplete or inverted range queries", async () => {
+        const base = `/api/v1/organizations/${authUser.auth.organizationId}/usage`
+        for (const query of [
+            "range=calendar_month",
+            "range=custom&from=2025-03-01",
+            "range=custom&from=2025-04-01&to=2025-03-01",
+        ]) {
+            const res = await request(app.express).get(`${base}?${query}`).set(authUser.headers())
+            expect(res.status).toBe(400)
+        }
+    })
+
+    it("gives a PENDING workspace zero quota", async () => {
+        const created = await request(app.express)
+            .post("/api/v1/organizations")
+            .set(authUser.headers())
+            .send({ name: `Pending Usage ${authUser.auth.userId.slice(-6)}`, plan: PLAN_NAMES.pro })
+        expect(created.status).toBe(201)
+
+        const res = await request(app.express)
+            .get(`/api/v1/organizations/${created.body.data.id as string}/usage`)
+            .set(authUser.headers())
+
+        expect(res.status).toBe(200)
+        expect(res.body.data.plan).toMatchObject({
+            status: "PENDING",
+            entitled: false,
+            requestLimit: 0,
+            tokenLimit: 0,
+            periodStart: null,
+        })
+        expect(res.body.data.quota).toBeNull()
+        expect(res.body.data.availableMonths).toEqual([])
+    })
+
+    it("counts quota from the payment date and lists the months the plan spans", async () => {
+        const created = await request(app.express)
+            .post("/api/v1/organizations")
+            .set(authUser.headers())
+            .send({ name: `Paid Usage ${authUser.auth.userId.slice(-6)}`, plan: PLAN_NAMES.pro })
+        expect(created.status).toBe(201)
+        const orgId = created.body.data.id as string
+
+        const startedAt = new Date(Date.now() - 3 * DAY_MS)
+        const expiresAt = proRenewsAt(startedAt)
+        await prismaClient.subscription.updateMany({
+            where: { organizationId: orgId, status: "PENDING" },
+            data: { status: "ACTIVE", startedAt, expiresAt },
+        })
+
+        const project = await prismaClient.project.create({
+            data: { organizationId: orgId, name: "Paid Project", environment: "DEVELOPMENT" },
+        })
+        const generated = apiKeyHasher.generate()
+        const key = await prismaClient.apiKey.create({
+            data: {
+                projectId: project.id,
+                keyName: "Paid Key",
+                keyHash: generated.keyHash,
+                keyPrefix: generated.keyPrefix,
+                status: "ACTIVE",
+            },
+        })
+        for (const createdAt of [new Date(startedAt.getTime() - DAY_MS), new Date()]) {
+            await prismaClient.aIRequest.create({
+                data: {
+                    projectId: project.id,
+                    apiKeyId: key.id,
+                    modelId,
+                    serviceType: "TEXT",
+                    requestStatus: "SUCCESS",
+                    requestPayload: { model: "gemini/gemini-3.6-flash", messages: [] },
+                    inputTokens: 1,
+                    outputTokens: 1,
+                    totalTokens: 2,
+                    createdAt,
+                },
+            })
+        }
+
+        const res = await request(app.express)
+            .get(`/api/v1/organizations/${orgId}/usage`)
+            .set(authUser.headers())
+        expect(res.status).toBe(200)
+        expect(res.body.data.plan).toMatchObject({
+            entitled: true,
+            periodStart: startedAt.toISOString(),
+            periodEnd: expiresAt.toISOString(),
+        })
+        expect(res.body.data.quota.requestsUsed).toBe(1)
+        expect(res.body.data.daily).toHaveLength(4)
+        expect(res.body.data.availableMonths).toEqual(
+            [...new Set([monthKey(expiresAt), monthKey(startedAt)])],
+        )
+
+        const week = await request(app.express)
+            .get(`/api/v1/organizations/${orgId}/usage?range=7d`)
+            .set(authUser.headers())
+        expect(week.body.data.period.requestsUsed).toBe(2)
+        expect(week.body.data.quota.requestsUsed).toBe(1)
     })
 
     it("rejects an unknown analytics range", async () => {

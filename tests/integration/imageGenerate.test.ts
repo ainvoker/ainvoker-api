@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import request from "supertest"
 import app from "../../src/app.js"
 import { ensureBillingCatalog, getPlanByName, PLAN_NAMES } from "../../src/modules/billing/catalog.js"
-import { ensureImageCatalog, imageCatalogDefaults } from "../../src/modules/image/catalog.js"
+import { imageCatalogDefaults } from "../../src/modules/catalog/seed.js"
 import { IMAGE_OUTPUT_TOKEN_HOLD } from "../../src/modules/image/service.js"
 import apiKeyHasher from "../../src/platform/hash.js"
 import prismaClient from "../../src/platform/prisma.js"
@@ -148,7 +148,6 @@ describe("POST /v1/image/generate", () => {
 
     it("returns 403 MODEL_DISABLED when the project disables the model", async () => {
         await upgradeToPro()
-        await ensureImageCatalog()
         const model = await prismaClient.aIModel.findFirstOrThrow({
             where: { name: imageCatalogDefaults.modelName },
         })

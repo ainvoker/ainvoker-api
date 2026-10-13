@@ -3,17 +3,11 @@ import prismaClient from "../../platform/prisma.js"
 import { chatProviderRegistry, imageProviderRegistry } from "../../providers/index.js"
 import { getActiveSubscriptionWithPlan } from "../billing/limits.js"
 import { PLAN_NAMES } from "../billing/catalog.js"
-import { ensureImageCatalog } from "../image/catalog.js"
 
 type DbClient = Prisma.TransactionClient | typeof prismaClient
 
-/** Model types the gateway can route. Seeds both catalogs. */
+/** Model types the gateway can route. */
 export const ROUTABLE_MODEL_TYPES = ["TEXT", "IMAGE"] satisfies AIModelType[]
-
-export async function ensureRoutableCatalog(): Promise<void> {
-    // The image seed runs the text seed first.
-    await ensureImageCatalog()
-}
 
 /** True when an adapter is registered for this model's type and provider. */
 export function hasModelAdapter(type: AIModelType, providerName: string): boolean {
@@ -33,8 +27,6 @@ export async function listPlanAllowedRoutableModelIds(
     organizationId: string,
     db: DbClient = prismaClient,
 ): Promise<number[]> {
-    await ensureRoutableCatalog()
-
     const subscription = await getActiveSubscriptionWithPlan(organizationId)
     const planName = subscription.plan.name
 

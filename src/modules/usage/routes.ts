@@ -6,7 +6,7 @@ import { BaseRoutes } from "../../platform/BaseRoutes.js"
 import http from "../../platform/http.js"
 import { orgIdParamsSchema } from "../organizations/schemas.js"
 import { projectIdParamsSchema } from "../projects/schemas.js"
-import { projectAnalyticsQuerySchema } from "./schemas.js"
+import { projectAnalyticsQuerySchema, usageRangeQuerySchema } from "./schemas.js"
 import usageService from "./service.js"
 
 class UsageRoutes extends BaseRoutes {
@@ -36,7 +36,8 @@ class UsageRoutes extends BaseRoutes {
     private async orgUsage(req: Request, res: Response) {
         const auth = this.requireAuth(req)
         const { orgId } = orgIdParamsSchema.parse(req.params)
-        const data = await usageService.getOrganizationUsage(orgId, auth.userId)
+        const query = usageRangeQuerySchema.parse(req.query)
+        const data = await usageService.getOrganizationUsage(orgId, auth.userId, query)
         http.ok(res, data)
     }
 
@@ -50,8 +51,8 @@ class UsageRoutes extends BaseRoutes {
     private async projectAnalytics(req: Request, res: Response) {
         const auth = this.requireAuth(req)
         const { projectId } = projectIdParamsSchema.parse(req.params)
-        const { range } = projectAnalyticsQuerySchema.parse(req.query)
-        const data = await usageService.getProjectAnalytics(projectId, auth.userId, range)
+        const query = projectAnalyticsQuerySchema.parse(req.query)
+        const data = await usageService.getProjectAnalytics(projectId, auth.userId, query)
         http.ok(res, data)
     }
 }

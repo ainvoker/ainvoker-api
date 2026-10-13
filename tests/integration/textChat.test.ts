@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import request from "supertest"
 import app from "../../src/app.js"
 import { ensureBillingCatalog, getPlanByName, PLAN_NAMES } from "../../src/modules/billing/catalog.js"
-import { ensureTextCatalog, textCatalogDefaults } from "../../src/modules/text/catalog.js"
+import { textCatalogDefaults } from "../../src/modules/catalog/seed.js"
 import {
     DEFAULT_OUTPUT_TOKEN_HOLD,
     estimateTextTokenHold,
@@ -210,7 +210,6 @@ describe("POST /v1/text/chat", () => {
     })
 
     it("returns 429 when Free monthly request limit is exceeded", async () => {
-        await ensureTextCatalog()
         const openai = await prismaClient.aIProvider.findUniqueOrThrow({
             where: { name: "openai" },
         })
@@ -263,7 +262,6 @@ describe("POST /v1/text/chat", () => {
     })
 
     it("does not exceed monthly request limit under concurrent chats", async () => {
-        await ensureTextCatalog()
         const openai = await prismaClient.aIProvider.findUniqueOrThrow({
             where: { name: "openai" },
         })
@@ -437,7 +435,6 @@ describe("POST /v1/text/chat", () => {
     })
 
     it("returns 403 when Free plan calls a non-eligible model", async () => {
-        await ensureTextCatalog()
         const openai = await prismaClient.aIProvider.findUniqueOrThrow({
             where: { name: "openai" },
         })
@@ -477,8 +474,6 @@ describe("POST /v1/text/chat", () => {
 
     it("allows Pro plans to call non-eligible models", async () => {
         await ensureBillingCatalog()
-        await ensureTextCatalog()
-
         const openai = await prismaClient.aIProvider.findUniqueOrThrow({
             where: { name: "openai" },
         })
@@ -656,7 +651,6 @@ describe("POST /v1/text/chat", () => {
     })
 
     it("rejects an ambiguous bare model name", async () => {
-        await ensureTextCatalog()
         const gemini = await prismaClient.aIProvider.findUniqueOrThrow({
             where: { name: "gemini" },
         })
@@ -715,7 +709,6 @@ describe("POST /v1/text/chat", () => {
     })
 
     it("rejects a disabled project model even when the plan allows it", async () => {
-        await ensureTextCatalog()
         const openai = await prismaClient.aIProvider.findUniqueOrThrow({
             where: { name: "openai" },
         })

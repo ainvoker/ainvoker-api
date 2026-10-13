@@ -2,8 +2,7 @@ import request from "supertest"
 import { beforeEach, describe, expect, it } from "vitest"
 import app from "../../src/app.js"
 import { ensureBillingCatalog, getPlanByName, PLAN_NAMES } from "../../src/modules/billing/catalog.js"
-import { imageCatalogDefaults } from "../../src/modules/image/catalog.js"
-import { ensureTextCatalog, textCatalogDefaults } from "../../src/modules/text/catalog.js"
+import { imageCatalogDefaults, textCatalogDefaults } from "../../src/modules/catalog/seed.js"
 import prismaClient from "../../src/platform/prisma.js"
 import {
     cleanupTestUser,
@@ -18,7 +17,6 @@ describe("project models endpoints", () => {
     let projectId = ""
 
     beforeEach(async () => {
-        await ensureTextCatalog()
         const createRes = await request(app.express)
             .post(`/api/v1/organizations/${authUser.auth.organizationId}/projects`)
             .set(authUser.headers())
@@ -131,7 +129,6 @@ describe("project models endpoints", () => {
     })
 
     it("rejects toggling a plan-locked model", async () => {
-        await ensureTextCatalog()
         const openai = await prismaClient.aIProvider.findUniqueOrThrow({
             where: { name: "openai" },
         })
@@ -216,8 +213,6 @@ describe("project models on Pro", () => {
 
     it("lists plan-locked models as unlocked after upgrading to Pro", async () => {
         await ensureBillingCatalog()
-        await ensureTextCatalog()
-
         const pro = await getPlanByName(PLAN_NAMES.pro)
         await prismaClient.subscription.updateMany({
             where: { organizationId: authUser.auth.organizationId, status: "ACTIVE" },

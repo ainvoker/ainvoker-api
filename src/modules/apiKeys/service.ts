@@ -1,11 +1,12 @@
-import type { Prisma } from "../../generated/prisma/client.js"
+import { Prisma } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import apiKeyHasher from "../../platform/hash.js"
 import prismaClient from "../../platform/prisma.js"
 import { assertOrgCanMutateResources } from "../billing/limits.js"
 import projectsService from "../projects/service.js"
 import type { z } from "zod"
-import type { createApiKeySchema } from "./schemas.js"
+import { normalizeApiKeyPermissions } from "./permissions.js"
+import type { createApiKeySchema, updateApiKeySchema } from "./schemas.js"
 
 class ApiKeyService {
     private serializeApiKey(key: {
@@ -63,7 +64,7 @@ class ApiKeyService {
                 keyPrefix,
                 expiresAt: input.expiresAt ?? null,
                 ...(input.permissions !== undefined
-                    ? { permissions: input.permissions as Prisma.InputJsonValue }
+                    ? { permissions: normalizeApiKeyPermissions(input.permissions) }
                     : {}),
             },
         })
@@ -72,6 +73,39 @@ class ApiKeyService {
             ...this.serializeApiKey(key),
             apiKey: plaintext,
         }
+    }
+
+    async updateApiKey(
+        projectId: string,
+        keyId: string,
+        userId: string,
+        input: z.infer<typeof updateApiKeySchema>,
+    ) {
+        const project = await projectsService.getProjectForMember(projectId, userId)
+        await assertOrgCanMutateResources(project.organizationId)
+
+        const existing = await prismaClient.apiKey.findFirst({
+            where: { id: keyId, projectId },
+        })
+
+        if (!existing) {
+            throw new AppError(404, "NOT_FOUND", "API key not found")
+        }
+
+        if (existing.status !== "ACTIVE") {
+            throw new AppError(409, "KEY_NOT_ACTIVE", "Only active API keys can be updated")
+        }
+
+        const key = await prismaClient.apiKey.update({
+            where: { id: keyId },
+            data: {
+                permissions: input.permissions
+                    ? normalizeApiKeyPermissions(input.permissions)
+                    : Prisma.DbNull,
+            },
+        })
+
+        return this.serializeApiKey(key)
     }
 
     async revokeApiKey(projectId: string, keyId: string, userId: string) {

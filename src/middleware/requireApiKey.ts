@@ -78,6 +78,7 @@ class ApiKeyMiddleware {
                 apiKeyId: apiKey.id,
                 projectId: apiKey.projectId,
                 organizationId: apiKey.project.organizationId,
+                permissions: apiKey.permissions,
             }
 
             const now = Date.now()

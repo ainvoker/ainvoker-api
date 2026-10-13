@@ -16,7 +16,6 @@ import type {
     ToolCall,
 } from "../../providers/types.js"
 import type { ApiKeyContext } from "../../types/express.js"
-import { ensureTextCatalog } from "./catalog.js"
 import { isModelSlug, parseModelSlug, type TextChatBody } from "./schemas.js"
 import { estimateTextTokenHold } from "./tokens.js"
 
@@ -147,8 +146,6 @@ class TextService {
         apiKeyContext: ApiKeyContext,
         body: TextChatBody,
     ): Promise<PreparedTextCall> {
-        await ensureTextCatalog()
-
         const [modelResult, subscriptionResult] = await Promise.allSettled([
             this.resolveModel(body.model),
             getActiveSubscriptionWithPlan(apiKeyContext.organizationId),

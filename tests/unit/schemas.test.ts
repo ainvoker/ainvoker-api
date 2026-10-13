@@ -74,6 +74,30 @@ describe("createApiKeySchema", () => {
         expect(parsed.keyName).toBe("CI")
         expect(parsed.expiresAt).toBeInstanceOf(Date)
     })
+
+    it("rejects an expiry that is not in the future", () => {
+        expect(() =>
+            createApiKeySchema.parse({ keyName: "CI", expiresAt: new Date(Date.now() - 1000) }),
+        ).toThrow()
+    })
+
+    it("accepts categories and features and rejects unknown or empty scopes", () => {
+        expect(
+            createApiKeySchema.parse({
+                keyName: "CI",
+                permissions: { scopes: ["image", "text.chat"] },
+            }).permissions,
+        ).toEqual({ scopes: ["image", "text.chat"] })
+        expect(() =>
+            createApiKeySchema.parse({ keyName: "CI", permissions: { scopes: ["text.edit"] } }),
+        ).toThrow()
+        expect(() =>
+            createApiKeySchema.parse({ keyName: "CI", permissions: { scopes: [] } }),
+        ).toThrow()
+        expect(() =>
+            createApiKeySchema.parse({ keyName: "CI", permissions: { scopes: ["admin"] } }),
+        ).toThrow()
+    })
 })
 
 describe("apiKeyParamsSchema", () => {

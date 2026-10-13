@@ -8,7 +8,7 @@ import {
     startOfUtcMonth,
 } from "../usage/aggregate.js"
 import { ensureBillingCatalog, getPlanByName, PLAN_NAMES, type PlanName } from "./catalog.js"
-import { isEntitlementUnexpired } from "./period.js"
+import { isEntitlementUnexpired, quotaPeriodForSubscription } from "./period.js"
 
 export type QuotaSnapshot = {
     planName: string
@@ -213,10 +213,18 @@ async function loadActiveSubscriptionPlan(db: DbClient, organizationId: string) 
     return subscription
 }
 
+/** Start of the billing period an entitled subscription's quota counts against. */
+export function entitledPeriodStart(
+    subscription: { status: string; startedAt: Date; expiresAt: Date | null },
+    now = new Date(),
+): Date {
+    return quotaPeriodForSubscription(subscription, now)?.periodStart ?? now
+}
+
 async function aggregateOrgQuotaUsage(
     db: DbClient,
     organizationId: string,
-    periodStart = startOfUtcMonth(),
+    periodStart: Date,
     now = new Date(),
 ): Promise<{ requestsUsed: number; tokensUsed: number; periodStart: Date }> {
     const quotaAgg = await db.aIRequest.aggregate({
@@ -242,7 +250,10 @@ async function aggregateOrgQuotaUsage(
  */
 export async function assertWithinPlanLimits(organizationId: string): Promise<QuotaSnapshot> {
     const subscription = await getActiveSubscriptionWithPlan(organizationId)
-    const period = await aggregatePeriodUsage({ organizationId })
+    const period = await aggregatePeriodUsage(
+        { organizationId },
+        entitledPeriodStart(subscription),
+    )
     return enforcePlanQuota(subscription.plan, period)
 }
 
@@ -341,7 +352,11 @@ async function reservePendingRequest(
         }
 
         const subscription = await loadActiveSubscriptionPlan(tx, input.organizationId)
-        const period = await aggregateOrgQuotaUsage(tx, input.organizationId)
+        const period = await aggregateOrgQuotaUsage(
+            tx,
+            input.organizationId,
+            entitledPeriodStart(subscription),
+        )
         const quota = enforcePlanQuota(subscription.plan, period)
         const tokenHold = fitTokenHold(subscription.plan, period.tokensUsed, input)
 

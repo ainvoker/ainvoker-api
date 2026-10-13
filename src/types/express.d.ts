@@ -1,4 +1,4 @@
-import type { OrganizationMember, Role } from "../../generated/prisma/client.js"
+import type { OrganizationMember, Prisma, Role } from "../../generated/prisma/client.js"
 
 export type AuthContext = {
     userId: string
@@ -12,6 +12,7 @@ export type ApiKeyContext = {
     apiKeyId: string
     projectId: string
     organizationId: string
+    permissions: Prisma.JsonValue | null
 }
 
 declare global {
