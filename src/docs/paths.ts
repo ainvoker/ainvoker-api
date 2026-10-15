@@ -99,6 +99,12 @@ const errorResponses = {
     },
 }
 
+const providerUnavailableResponse = {
+    description:
+        "`PROVIDER_UNAVAILABLE`: the model provider is overloaded or unreachable (the gateway already retried once). Safe to retry after a short delay.",
+    content: { "application/json": { schema: errorResponseSchema } },
+}
+
 export function registerApiPaths(registry: OpenAPIRegistry) {
     registry.registerPath({
         method: "get",
@@ -1001,6 +1007,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
                 description: "Provider adapter not implemented",
                 content: { "application/json": { schema: errorResponseSchema } },
             },
+            503: providerUnavailableResponse,
             ...errorResponses,
         },
     })
@@ -1048,6 +1055,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
                 description: "Provider adapter not implemented",
                 content: { "application/json": { schema: errorResponseSchema } },
             },
+            503: providerUnavailableResponse,
             ...errorResponses,
         },
     })
@@ -1086,6 +1094,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
                 description: "Provider adapter not implemented",
                 content: { "application/json": { schema: errorResponseSchema } },
             },
+            503: providerUnavailableResponse,
             ...errorResponses,
         },
     })

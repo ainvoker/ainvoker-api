@@ -1,5 +1,6 @@
 import env from "../config/env.js"
 import { AppError } from "../platform/errors.js"
+import { fetchProvider, providerHttpError } from "./upstream.js"
 import type {
     ChatCompletionUsage,
     ImageGenerationInput,
@@ -74,30 +75,19 @@ class OpenAIImageProvider implements ImageProvider {
         const baseUrl = input.baseUrl.replace(/\/$/, "")
         const url = `${baseUrl}/images/generations`
 
-        let response: Response
-        try {
-            response = await fetch(url, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(buildRequestBody(input)),
-            })
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Upstream request failed"
-            throw new AppError(502, "UPSTREAM_ERROR", message)
-        }
+        const response = await fetchProvider("OpenAI", url, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(buildRequestBody(input)),
+        })
 
         const raw = (await response.json().catch(() => null)) as OpenAIImageResponse | null
 
         if (!response.ok) {
-            const message = raw?.error?.message ?? `OpenAI request failed (${response.status})`
-            throw new AppError(
-                response.status >= 400 && response.status < 500 ? 400 : 502,
-                "UPSTREAM_ERROR",
-                message,
-            )
+            throw providerHttpError("OpenAI", response.status, raw?.error?.message)
         }
 
         const mimeType = MIME_TYPES[raw?.output_format ?? input.outputFormat ?? "png"] ?? "image/png"

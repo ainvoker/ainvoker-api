@@ -1,6 +1,7 @@
 import env from "../config/env.js"
 import { AppError } from "../platform/errors.js"
 import { parseSseDataPayloads } from "./sse.js"
+import { fetchProvider, providerHttpError } from "./upstream.js"
 import type {
     ChatCompletionInput,
     ChatCompletionResult,
@@ -309,30 +310,19 @@ class GeminiChatProvider implements ChatProvider {
         const url = `${baseUrl}/models/${encodeURIComponent(input.model)}:generateContent`
         const body = buildRequestBody(input)
 
-        let response: Response
-        try {
-            response = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": apiKey,
-                },
-                body: JSON.stringify(body),
-            })
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Upstream request failed"
-            throw new AppError(502, "UPSTREAM_ERROR", message)
-        }
+        const response = await fetchProvider("Gemini", url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": apiKey,
+            },
+            body: JSON.stringify(body),
+        })
 
         const raw = (await response.json().catch(() => null)) as GeminiGenerateResponse | null
 
         if (!response.ok) {
-            const message = raw?.error?.message ?? `Gemini request failed (${response.status})`
-            throw new AppError(
-                response.status >= 400 && response.status < 500 ? 400 : 502,
-                "UPSTREAM_ERROR",
-                message,
-            )
+            throw providerHttpError("Gemini", response.status, raw?.error?.message)
         }
 
         const parts = raw?.candidates?.[0]?.content?.parts ?? []
@@ -362,34 +352,20 @@ class GeminiChatProvider implements ChatProvider {
         const url = `${baseUrl}/models/${encodeURIComponent(input.model)}:streamGenerateContent?alt=sse`
         const body = buildRequestBody(input)
 
-        let response: Response
-        try {
-            response = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "text/event-stream",
-                    "x-goog-api-key": apiKey,
-                },
-                body: JSON.stringify(body),
-                ...(options?.signal ? { signal: options.signal } : {}),
-            })
-        } catch (err) {
-            if (options?.signal?.aborted) {
-                throw new AppError(499, "CLIENT_CLOSED", "Client disconnected")
-            }
-            const message = err instanceof Error ? err.message : "Upstream request failed"
-            throw new AppError(502, "UPSTREAM_ERROR", message)
-        }
+        const response = await fetchProvider("Gemini", url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "text/event-stream",
+                "x-goog-api-key": apiKey,
+            },
+            body: JSON.stringify(body),
+            ...(options?.signal ? { signal: options.signal } : {}),
+        })
 
         if (!response.ok) {
             const raw = (await response.json().catch(() => null)) as GeminiGenerateResponse | null
-            const message = raw?.error?.message ?? `Gemini request failed (${response.status})`
-            throw new AppError(
-                response.status >= 400 && response.status < 500 ? 400 : 502,
-                "UPSTREAM_ERROR",
-                message,
-            )
+            throw providerHttpError("Gemini", response.status, raw?.error?.message)
         }
 
         if (!response.body) {

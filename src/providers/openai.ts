@@ -1,6 +1,7 @@
 import env from "../config/env.js"
 import { AppError } from "../platform/errors.js"
 import { parseSseDataPayloads } from "./sse.js"
+import { fetchProvider, providerHttpError } from "./upstream.js"
 import type {
     ChatCompletionInput,
     ChatCompletionResult,
@@ -156,30 +157,19 @@ class OpenAIChatProvider implements ChatProvider {
         const baseUrl = input.baseUrl.replace(/\/$/, "")
         const url = `${baseUrl}/chat/completions`
 
-        let response: Response
-        try {
-            response = await fetch(url, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${apiKey}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(buildRequestBody(input, false)),
-            })
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Upstream request failed"
-            throw new AppError(502, "UPSTREAM_ERROR", message)
-        }
+        const response = await fetchProvider("OpenAI", url, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(buildRequestBody(input, false)),
+        })
 
         const raw = (await response.json().catch(() => null)) as OpenAIChatResponse | null
 
         if (!response.ok) {
-            const message = raw?.error?.message ?? `OpenAI request failed (${response.status})`
-            throw new AppError(
-                response.status >= 400 && response.status < 500 ? 400 : 502,
-                "UPSTREAM_ERROR",
-                message,
-            )
+            throw providerHttpError("OpenAI", response.status, raw?.error?.message)
         }
 
         const choice = raw?.choices?.[0]?.message
@@ -207,34 +197,20 @@ class OpenAIChatProvider implements ChatProvider {
         const baseUrl = input.baseUrl.replace(/\/$/, "")
         const url = `${baseUrl}/chat/completions`
 
-        let response: Response
-        try {
-            response = await fetch(url, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${apiKey}`,
-                    "Content-Type": "application/json",
-                    Accept: "text/event-stream",
-                },
-                body: JSON.stringify(buildRequestBody(input, true)),
-                ...(options?.signal ? { signal: options.signal } : {}),
-            })
-        } catch (err) {
-            if (options?.signal?.aborted) {
-                throw new AppError(499, "CLIENT_CLOSED", "Client disconnected")
-            }
-            const message = err instanceof Error ? err.message : "Upstream request failed"
-            throw new AppError(502, "UPSTREAM_ERROR", message)
-        }
+        const response = await fetchProvider("OpenAI", url, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+                Accept: "text/event-stream",
+            },
+            body: JSON.stringify(buildRequestBody(input, true)),
+            ...(options?.signal ? { signal: options.signal } : {}),
+        })
 
         if (!response.ok) {
             const raw = (await response.json().catch(() => null)) as OpenAIChatResponse | null
-            const message = raw?.error?.message ?? `OpenAI request failed (${response.status})`
-            throw new AppError(
-                response.status >= 400 && response.status < 500 ? 400 : 502,
-                "UPSTREAM_ERROR",
-                message,
-            )
+            throw providerHttpError("OpenAI", response.status, raw?.error?.message)
         }
 
         if (!response.body) {
