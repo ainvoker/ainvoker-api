@@ -45,9 +45,11 @@ export const gatewayCorsOptions: CorsOptions = {
             try {
                 const allowed = await allowedOriginsService.isOriginRegistered(normalized)
                 callback(null, allowed ? normalized : false)
-            } catch {
+            } catch (err) {
+                console.error("Gateway CORS origin lookup failed", err)
                 callback(null, false)
             }
         })()
     },
+    maxAge: 600,
 }

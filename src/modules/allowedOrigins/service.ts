@@ -6,7 +6,12 @@ import projectsService from "../projects/service.js"
 import type { z } from "zod"
 import type { createAllowedOriginSchema } from "./schemas.js"
 
+const REGISTERED_ORIGIN_TTL_MS = 60_000
+
 class AllowedOriginsService {
+    /** CORS checks every gateway preflight; a brief DB outage must not drop the header. */
+    private readonly registeredCache = new Map<string, { registered: boolean; expiresAt: number }>()
+
     private serialize(row: {
         id: string
         projectId: string
@@ -58,6 +63,7 @@ class AllowedOriginsService {
             const row = await prismaClient.projectAllowedOrigin.create({
                 data: { projectId, origin },
             })
+            this.registeredCache.delete(origin)
             return this.serialize(row)
         } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
@@ -79,14 +85,33 @@ class AllowedOriginsService {
         }
 
         await prismaClient.projectAllowedOrigin.delete({ where: { id: originId } })
+        this.registeredCache.delete(existing.origin)
     }
 
+    /** Serves a stale answer when the DB lookup fails; throws only if nothing is cached. */
     async isOriginRegistered(origin: string): Promise<boolean> {
-        const row = await prismaClient.projectAllowedOrigin.findFirst({
-            where: { origin },
-            select: { id: true },
-        })
-        return Boolean(row)
+        const cached = this.registeredCache.get(origin)
+        if (cached && cached.expiresAt > Date.now()) {
+            return cached.registered
+        }
+
+        try {
+            const row = await prismaClient.projectAllowedOrigin.findFirst({
+                where: { origin },
+                select: { id: true },
+            })
+            const registered = Boolean(row)
+            this.registeredCache.set(origin, {
+                registered,
+                expiresAt: Date.now() + REGISTERED_ORIGIN_TTL_MS,
+            })
+            return registered
+        } catch (err) {
+            if (cached) {
+                return cached.registered
+            }
+            throw err
+        }
     }
 
     async isOriginAllowedForProject(projectId: string, origin: string): Promise<boolean> {
