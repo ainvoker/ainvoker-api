@@ -61,6 +61,14 @@ export function buildOpenApiDocument() {
                 name: "Members",
                 description: "Organization members, invites, roles, and ownership transfer",
             },
+            {
+                name: "Admin Catalog",
+                description: "Platform admin model and provider catalog",
+            },
+            {
+                name: "Admin Customers",
+                description: "Platform admin organization and user lookup",
+            },
         ],
     })
 }

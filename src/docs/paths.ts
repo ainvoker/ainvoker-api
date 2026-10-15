@@ -38,11 +38,20 @@ import {
     adminModelParamsSchema,
     listAdminModelsQuerySchema,
     updateAdminModelSchema,
+    adminOrganizationParamsSchema,
+    adminUserParamsSchema,
+    listAdminOrganizationsQuerySchema,
+    listAdminUsersQuerySchema,
+    updateAdminOrganizationSchema,
 } from "./schemas.js"
 import {
     acceptInviteResponseSchema,
     adminModelSchema,
+    adminOrganizationDetailSchema,
+    adminOrganizationListSchema,
     adminProviderSchema,
+    adminUserDetailSchema,
+    adminUserListSchema,
     allowedOriginSchema,
     apiKeySchema,
     aiRequestDetailSchema,
@@ -879,6 +888,115 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             200: {
                 description: "Updated model",
                 content: { "application/json": { schema: dataEnvelope(adminModelSchema) } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/organizations",
+        tags: ["Admin Customers"],
+        summary: "List organizations",
+        description:
+            "Platform admin only. Search by name, slug, id, or owner email. Defaults to non-DELETED organizations.",
+        security: bearerAuth,
+        request: {
+            query: listAdminOrganizationsQuerySchema,
+        },
+        responses: {
+            200: {
+                description: "Paginated organizations",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminOrganizationListSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/organizations/{orgId}",
+        tags: ["Admin Customers"],
+        summary: "Get organization detail",
+        description:
+            "Platform admin only. Includes owner, subscription, projects, API keys, and pending invites.",
+        security: bearerAuth,
+        request: {
+            params: adminOrganizationParamsSchema,
+        },
+        responses: {
+            200: {
+                description: "Organization detail",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminOrganizationDetailSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "patch",
+        path: "/api/v1/admin/organizations/{orgId}",
+        tags: ["Admin Customers"],
+        summary: "Suspend or reinstate an organization",
+        description:
+            "Platform admin only. Sets status to ACTIVE or SUSPENDED. Deleted organizations cannot be changed.",
+        security: bearerAuth,
+        request: {
+            params: adminOrganizationParamsSchema,
+            body: {
+                required: true,
+                content: { "application/json": { schema: updateAdminOrganizationSchema } },
+            },
+        },
+        responses: {
+            200: {
+                description: "Updated organization",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminOrganizationDetailSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/users",
+        tags: ["Admin Customers"],
+        summary: "List users",
+        description: "Platform admin only. Search by email, name, or id.",
+        security: bearerAuth,
+        request: {
+            query: listAdminUsersQuerySchema,
+        },
+        responses: {
+            200: {
+                description: "Paginated users",
+                content: { "application/json": { schema: dataEnvelope(adminUserListSchema) } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/users/{userId}",
+        tags: ["Admin Customers"],
+        summary: "Get user detail",
+        description:
+            "Platform admin only. Includes profile, platform-admin flag, and workspace memberships.",
+        security: bearerAuth,
+        request: {
+            params: adminUserParamsSchema,
+        },
+        responses: {
+            200: {
+                description: "User detail",
+                content: { "application/json": { schema: dataEnvelope(adminUserDetailSchema) } },
             },
             ...errorResponses,
         },

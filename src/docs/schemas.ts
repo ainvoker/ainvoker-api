@@ -25,3 +25,10 @@ export {
     listAdminModelsQuerySchema,
     updateAdminModelSchema,
 } from "../modules/catalog/schemas.js"
+export {
+    adminOrganizationParamsSchema,
+    adminUserParamsSchema,
+    listAdminOrganizationsQuerySchema,
+    listAdminUsersQuerySchema,
+    updateAdminOrganizationSchema,
+} from "../modules/customers/schemas.js"

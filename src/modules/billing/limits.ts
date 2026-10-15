@@ -123,6 +123,29 @@ export async function getActiveSubscriptionWithPlan(organizationId: string) {
     return loadActiveSubscriptionPlan(prismaClient, organizationId)
 }
 
+/** Shared gate for org status on dashboard mutations and inference. */
+export function assertOrganizationStatusActive(status: string | null | undefined) {
+    if (!status || status === "DELETED") {
+        throw new AppError(404, "NOT_FOUND", "Organization not found")
+    }
+
+    if (status !== "ACTIVE") {
+        throw new AppError(403, "FORBIDDEN", "Organization is not active")
+    }
+}
+
+/**
+ * Gate API-key inference until the org is ACTIVE.
+ * Call from requireApiKey and inside reservePendingRequest after the org row lock.
+ */
+export async function assertOrganizationActiveForInference(organizationId: string) {
+    const org = await prismaClient.organization.findUnique({
+        where: { id: organizationId },
+        select: { status: true },
+    })
+    assertOrganizationStatusActive(org?.status)
+}
+
 /**
  * Gate dashboard mutations (create project / API key) until the org is ACTIVE
  * and has an ACTIVE, unexpired subscription. PENDING Pro orgs cannot mutate.
@@ -133,13 +156,7 @@ export async function assertOrgCanMutateResources(organizationId: string) {
         select: { status: true },
     })
 
-    if (!org || org.status === "DELETED") {
-        throw new AppError(404, "NOT_FOUND", "Organization not found")
-    }
-
-    if (org.status !== "ACTIVE") {
-        throw new AppError(403, "FORBIDDEN", "Organization is not active")
-    }
+    assertOrganizationStatusActive(org?.status)
 
     await getActiveSubscriptionWithPlan(organizationId)
 }
@@ -394,6 +411,12 @@ async function reservePendingRequest(
     return prismaClient.$transaction(async (tx) => {
         // Serialize quota check+insert per org across API processes (TOCTOU / multi-instance).
         await tx.$queryRaw`SELECT id FROM "Organization" WHERE id = ${input.organizationId} FOR UPDATE`
+
+        const org = await tx.organization.findUnique({
+            where: { id: input.organizationId },
+            select: { status: true },
+        })
+        assertOrganizationStatusActive(org?.status)
 
         const model = await tx.aIModel.findUniqueOrThrow({
             where: { id: input.modelId },

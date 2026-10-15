@@ -1,9 +1,10 @@
 import type { NextFunction, Request, Response } from "express"
+import { assertOrganizationStatusActive } from "../modules/billing/limits.js"
+import allowedOriginsService from "../modules/allowedOrigins/service.js"
 import { AppError } from "../platform/errors.js"
 import apiKeyHasher from "../platform/hash.js"
 import { tryNormalizeOrigin } from "../platform/origin.js"
 import prismaClient from "../platform/prisma.js"
-import allowedOriginsService from "../modules/allowedOrigins/service.js"
 
 const LAST_USED_THROTTLE_MS = 60_000
 
@@ -37,6 +38,7 @@ class ApiKeyMiddleware {
                             id: true,
                             organizationId: true,
                             status: true,
+                            organization: { select: { status: true } },
                         },
                     },
                 },
@@ -53,6 +55,8 @@ class ApiKeyMiddleware {
             if (apiKey.project.status !== "ACTIVE") {
                 throw new AppError(403, "FORBIDDEN", "Project is not active")
             }
+
+            assertOrganizationStatusActive(apiKey.project.organization.status)
 
             const rawOrigin = req.headers.origin
             const hasOrigin = typeof rawOrigin === "string" && rawOrigin.trim().length > 0

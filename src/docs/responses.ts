@@ -173,6 +173,151 @@ export const adminModelSchema = z
     })
     .meta({ id: "AdminModel" })
 
+const adminUserSummarySchema = z.object({
+    id: z.string(),
+    email: z.string().nullable(),
+    firstName: z.string().nullable(),
+    lastName: z.string().nullable(),
+})
+
+const adminSubscriptionSnapshotSchema = z
+    .object({
+        id: z.string(),
+        status: z.string(),
+        planName: z.string(),
+        expiresAt: z.string().nullable(),
+        cancelAtPeriodEnd: z.boolean(),
+    })
+    .nullable()
+
+export const adminOrganizationListItemSchema = z
+    .object({
+        id: z.string(),
+        name: z.string(),
+        slug: z.string(),
+        status: z.enum(["ACTIVE", "SUSPENDED", "DELETED"]),
+        isPersonal: z.boolean(),
+        owner: adminUserSummarySchema.nullable(),
+        memberCount: z.number().int(),
+        planName: z.string().nullable(),
+        subscriptionStatus: z.string().nullable(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+    })
+    .meta({ id: "AdminOrganizationListItem" })
+
+export const adminOrganizationListSchema = z
+    .object({
+        items: z.array(adminOrganizationListItemSchema),
+        total: z.number().int(),
+        limit: z.number().int(),
+        offset: z.number().int(),
+    })
+    .meta({ id: "AdminOrganizationList" })
+
+export const adminOrganizationDetailSchema = z
+    .object({
+        id: z.string(),
+        name: z.string(),
+        slug: z.string(),
+        status: z.enum(["ACTIVE", "SUSPENDED", "DELETED"]),
+        isPersonal: z.boolean(),
+        owner: adminUserSummarySchema.nullable(),
+        memberCount: z.number().int(),
+        subscription: adminSubscriptionSnapshotSchema,
+        projects: z.array(
+            z.object({
+                id: z.string(),
+                name: z.string(),
+                environment: z.string(),
+                status: z.string(),
+                apiKeyCount: z.number().int(),
+                createdAt: z.string(),
+                updatedAt: z.string(),
+            }),
+        ),
+        apiKeys: z.array(
+            z.object({
+                id: z.string(),
+                projectId: z.string(),
+                projectName: z.string(),
+                keyName: z.string(),
+                keyPrefix: z.string(),
+                status: z.string(),
+                clientType: z.string(),
+                lastUsed: z.string().nullable(),
+                createdAt: z.string(),
+            }),
+        ),
+        invites: z.array(
+            z.object({
+                id: z.string(),
+                email: z.string(),
+                role: z.string(),
+                status: z.string(),
+                expiresAt: z.string(),
+                createdAt: z.string(),
+            }),
+        ),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+    })
+    .meta({ id: "AdminOrganizationDetail" })
+
+export const adminUserListItemSchema = z
+    .object({
+        id: z.string(),
+        email: z.string().nullable(),
+        firstName: z.string().nullable(),
+        lastName: z.string().nullable(),
+        profilePicture: z.string().nullable(),
+        isPlatformAdmin: z.boolean(),
+        membershipCount: z.number().int(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+    })
+    .meta({ id: "AdminUserListItem" })
+
+export const adminUserListSchema = z
+    .object({
+        items: z.array(adminUserListItemSchema),
+        total: z.number().int(),
+        limit: z.number().int(),
+        offset: z.number().int(),
+    })
+    .meta({ id: "AdminUserList" })
+
+export const adminUserDetailSchema = z
+    .object({
+        id: z.string(),
+        email: z.string().nullable(),
+        firstName: z.string().nullable(),
+        lastName: z.string().nullable(),
+        profilePicture: z.string().nullable(),
+        themePreference: z.enum(["LIGHT", "DARK", "DEVICE"]),
+        freeQuotaUnitsUsed: z.number().int(),
+        freeQuotaUnitsLimit: z.number().int(),
+        isPlatformAdmin: z.boolean(),
+        memberships: z.array(
+            z.object({
+                id: z.string(),
+                role: z.string(),
+                organization: z.object({
+                    id: z.string(),
+                    name: z.string(),
+                    slug: z.string(),
+                    status: z.enum(["ACTIVE", "SUSPENDED", "DELETED"]),
+                    isPersonal: z.boolean(),
+                    createdAt: z.string(),
+                }),
+                createdAt: z.string(),
+            }),
+        ),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+    })
+    .meta({ id: "AdminUserDetail" })
+
 export const deletedResponseSchema = z
     .object({
         deleted: z.literal(true),
