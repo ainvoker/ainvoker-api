@@ -55,7 +55,25 @@ class ApiKeyMiddleware {
             }
 
             const rawOrigin = req.headers.origin
-            if (typeof rawOrigin === "string" && rawOrigin.trim().length > 0) {
+            const hasOrigin = typeof rawOrigin === "string" && rawOrigin.trim().length > 0
+
+            if (apiKey.clientType === "SERVER" && hasOrigin) {
+                throw new AppError(
+                    403,
+                    "ORIGIN_NOT_ALLOWED",
+                    "Server API keys cannot be used from a browser origin",
+                )
+            }
+
+            if (apiKey.clientType === "BROWSER") {
+                if (!hasOrigin) {
+                    throw new AppError(
+                        403,
+                        "ORIGIN_REQUIRED",
+                        "Browser API keys require an allowed Origin header",
+                    )
+                }
+
                 const origin = tryNormalizeOrigin(rawOrigin)
                 if (!origin) {
                     throw new AppError(403, "ORIGIN_NOT_ALLOWED", "Request origin is not allowed")

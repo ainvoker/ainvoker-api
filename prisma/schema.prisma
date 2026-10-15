@@ -37,6 +37,11 @@ enum ApiKeyStatus {
   EXPIRED
 }
 
+enum ApiKeyClientType {
+  SERVER
+  BROWSER
+}
+
 enum CatalogStatus {
   ACTIVE
   INACTIVE
@@ -294,6 +299,7 @@ model ApiKey {
   lastUsed   DateTime?
   expiresAt  DateTime?
   status     ApiKeyStatus @default(ACTIVE)
+  clientType ApiKeyClientType @default(SERVER)
 
   project  Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   requests AIRequest[]

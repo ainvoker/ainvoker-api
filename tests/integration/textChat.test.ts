@@ -524,85 +524,87 @@ describe("POST /v1/text/chat", () => {
         expect(fetchSpy).toHaveBeenCalled()
     })
 
-    it("allows requests without Origin (Node / server SDK)", async () => {
-        const res = await request(app.express)
-            .post("/v1/text/chat")
-            .set({ Authorization: `Bearer ${plaintextKey}` })
-            .send({
-                model: textCatalogDefaults.modelSlug,
-                messages: [{ role: "user", content: "Hi" }],
-            })
-        expect(res.status).toBe(200)
-    })
+    describe("Origin enforcement", () => {
+        const chatBody = {
+            model: textCatalogDefaults.modelSlug,
+            messages: [{ role: "user", content: "Hi" }],
+        }
 
-    it("rejects unlisted browser Origin with ORIGIN_NOT_ALLOWED", async () => {
-        const res = await request(app.express)
-            .post("/v1/text/chat")
-            .set({
-                Authorization: `Bearer ${plaintextKey}`,
-                Origin: "https://unlisted.example.com",
-            })
-            .send({
-                model: textCatalogDefaults.modelSlug,
-                messages: [{ role: "user", content: "Hi" }],
-            })
+        function chat(key: string, origin?: string) {
+            return request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${key}`, ...(origin ? { Origin: origin } : {}) })
+                .send(chatBody)
+        }
 
-        expect(res.status).toBe(403)
-        expect(res.body.error.code).toBe("ORIGIN_NOT_ALLOWED")
-        expect(fetchSpy).not.toHaveBeenCalled()
-    })
+        async function createBrowserKey() {
+            const generated = apiKeyHasher.generate()
+            await prismaClient.apiKey.create({
+                data: {
+                    projectId,
+                    keyName: "Browser Test Key",
+                    keyHash: generated.keyHash,
+                    keyPrefix: generated.keyPrefix,
+                    clientType: "BROWSER",
+                },
+            })
+            return generated.plaintext
+        }
 
-    it("allows a browser Origin listed on this project", async () => {
-        await prismaClient.projectAllowedOrigin.create({
-            data: {
-                projectId,
-                origin: "https://app.example.com",
-            },
+        beforeEach(async () => {
+            await prismaClient.projectAllowedOrigin.create({
+                data: { projectId, origin: "https://app.example.com" },
+            })
         })
 
-        const res = await request(app.express)
-            .post("/v1/text/chat")
-            .set({
-                Authorization: `Bearer ${plaintextKey}`,
-                Origin: "https://app.example.com",
-            })
-            .send({
-                model: textCatalogDefaults.modelSlug,
-                messages: [{ role: "user", content: "Hi" }],
-            })
-
-        expect(res.status).toBe(200)
-        expect(res.headers["access-control-allow-origin"]).toBe("https://app.example.com")
-    })
-
-    it("rejects Origin allowed on a different project", async () => {
-        const otherProject = await prismaClient.project.create({
-            data: {
-                organizationId,
-                name: `Other Origins ${userId.slice(-8)}`,
-                environment: "DEVELOPMENT",
-            },
-        })
-        await prismaClient.projectAllowedOrigin.create({
-            data: {
-                projectId: otherProject.id,
-                origin: "https://other.example.com",
-            },
+        it("allows a server key without Origin (Node / server SDK)", async () => {
+            const res = await chat(plaintextKey)
+            expect(res.status).toBe(200)
         })
 
-        const res = await request(app.express)
-            .post("/v1/text/chat")
-            .set({
-                Authorization: `Bearer ${plaintextKey}`,
-                Origin: "https://other.example.com",
+        it("rejects a server key sent with an Origin, even an allowed one", async () => {
+            const res = await chat(plaintextKey, "https://app.example.com")
+            expect(res.status).toBe(403)
+            expect(res.body.error.code).toBe("ORIGIN_NOT_ALLOWED")
+            expect(fetchSpy).not.toHaveBeenCalled()
+        })
+
+        it("rejects a browser key without Origin with ORIGIN_REQUIRED", async () => {
+            const res = await chat(await createBrowserKey())
+            expect(res.status).toBe(403)
+            expect(res.body.error.code).toBe("ORIGIN_REQUIRED")
+            expect(fetchSpy).not.toHaveBeenCalled()
+        })
+
+        it("rejects a browser key from an unlisted Origin", async () => {
+            const res = await chat(await createBrowserKey(), "https://unlisted.example.com")
+            expect(res.status).toBe(403)
+            expect(res.body.error.code).toBe("ORIGIN_NOT_ALLOWED")
+            expect(fetchSpy).not.toHaveBeenCalled()
+        })
+
+        it("allows a browser key from an Origin listed on this project", async () => {
+            const res = await chat(await createBrowserKey(), "https://app.example.com")
+            expect(res.status).toBe(200)
+            expect(res.headers["access-control-allow-origin"]).toBe("https://app.example.com")
+        })
+
+        it("rejects a browser key from an Origin allowed on a different project", async () => {
+            const otherProject = await prismaClient.project.create({
+                data: {
+                    organizationId,
+                    name: `Other Origins ${userId.slice(-8)}`,
+                    environment: "DEVELOPMENT",
+                },
             })
-            .send({
-                model: textCatalogDefaults.modelSlug,
-                messages: [{ role: "user", content: "Hi" }],
+            await prismaClient.projectAllowedOrigin.create({
+                data: { projectId: otherProject.id, origin: "https://other.example.com" },
             })
 
-        expect(res.status).toBe(403)
-        expect(res.body.error.code).toBe("ORIGIN_NOT_ALLOWED")
+            const res = await chat(await createBrowserKey(), "https://other.example.com")
+            expect(res.status).toBe(403)
+            expect(res.body.error.code).toBe("ORIGIN_NOT_ALLOWED")
+        })
     })
 
     it("reflects Access-Control-Allow-Origin on preflight for registered origins", async () => {

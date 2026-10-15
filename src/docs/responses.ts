@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { apiKeyPermissionsSchema } from "../modules/apiKeys/permissions.js"
+import { apiKeyClientTypeSchema } from "../modules/apiKeys/schemas.js"
 
 export const errorResponseSchema = z
     .object({
@@ -98,6 +99,9 @@ export const apiKeySchema = z
         lastUsed: z.string().nullable(),
         expiresAt: z.string().nullable(),
         status: z.string(),
+        clientType: apiKeyClientTypeSchema.describe(
+            "`SERVER` keys only work without an `Origin` header; `BROWSER` keys only work from an allowed app URL.",
+        ),
         createdAt: z.string(),
         updatedAt: z.string(),
     })

@@ -35,6 +35,7 @@ describe("api keys endpoints", () => {
             projectId,
             keyName: "Test Key",
             status: "ACTIVE",
+            clientType: "SERVER",
         })
         expect(createRes.body.data.apiKey).toMatch(/^ain_/)
         expect(createRes.body.data.keyPrefix).toBe(createRes.body.data.apiKey.slice(0, 12))
@@ -74,6 +75,26 @@ describe("api keys endpoints", () => {
 
         expect(res.status).toBe(400)
         expect(res.body.error.code).toBe("VALIDATION_ERROR")
+    })
+
+    it("refuses a browser key until the project has an allowed origin", async () => {
+        const blocked = await request(app.express)
+            .post(`/api/v1/projects/${projectId}/api-keys`)
+            .set(authUser.headers())
+            .send({ keyName: "Web", clientType: "BROWSER" })
+        expect(blocked.status).toBe(400)
+        expect(blocked.body.error.code).toBe("NO_ALLOWED_ORIGINS")
+
+        await prismaClient.projectAllowedOrigin.create({
+            data: { projectId, origin: "https://app.example.com" },
+        })
+
+        const created = await request(app.express)
+            .post(`/api/v1/projects/${projectId}/api-keys`)
+            .set(authUser.headers())
+            .send({ keyName: "Web", clientType: "BROWSER" })
+        expect(created.status).toBe(201)
+        expect(created.body.data.clientType).toBe("BROWSER")
     })
 
     describe("capabilities", () => {

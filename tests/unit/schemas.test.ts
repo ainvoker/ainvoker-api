@@ -75,6 +75,14 @@ describe("createApiKeySchema", () => {
         expect(parsed.expiresAt).toBeInstanceOf(Date)
     })
 
+    it("defaults clientType to SERVER and rejects unknown types", () => {
+        expect(createApiKeySchema.parse({ keyName: "CI" }).clientType).toBe("SERVER")
+        expect(createApiKeySchema.parse({ keyName: "CI", clientType: "BROWSER" }).clientType).toBe(
+            "BROWSER",
+        )
+        expect(() => createApiKeySchema.parse({ keyName: "CI", clientType: "MOBILE" })).toThrow()
+    })
+
     it("rejects an expiry that is not in the future", () => {
         expect(() =>
             createApiKeySchema.parse({ keyName: "CI", expiresAt: new Date(Date.now() - 1000) }),

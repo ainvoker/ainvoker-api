@@ -575,7 +575,8 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         path: "/api/v1/projects/{projectId}/api-keys",
         tags: ["API Keys"],
         summary: "Create an API key",
-        description: "Returns the plaintext `apiKey` once. Store it immediately.",
+        description:
+            "Returns the plaintext `apiKey` once. Store it immediately. `clientType` defaults to `SERVER` and cannot be changed later. Creating a `BROWSER` key requires at least one allowed app URL on the project (`400 NO_ALLOWED_ORIGINS`).",
         security: bearerAuth,
         request: {
             params: projectIdParamsSchema,

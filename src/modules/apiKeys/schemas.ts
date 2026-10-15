@@ -1,8 +1,11 @@
 import { z } from "zod"
 import { apiKeyPermissionsSchema } from "./permissions.js"
 
+export const apiKeyClientTypeSchema = z.enum(["SERVER", "BROWSER"])
+
 export const createApiKeySchema = z.object({
     keyName: z.string().trim().min(1).max(100),
+    clientType: apiKeyClientTypeSchema.default("SERVER"),
     permissions: apiKeyPermissionsSchema.optional(),
     expiresAt: z.coerce
         .date()

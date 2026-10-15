@@ -23,7 +23,7 @@ registry.registerComponent("securitySchemes", "apiKeyAuth", {
     scheme: "bearer",
     bearerFormat: "API Key",
     description:
-        "Project API key for the data plane: send `Authorization: Bearer ain_…` (plaintext key shown once on create).",
+        "Project API key for the data plane: send `Authorization: Bearer ain_…` (plaintext key shown once on create). `SERVER` keys reject any request with an `Origin` header (`403 ORIGIN_NOT_ALLOWED`). `BROWSER` keys require an `Origin` on the project's allowed app URLs (`403 ORIGIN_REQUIRED` when missing, `403 ORIGIN_NOT_ALLOWED` when not listed).",
 })
 
 registerApiPaths(registry)

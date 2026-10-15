@@ -2060,6 +2060,7 @@ export const ApiKeyScalarFieldEnum = {
   lastUsed: 'lastUsed',
   expiresAt: 'expiresAt',
   status: 'status',
+  clientType: 'clientType',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -2434,6 +2435,20 @@ export type EnumApiKeyStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pri
  * Reference to a field of type 'ApiKeyStatus[]'
  */
 export type ListEnumApiKeyStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApiKeyStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'ApiKeyClientType'
+ */
+export type EnumApiKeyClientTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApiKeyClientType'>
+    
+
+
+/**
+ * Reference to a field of type 'ApiKeyClientType[]'
+ */
+export type ListEnumApiKeyClientTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApiKeyClientType[]'>
     
 
 

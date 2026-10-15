@@ -45,6 +45,14 @@ export const ApiKeyStatus = {
 export type ApiKeyStatus = (typeof ApiKeyStatus)[keyof typeof ApiKeyStatus]
 
 
+export const ApiKeyClientType = {
+  SERVER: 'SERVER',
+  BROWSER: 'BROWSER'
+} as const
+
+export type ApiKeyClientType = (typeof ApiKeyClientType)[keyof typeof ApiKeyClientType]
+
+
 export const CatalogStatus = {
   ACTIVE: 'ACTIVE',
   INACTIVE: 'INACTIVE',

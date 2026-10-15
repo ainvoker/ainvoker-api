@@ -291,6 +291,13 @@ export type EnumApiKeyStatusFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumApiKeyStatusFilter<$PrismaModel> | $Enums.ApiKeyStatus
 }
 
+export type EnumApiKeyClientTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.ApiKeyClientType | Prisma.EnumApiKeyClientTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ApiKeyClientType[] | Prisma.ListEnumApiKeyClientTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ApiKeyClientType[] | Prisma.ListEnumApiKeyClientTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumApiKeyClientTypeFilter<$PrismaModel> | $Enums.ApiKeyClientType
+}
+
 export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
 | Prisma.PatchUndefined<
     Prisma.Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
@@ -326,6 +333,16 @@ export type EnumApiKeyStatusWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumApiKeyStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumApiKeyStatusFilter<$PrismaModel>
+}
+
+export type EnumApiKeyClientTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ApiKeyClientType | Prisma.EnumApiKeyClientTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ApiKeyClientType[] | Prisma.ListEnumApiKeyClientTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ApiKeyClientType[] | Prisma.ListEnumApiKeyClientTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumApiKeyClientTypeWithAggregatesFilter<$PrismaModel> | $Enums.ApiKeyClientType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumApiKeyClientTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumApiKeyClientTypeFilter<$PrismaModel>
 }
 
 export type EnumCatalogStatusFilter<$PrismaModel = never> = {
@@ -896,6 +913,13 @@ export type NestedEnumApiKeyStatusFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumApiKeyStatusFilter<$PrismaModel> | $Enums.ApiKeyStatus
 }
 
+export type NestedEnumApiKeyClientTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.ApiKeyClientType | Prisma.EnumApiKeyClientTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ApiKeyClientType[] | Prisma.ListEnumApiKeyClientTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ApiKeyClientType[] | Prisma.ListEnumApiKeyClientTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumApiKeyClientTypeFilter<$PrismaModel> | $Enums.ApiKeyClientType
+}
+
 export type NestedJsonNullableFilter<$PrismaModel = never> =
 | Prisma.PatchUndefined<
     Prisma.Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
@@ -928,6 +952,16 @@ export type NestedEnumApiKeyStatusWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumApiKeyStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumApiKeyStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumApiKeyClientTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ApiKeyClientType | Prisma.EnumApiKeyClientTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ApiKeyClientType[] | Prisma.ListEnumApiKeyClientTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ApiKeyClientType[] | Prisma.ListEnumApiKeyClientTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumApiKeyClientTypeWithAggregatesFilter<$PrismaModel> | $Enums.ApiKeyClientType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumApiKeyClientTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumApiKeyClientTypeFilter<$PrismaModel>
 }
 
 export type NestedEnumCatalogStatusFilter<$PrismaModel = never> = {

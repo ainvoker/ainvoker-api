@@ -18,6 +18,7 @@ class ApiKeyService {
         lastUsed: Date | null
         expiresAt: Date | null
         status: string
+        clientType: string
         createdAt: Date
         updatedAt: Date
     }) {
@@ -30,6 +31,7 @@ class ApiKeyService {
             lastUsed: key.lastUsed,
             expiresAt: key.expiresAt,
             status: key.status,
+            clientType: key.clientType,
             createdAt: key.createdAt,
             updatedAt: key.updatedAt,
         }
@@ -54,12 +56,26 @@ class ApiKeyService {
         const project = await projectsService.getProjectForMember(projectId, userId)
         await assertOrgCanMutateResources(project.organizationId)
 
+        if (input.clientType === "BROWSER") {
+            const originCount = await prismaClient.projectAllowedOrigin.count({
+                where: { projectId },
+            })
+            if (originCount === 0) {
+                throw new AppError(
+                    400,
+                    "NO_ALLOWED_ORIGINS",
+                    "Add at least one allowed app URL before creating a browser API key",
+                )
+            }
+        }
+
         const { plaintext, keyHash, keyPrefix } = apiKeyHasher.generate()
 
         const key = await prismaClient.apiKey.create({
             data: {
                 projectId,
                 keyName: input.keyName,
+                clientType: input.clientType,
                 keyHash,
                 keyPrefix,
                 expiresAt: input.expiresAt ?? null,
