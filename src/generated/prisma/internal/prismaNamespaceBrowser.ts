@@ -67,6 +67,7 @@ export const ModelName = {
   ActionInvocation: 'ActionInvocation',
   UsageAnalytics: 'UsageAnalytics',
   Webhook: 'Webhook',
+  PlatformBusinessSettings: 'PlatformBusinessSettings',
   Plan: 'Plan',
   Subscription: 'Subscription',
   Transaction: 'Transaction',
@@ -96,6 +97,8 @@ export const UserScalarFieldEnum = {
   lastName: 'lastName',
   profilePicture: 'profilePicture',
   themePreference: 'themePreference',
+  freeQuotaUnitsUsed: 'freeQuotaUnitsUsed',
+  freeQuotaUnitsLimit: 'freeQuotaUnitsLimit',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -123,6 +126,7 @@ export const OrganizationScalarFieldEnum = {
   paymentMethodType: 'paymentMethodType',
   paymentMethodBrand: 'paymentMethodBrand',
   paymentMethodLast4: 'paymentMethodLast4',
+  scaleWalletBalanceCentavos: 'scaleWalletBalanceCentavos',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -234,9 +238,12 @@ export const AIModelScalarFieldEnum = {
   name: 'name',
   type: 'type',
   contextWindow: 'contextWindow',
+  providerInputPrice: 'providerInputPrice',
+  providerOutputPrice: 'providerOutputPrice',
   inputPrice: 'inputPrice',
   outputPrice: 'outputPrice',
   status: 'status',
+  planTier: 'planTier',
   freeEligible: 'freeEligible',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -256,6 +263,7 @@ export const AIRequestScalarFieldEnum = {
   inputTokens: 'inputTokens',
   outputTokens: 'outputTokens',
   totalTokens: 'totalTokens',
+  quotaTokens: 'quotaTokens',
   latency: 'latency',
   requestCost: 'requestCost',
   requestStatus: 'requestStatus',
@@ -320,6 +328,20 @@ export const WebhookScalarFieldEnum = {
 } as const
 
 export type WebhookScalarFieldEnum = (typeof WebhookScalarFieldEnum)[keyof typeof WebhookScalarFieldEnum]
+
+
+export const PlatformBusinessSettingsScalarFieldEnum = {
+  id: 'id',
+  economyMarkupMultiplier: 'economyMarkupMultiplier',
+  premiumMarkupMultiplier: 'premiumMarkupMultiplier',
+  imageMarkupMultiplier: 'imageMarkupMultiplier',
+  usdToPhpRate: 'usdToPhpRate',
+  quotaReferenceModelId: 'quotaReferenceModelId',
+  scaleAdvanceCentavos: 'scaleAdvanceCentavos',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PlatformBusinessSettingsScalarFieldEnum = (typeof PlatformBusinessSettingsScalarFieldEnum)[keyof typeof PlatformBusinessSettingsScalarFieldEnum]
 
 
 export const PlanScalarFieldEnum = {

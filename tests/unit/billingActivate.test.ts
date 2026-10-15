@@ -35,7 +35,7 @@ describe("activateProSubscription", () => {
             organizationId: org.id,
             paymentReference: reference,
             paymentTokenId: "pt_test_token",
-            amountPhp: 109900,
+            amountPhp: 49900,
         })
         expect(first.activated).toBe(true)
 
@@ -61,7 +61,7 @@ describe("activateProSubscription", () => {
         const second = await activateProSubscription({
             organizationId: org.id,
             paymentReference: reference,
-            amountPhp: 109900,
+            amountPhp: 49900,
         })
         expect(second.alreadyProcessed).toBe(true)
 

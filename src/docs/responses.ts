@@ -52,6 +52,7 @@ export const meResponseSchema = z
     .object({
         user: userSchema,
         memberships: z.array(membershipSchema),
+        isPlatformAdmin: z.boolean(),
     })
     .meta({ id: "MeResponse" })
 

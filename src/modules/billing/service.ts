@@ -7,7 +7,9 @@ import {
     ensureBillingCatalog,
     getPlanByName,
     getProCheckoutAmountPhp,
+    getScaleCheckoutAmountPhp,
     PLAN_NAMES,
+    type PlanName,
 } from "./catalog.js"
 import {
     canReuseXenditCheckoutSession,
@@ -18,9 +20,14 @@ import {
     isDuplicateCustomerReferenceError,
     type XenditSessionResponse,
 } from "./xendit/client.js"
-import { activateProSubscription, renewProSubscription } from "./activate.js"
+import {
+    activateProSubscription,
+    activateScaleSubscription,
+    renewProSubscription,
+} from "./activate.js"
 import { expireLapsedSubscriptions } from "./limits.js"
 import { isEntitlementUnexpired, proRenewsAt } from "./period.js"
+import { previewScaleUpgrade } from "./proration.js"
 import { buildNestedCustomer, sessionCustomerFields } from "./sessionCustomer.js"
 
 const BILLING_ADMIN_ROLES = new Set(["owner", "admin"])
@@ -89,37 +96,38 @@ async function lockOrganizationRow(tx: Prisma.TransactionClient, organizationId:
     await tx.$queryRaw`SELECT id FROM "Organization" WHERE id = ${organizationId} FOR UPDATE`
 }
 
-async function assertNoUnexpiredActivePro(
+async function assertNoUnexpiredActivePlan(
     tx: Prisma.TransactionClient,
     organizationId: string,
-    proPlanId: number,
+    planId: number,
+    planLabel: string,
 ) {
-    const activePro = await tx.subscription.findFirst({
+    const active = await tx.subscription.findFirst({
         where: {
             organizationId,
-            planId: proPlanId,
+            planId,
             status: "ACTIVE",
         },
         orderBy: { startedAt: "desc" },
     })
-    if (activePro && isEntitlementUnexpired(activePro.expiresAt)) {
+    if (active && isEntitlementUnexpired(active.expiresAt)) {
         throw new AppError(
             409,
             "ALREADY_ACTIVE",
-            "Pro is already active for this organization",
+            `${planLabel} is already active for this organization`,
         )
     }
 }
 
-async function findOrCreatePendingPro(
+async function findOrCreatePendingForPlan(
     tx: Prisma.TransactionClient,
     organizationId: string,
-    proPlanId: number,
+    planId: number,
 ) {
     const existingPending = await tx.subscription.findFirst({
         where: {
             organizationId,
-            planId: proPlanId,
+            planId,
             status: "PENDING",
         },
         orderBy: { createdAt: "desc" },
@@ -131,7 +139,7 @@ async function findOrCreatePendingPro(
     return tx.subscription.create({
         data: {
             organizationId,
-            planId: proPlanId,
+            planId,
             status: "PENDING",
             startedAt: new Date(),
         },
@@ -161,14 +169,15 @@ function outcomeFromPendingSession(
 
 async function claimCheckoutSlot(
     organizationId: string,
-    proPlanId: number,
+    planId: number,
+    planLabel: string,
     claimToken: string,
 ): Promise<CheckoutClaimOutcome> {
     return prismaClient.$transaction(async (tx) => {
         await lockOrganizationRow(tx, organizationId)
-        await assertNoUnexpiredActivePro(tx, organizationId, proPlanId)
+        await assertNoUnexpiredActivePlan(tx, organizationId, planId, planLabel)
 
-        const pending = await findOrCreatePendingPro(tx, organizationId, proPlanId)
+        const pending = await findOrCreatePendingForPlan(tx, organizationId, planId)
         const sessionId = pending.xenditSessionId
 
         if (sessionId && !isCheckoutClaim(sessionId)) {
@@ -194,14 +203,15 @@ async function claimCheckoutSlot(
 
 async function claimAfterObservedSession(
     organizationId: string,
-    proPlanId: number,
+    planId: number,
+    planLabel: string,
     pendingId: string,
     observedSessionId: string,
     claimToken: string,
 ): Promise<CheckoutClaimOutcome> {
     return prismaClient.$transaction(async (tx) => {
         await lockOrganizationRow(tx, organizationId)
-        await assertNoUnexpiredActivePro(tx, organizationId, proPlanId)
+        await assertNoUnexpiredActivePlan(tx, organizationId, planId, planLabel)
 
         const pending = await tx.subscription.findUniqueOrThrow({
             where: { id: pendingId },
@@ -309,6 +319,7 @@ async function loadOrgXenditCustomer(organizationId: string) {
             paymentMethodType: true,
             paymentMethodBrand: true,
             paymentMethodLast4: true,
+            scaleWalletBalanceCentavos: true,
         },
     })
 }
@@ -494,8 +505,10 @@ class BillingService {
         const expired = subscriptions.find((s) => s.status === "EXPIRED")
         const subscription = unexpiredActive ?? pending ?? expired ?? subscriptions[0]
 
-        const pendingPro = subscriptions.find(
-            (s) => s.status === "PENDING" && s.plan.name === PLAN_NAMES.pro,
+        const pendingPaid = subscriptions.find(
+            (s) =>
+                s.status === "PENDING" &&
+                (s.plan.name === PLAN_NAMES.pro || s.plan.name === PLAN_NAMES.scale),
         )
 
         if (!subscription) {
@@ -510,13 +523,20 @@ class BillingService {
             billingMode: subscription.plan.billingMode,
             tokenLimit: subscription.plan.tokenLimit,
             requestLimit: subscription.plan.requestLimit,
-            pendingPlanName: pendingPro ? pendingPro.plan.name : null,
+            pendingPlanName: pendingPaid ? pendingPaid.plan.name : null,
             expiresAt: subscription.expiresAt ? subscription.expiresAt.toISOString() : null,
             renewsAt: subscription.expiresAt ? subscription.expiresAt.toISOString() : null,
             cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
             canceledAt: subscription.canceledAt ? subscription.canceledAt.toISOString() : null,
             paymentMethod: paymentMethodSnapshot(org),
+            scaleWalletBalanceCentavos: org.scaleWalletBalanceCentavos,
         }
+    }
+
+    async getScaleUpgradePreview(organizationId: string, roleName: string) {
+        assertBillingRole(roleName)
+        await expireLapsedSubscriptions(organizationId)
+        return previewScaleUpgrade(organizationId)
     }
 
     async listOrganizationInvoices(organizationId: string, roleName: string) {
@@ -609,11 +629,12 @@ class BillingService {
         }
     }
 
-    async createProCheckoutSession(input: {
+    async createCheckoutSession(input: {
         organizationId: string
         userId: string
         roleName: string
         returnUrl: string
+        plan: PlanName
     }): Promise<CheckoutSessionResult> {
         assertBillingEnabled()
         assertBillingRole(input.roleName)
@@ -634,14 +655,16 @@ class BillingService {
         // Expire outside the org row lock — uses its own connection.
         await expireLapsedSubscriptions(input.organizationId)
         await ensureBillingCatalog()
-        const proPlan = await getPlanByName(PLAN_NAMES.pro)
+        const planRecord = await getPlanByName(input.plan)
+        const planLabel = input.plan === PLAN_NAMES.pro ? "Pro" : "Scale"
         const claimToken = randomUUID()
         const deadline = Date.now() + CHECKOUT_CLAIM_TTL_MS + 5_000
 
         while (Date.now() < deadline) {
             const outcome = await claimCheckoutSlot(
                 input.organizationId,
-                proPlan.id,
+                planRecord.id,
+                planLabel,
                 claimToken,
             )
 
@@ -661,7 +684,8 @@ class BillingService {
 
                 const after = await claimAfterObservedSession(
                     input.organizationId,
-                    proPlan.id,
+                    planRecord.id,
+                    planLabel,
                     outcome.pendingId,
                     outcome.sessionId,
                     claimToken,
@@ -673,7 +697,13 @@ class BillingService {
                 if (after.kind === "reuse") {
                     continue
                 }
-                return this.createXenditSessionForClaim(input, user, after.pendingId, after.claim)
+                return this.createXenditSessionForClaim(
+                    input,
+                    user,
+                    after.pendingId,
+                    after.claim,
+                    input.plan,
+                )
             }
 
             return this.createXenditSessionForClaim(
@@ -681,6 +711,7 @@ class BillingService {
                 user,
                 outcome.pendingId,
                 outcome.claim,
+                input.plan,
             )
         }
 
@@ -689,6 +720,16 @@ class BillingService {
             "PAYMENT_PROVIDER_ERROR",
             "Checkout is busy for this organization; please try again",
         )
+    }
+
+    /** @deprecated Use createCheckoutSession({ plan: "pro", ... }) */
+    async createProCheckoutSession(input: {
+        organizationId: string
+        userId: string
+        roleName: string
+        returnUrl: string
+    }): Promise<CheckoutSessionResult> {
+        return this.createCheckoutSession({ ...input, plan: PLAN_NAMES.pro })
     }
 
     private async createXenditSessionForClaim(
@@ -705,6 +746,7 @@ class BillingService {
         },
         pendingId: string,
         claim: string,
+        plan: PlanName,
     ): Promise<CheckoutSessionResult> {
         const customerReference = await ensureXenditCustomerReference(input.organizationId)
         await resolveXenditCustomerId(input.organizationId, customerReference)
@@ -712,46 +754,71 @@ class BillingService {
         const nestedCustomer = buildNestedCustomer(customerReference, user)
         const customerFields = sessionCustomerFields(org, nestedCustomer)
 
-        const amount = getProCheckoutAmountPhp()
-        const referenceId = `pro_${input.organizationId}_${Date.now()}`
         const createdAt = new Date()
         const sessionExpiresAt = new Date(createdAt.getTime() + 30 * 60 * 1000)
-        // First month is charged by the session; Xendit requires anchor_date >= expires_at.
-        const anchorDate = proRenewsAt(createdAt)
 
-        const sessionBody: Record<string, unknown> = {
-            reference_id: referenceId,
-            session_type: "SUBSCRIPTION",
-            mode: "COMPONENTS",
-            amount: Number(amount),
-            currency: "PHP",
-            country: "PH",
-            locale: "en",
-            description: "AInvoker Pro (monthly)",
-            expires_at: sessionExpiresAt.toISOString(),
-            ...customerFields,
-            metadata: {
-                organizationId: input.organizationId,
-                planName: PLAN_NAMES.pro,
-                userId: input.userId,
-                subscriptionId: pendingId,
-            },
-            subscription: {
-                schedule: {
-                    interval: "MONTH",
-                    interval_count: 1,
-                    anchor_date: anchorDate.toISOString(),
-                    retry_interval: "DAY",
-                    retry_interval_count: 1,
-                    total_retry: 3,
-                    failed_attempt_notifications: [1, 2, 3],
+        let sessionBody: Record<string, unknown>
+        if (plan === PLAN_NAMES.scale) {
+            const amount = getScaleCheckoutAmountPhp()
+            sessionBody = {
+                reference_id: `scale_${input.organizationId}_${Date.now()}`,
+                session_type: "PAY",
+                mode: "COMPONENTS",
+                amount: Number(amount),
+                currency: "PHP",
+                country: "PH",
+                locale: "en",
+                description: "AInvoker Scale — wallet advance",
+                expires_at: sessionExpiresAt.toISOString(),
+                ...customerFields,
+                metadata: {
+                    organizationId: input.organizationId,
+                    planName: PLAN_NAMES.scale,
+                    userId: input.userId,
+                    subscriptionId: pendingId,
                 },
-                failed_cycle_action: "RESUME",
-            },
-            components_configuration: {
-                origins: env.getXenditComponentsOrigins(),
-                return_url: input.returnUrl,
-            },
+                components_configuration: {
+                    origins: env.getXenditComponentsOrigins(),
+                    return_url: input.returnUrl,
+                },
+            }
+        } else {
+            const amount = getProCheckoutAmountPhp()
+            const anchorDate = proRenewsAt(createdAt)
+            sessionBody = {
+                reference_id: `pro_${input.organizationId}_${Date.now()}`,
+                session_type: "SUBSCRIPTION",
+                mode: "COMPONENTS",
+                amount: Number(amount),
+                currency: "PHP",
+                country: "PH",
+                locale: "en",
+                description: "AInvoker Pro (monthly)",
+                expires_at: sessionExpiresAt.toISOString(),
+                ...customerFields,
+                metadata: {
+                    organizationId: input.organizationId,
+                    planName: PLAN_NAMES.pro,
+                    userId: input.userId,
+                    subscriptionId: pendingId,
+                },
+                subscription: {
+                    schedule: {
+                        interval: "MONTH",
+                        interval_count: 1,
+                        anchor_date: anchorDate.toISOString(),
+                        retry_interval: "DAY",
+                        retry_interval_count: 1,
+                        total_retry: 3,
+                        failed_attempt_notifications: [1, 2, 3],
+                    },
+                    failed_cycle_action: "RESUME",
+                },
+                components_configuration: {
+                    origins: env.getXenditComponentsOrigins(),
+                    return_url: input.returnUrl,
+                },
+            }
         }
 
         let session: XenditSessionResponse
@@ -838,7 +905,6 @@ class BillingService {
         const eventName = event.event ?? ""
         const data = event.data ?? (payload as Record<string, unknown>)
         const metadata = extractMetadata(data)
-        const amountPhp = getProCheckoutAmountPhp()
         const receiptUrl = extractReceiptUrl(data)
         const pm = extractPaymentMethodSnapshot(data)
         const recurringPlanId = extractRecurringPlanId(data)
@@ -849,8 +915,12 @@ class BillingService {
             eventName === "payment.succeeded" ||
             eventName === "payment_token.activation"
         ) {
-            if (!metadata?.organizationId || metadata.planName !== PLAN_NAMES.pro) {
-                // Token activation may still update payment method on known org via plan id
+            const planName = metadata?.planName
+            const organizationId = metadata?.organizationId
+            const isPro = organizationId && planName === PLAN_NAMES.pro
+            const isScale = organizationId && planName === PLAN_NAMES.scale
+
+            if (!isPro && !isScale) {
                 if (eventName === "payment_token.activation" && recurringPlanId) {
                     await this.persistPaymentMethodByPlanId(recurringPlanId, pm)
                 }
@@ -863,18 +933,33 @@ class BillingService {
                 (data.payment_session_id as string | undefined) ??
                 `xendit_${Date.now()}`
 
-            await activateProSubscription({
-                organizationId: metadata.organizationId,
-                paymentReference: paymentId,
-                amountPhp,
-                receiptUrl,
-                description: "AInvoker Pro — first payment",
+            const pmFields = {
                 ...(pm.paymentTokenId ? { paymentTokenId: pm.paymentTokenId } : {}),
                 ...(pm.paymentMethodType ? { paymentMethodType: pm.paymentMethodType } : {}),
                 ...(pm.paymentMethodBrand ? { paymentMethodBrand: pm.paymentMethodBrand } : {}),
                 ...(pm.paymentMethodLast4 ? { paymentMethodLast4: pm.paymentMethodLast4 } : {}),
-                ...(recurringPlanId ? { xenditRecurringPlanId: recurringPlanId } : {}),
-            })
+            }
+
+            if (isPro) {
+                await activateProSubscription({
+                    organizationId,
+                    paymentReference: paymentId,
+                    amountPhp: getProCheckoutAmountPhp(),
+                    receiptUrl,
+                    description: "AInvoker Pro — first payment",
+                    ...pmFields,
+                    ...(recurringPlanId ? { xenditRecurringPlanId: recurringPlanId } : {}),
+                })
+            } else {
+                await activateScaleSubscription({
+                    organizationId,
+                    paymentReference: paymentId,
+                    amountPhp: getScaleCheckoutAmountPhp(),
+                    receiptUrl,
+                    description: "AInvoker Scale — wallet advance",
+                    ...pmFields,
+                })
+            }
 
             return { handled: true, activated: true }
         }
@@ -903,7 +988,7 @@ class BillingService {
             await renewProSubscription({
                 organizationId,
                 paymentReference: paymentId,
-                amountPhp,
+                amountPhp: getProCheckoutAmountPhp(),
                 receiptUrl,
                 description: "AInvoker Pro — renewal",
                 renewsAt: next && !Number.isNaN(next.getTime()) ? next : proRenewsAt(),

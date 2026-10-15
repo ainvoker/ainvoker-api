@@ -2,13 +2,9 @@ import { z } from "zod"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
 import { getActiveSubscriptionWithPlan } from "../billing/limits.js"
+import { isModelAllowedOnPlan } from "../billing/quotaHelpers.js"
 import projectsService from "../projects/service.js"
-import {
-    backfillProjectModelAllows,
-    hasModelAdapter,
-    isModelAllowedOnPlan,
-    ROUTABLE_MODEL_TYPES,
-} from "./allowlist.js"
+import { backfillProjectModelAllows, hasModelAdapter, ROUTABLE_MODEL_TYPES } from "./allowlist.js"
 
 const MODEL_MANAGER_ROLES = new Set(["owner", "admin"])
 
@@ -74,7 +70,7 @@ class ProjectModelsService {
         return models
             .filter((model) => hasModelAdapter(model.type, model.provider.name))
             .map((model) => {
-                const locked = !isModelAllowedOnPlan(planName, model.freeEligible)
+                const locked = !isModelAllowedOnPlan(planName, model)
                 const allow = model.projectAllows[0]
                 const enabled = locked ? false : Boolean(allow?.enabled)
                 return {
@@ -121,11 +117,11 @@ class ProjectModelsService {
         }
 
         const subscription = await getActiveSubscriptionWithPlan(project.organizationId)
-        if (!isModelAllowedOnPlan(subscription.plan.name, model.freeEligible)) {
+        if (!isModelAllowedOnPlan(subscription.plan.name, model)) {
             throw new AppError(
                 403,
                 "MODEL_NOT_ALLOWED_ON_PLAN",
-                `Model "${model.name}" is not available on the Free plan`,
+                `Model "${model.name}" is not available on the ${subscription.plan.name} plan`,
             )
         }
 

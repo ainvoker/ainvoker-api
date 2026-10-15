@@ -1,13 +1,9 @@
-import { Prisma } from "../../generated/prisma/client.js"
 import type { AIModel, AIProvider } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
+import { ensureBusinessSettings, retailPricesForModel } from "../business/retail.js"
 import { hasModelAdapter } from "../text/allowlist.js"
-import type {
-    CreateAdminModelInput,
-    ListAdminModelsQuery,
-    UpdateAdminModelInput,
-} from "./schemas.js"
+import type { ListAdminModelsQuery, UpdateAdminModelInput } from "./schemas.js"
 
 export type AdminProviderItem = {
     id: number
@@ -27,11 +23,13 @@ export type AdminModelItem = {
     slug: string
     type: AIModel["type"]
     contextWindow: number
+    providerInputPrice: string
+    providerOutputPrice: string
     inputPrice: string
     outputPrice: string
+    planTier: AIModel["planTier"]
     status: AIModel["status"]
     freeEligible: boolean
-    /** False when no adapter is registered for this provider and type; the model will not route. */
     routable: boolean
     createdAt: string
     updatedAt: string
@@ -49,19 +47,16 @@ class AdminModelsService {
             slug: `${model.provider.name}/${model.name}`,
             type: model.type,
             contextWindow: model.contextWindow,
+            providerInputPrice: model.providerInputPrice.toString(),
+            providerOutputPrice: model.providerOutputPrice.toString(),
             inputPrice: model.inputPrice.toString(),
             outputPrice: model.outputPrice.toString(),
+            planTier: model.planTier,
             status: model.status,
             freeEligible: model.freeEligible,
             routable: hasModelAdapter(model.type, model.provider.name),
             createdAt: model.createdAt.toISOString(),
             updatedAt: model.updatedAt.toISOString(),
-        }
-    }
-
-    private assertFreeEligibleAllowed(type: AIModel["type"], freeEligible: boolean) {
-        if (type === "IMAGE" && freeEligible) {
-            throw new AppError(400, "VALIDATION_ERROR", "Image models cannot be available on the Free plan")
         }
     }
 
@@ -102,49 +97,6 @@ class AdminModelsService {
         return this.serializeModel(model)
     }
 
-    async createModel(input: CreateAdminModelInput): Promise<AdminModelItem> {
-        const provider = await prismaClient.aIProvider.findUnique({
-            where: { id: input.providerId },
-        })
-        if (!provider) {
-            throw new AppError(404, "NOT_FOUND", "Provider not found")
-        }
-        if (input.status === "ACTIVE" && provider.status !== "ACTIVE") {
-            throw new AppError(
-                400,
-                "VALIDATION_ERROR",
-                `Provider "${provider.name}" is not active; create the model as INACTIVE instead`,
-            )
-        }
-        this.assertFreeEligibleAllowed(input.type, input.freeEligible)
-
-        try {
-            const model = await prismaClient.aIModel.create({
-                data: {
-                    providerId: provider.id,
-                    name: input.name,
-                    type: input.type,
-                    contextWindow: input.contextWindow,
-                    inputPrice: new Prisma.Decimal(input.inputPrice),
-                    outputPrice: new Prisma.Decimal(input.outputPrice),
-                    status: input.status,
-                    freeEligible: input.freeEligible,
-                },
-                include: { provider: { select: { name: true } } },
-            })
-            return this.serializeModel(model)
-        } catch (err) {
-            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-                throw new AppError(
-                    409,
-                    "CONFLICT",
-                    `Model "${provider.name}/${input.name}" already exists`,
-                )
-            }
-            throw err
-        }
-    }
-
     async updateModel(modelId: number, input: UpdateAdminModelInput): Promise<AdminModelItem> {
         const existing = await prismaClient.aIModel.findUnique({
             where: { id: modelId },
@@ -160,20 +112,30 @@ class AdminModelsService {
                 `Provider "${existing.provider.name}" is not active`,
             )
         }
-        this.assertFreeEligibleAllowed(existing.type, input.freeEligible ?? existing.freeEligible)
+
+        const planTier = input.planTier ?? existing.planTier
+        if (planTier === "PREMIUM" && input.freeEligible === true) {
+            throw new AppError(
+                400,
+                "VALIDATION_ERROR",
+                "Premium models cannot be available on the Free plan",
+            )
+        }
+        const freeEligible =
+            planTier === "PREMIUM" ? false : (input.freeEligible ?? existing.freeEligible)
+
+        const retail =
+            planTier !== existing.planTier
+                ? retailPricesForModel(await ensureBusinessSettings(), { ...existing, planTier })
+                : {}
 
         const model = await prismaClient.aIModel.update({
             where: { id: modelId },
             data: {
-                ...(input.contextWindow !== undefined ? { contextWindow: input.contextWindow } : {}),
-                ...(input.inputPrice !== undefined
-                    ? { inputPrice: new Prisma.Decimal(input.inputPrice) }
-                    : {}),
-                ...(input.outputPrice !== undefined
-                    ? { outputPrice: new Prisma.Decimal(input.outputPrice) }
-                    : {}),
                 ...(input.status !== undefined ? { status: input.status } : {}),
-                ...(input.freeEligible !== undefined ? { freeEligible: input.freeEligible } : {}),
+                planTier,
+                freeEligible,
+                ...retail,
             },
             include: { provider: { select: { name: true } } },
         })

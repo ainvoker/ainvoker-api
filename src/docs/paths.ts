@@ -16,6 +16,7 @@ import {
     orgSubscriptionResponseSchema,
     invoiceItemSchema,
     cancelSubscriptionResponseSchema,
+    scaleUpgradePreviewSchema,
     createProjectSchema,
     projectParamsSchema,
     updateProjectSchema,
@@ -35,7 +36,6 @@ import {
     transferOwnershipSchema,
     updateMemberRoleSchema,
     adminModelParamsSchema,
-    createAdminModelSchema,
     listAdminModelsQuerySchema,
     updateAdminModelSchema,
 } from "./schemas.js"
@@ -153,7 +153,8 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         path: "/api/v1/me/bootstrap",
         tags: ["Users"],
         summary: "Bootstrap user and Personal organization",
-        description: "Idempotent create of app User + Personal org. Optionally seeds profile fields.",
+        description:
+            "Idempotent create of app User + Personal org. Optionally seeds profile fields. `isPlatformAdmin` reflects `PLATFORM_ADMIN_USER_IDS`.",
         security: bearerAuth,
         request: {
             body: {
@@ -219,7 +220,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         tags: ["Organizations"],
         summary: "Create an organization",
         description:
-            "Create an additional organization with Pro (`plan: pro`). Pro subscription starts PENDING until Xendit checkout completes. Scale requires contact sales.",
+            "Create an additional organization with Pro or Scale (`plan: pro | scale`). The subscription starts PENDING until Xendit checkout completes. A Pro organization can later upgrade to Scale through checkout.",
         security: bearerAuth,
         request: {
             body: {
@@ -371,6 +372,28 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
 
     registry.registerPath({
         method: "get",
+        path: "/api/v1/organizations/{orgId}/subscription/scale-upgrade-preview",
+        tags: ["Billing"],
+        summary: "Preview a Pro to Scale upgrade",
+        description:
+            "Owner/admin only. Returns the Scale wallet advance plus the prorated credit for unused Pro time. Start the upgrade with POST checkout-sessions and `plan: scale`; on payment, Pro recurring billing stops and the credit lands in the Scale wallet (no card refund).",
+        security: bearerAuth,
+        request: { params: orgIdParamsSchema },
+        responses: {
+            200: {
+                description: "Upgrade preview",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(scaleUpgradePreviewSchema),
+                    },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
         path: "/api/v1/organizations/{orgId}/usage",
         tags: ["Usage"],
         summary: "Get organization usage dashboard",
@@ -393,9 +416,9 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         method: "post",
         path: "/api/v1/organizations/{orgId}/checkout-sessions",
         tags: ["Billing"],
-        summary: "Create Xendit Components checkout session (Pro)",
+        summary: "Create Xendit Components checkout session (Pro or Scale)",
         description:
-            "Creates a recurring SUBSCRIPTION payment session and returns `componentsSdkKey` for embedded Xendit Components. Requires `BILLING_ENABLED=true` and org owner/admin.",
+            "`plan: pro` creates a recurring SUBSCRIPTION session. `plan: scale` creates a one-time wallet advance session; on an active Pro org this is the upgrade path (see scale-upgrade-preview). Returns `componentsSdkKey` for embedded Xendit Components. Requires `BILLING_ENABLED=true` and org owner/admin.",
         security: bearerAuth,
         request: {
             params: orgIdParamsSchema,
@@ -784,7 +807,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         tags: ["Admin Catalog"],
         summary: "List AI providers",
         description:
-            "Platform admin only. Providers are added by developers (adapter + seed); this list feeds the model form.",
+            "Platform admin only. Providers are added by developers (adapter + seed).",
         security: bearerAuth,
         responses: {
             200: {
@@ -819,29 +842,6 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
     })
 
     registry.registerPath({
-        method: "post",
-        path: "/api/v1/admin/models",
-        tags: ["Admin Catalog"],
-        summary: "Create a catalog model",
-        description:
-            "Platform admin only. Prices are USD per 1M tokens. Image models cannot be freeEligible. The model routes only when its provider has a deployed adapter (see `routable`).",
-        security: bearerAuth,
-        request: {
-            body: {
-                required: true,
-                content: { "application/json": { schema: createAdminModelSchema } },
-            },
-        },
-        responses: {
-            201: {
-                description: "Created model",
-                content: { "application/json": { schema: dataEnvelope(adminModelSchema) } },
-            },
-            ...errorResponses,
-        },
-    })
-
-    registry.registerPath({
         method: "get",
         path: "/api/v1/admin/models/{modelId}",
         tags: ["Admin Catalog"],
@@ -864,9 +864,9 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         method: "patch",
         path: "/api/v1/admin/models/{modelId}",
         tags: ["Admin Catalog"],
-        summary: "Update a catalog model",
+        summary: "Update catalog model status and plan access",
         description:
-            "Platform admin only. Use `status` to retire a model (INACTIVE or DEPRECATED); models are never hard-deleted.",
+            "Platform admin only. Body accepts any of `status`, `planTier`, `freeEligible`. Models are defined in code/seed; use status to retire (INACTIVE or DEPRECATED). Pro and Scale can use every model. `planTier` sets the markup: ECONOMY uses the economy markup and may be offered on Free when `freeEligible`; PREMIUM uses the premium markup and always has `freeEligible: false`. Changing `planTier` recomputes the model's retail price.",
         security: bearerAuth,
         request: {
             params: adminModelParamsSchema,
@@ -979,7 +979,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         tags: ["Gateway"],
         summary: "Text chat completion",
         description:
-            "Invoke a text chat model via the data plane. Authenticate with a project API key (`Authorization: Bearer ain_…`). Model may be a `provider/model` slug (e.g. `openai/gpt-4o-mini`) or a bare model name when exactly one ACTIVE catalog row matches. Free plans may only call `freeEligible` catalog models. The project allowlist must enable the model. Subject to monthly request/token caps. Optional `tools` (max 32) are forwarded to the vendor; tool calls come back on `message.toolCalls` with `content` \"\" on a tool-only reply. The gateway does not run tools: the caller runs them and sends the result as a `tool` message on the next request.",
+            "Invoke a text chat model via the data plane. Authenticate with a project API key (`Authorization: Bearer ain_…`). Model may be a `provider/model` slug (e.g. `openai/gpt-4o-mini`) or a bare model name when exactly one ACTIVE catalog row matches. Free plans may only call `freeEligible` economy models; Pro and Scale may call every model. The project allowlist must enable the model. Subject to monthly request/token caps. Optional `tools` (max 32) are forwarded to the vendor; tool calls come back on `message.toolCalls` with `content` \"\" on a tool-only reply. The gateway does not run tools: the caller runs them and sends the result as a `tool` message on the next request.",
         security: apiKeyAuth,
         request: {
             body: {
@@ -1066,7 +1066,7 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
         tags: ["Gateway"],
         summary: "Image generation",
         description:
-            "Generate images from a text prompt. Authenticate with a project API key (`Authorization: Bearer ain_…`). Model resolution, project allowlist, and monthly request/token caps work the same as `POST /v1/text/chat`. No image model is available on the Free plan (`403 MODEL_NOT_ALLOWED_ON_PLAN`). Images come back base64-encoded; the gateway does not store image bytes. Each requested image reserves 8,000 output tokens against the monthly cap until the provider reports actual usage.",
+            "Generate images from a text prompt. Authenticate with a project API key (`Authorization: Bearer ain_…`). Model resolution, project allowlist, and monthly request/token caps work the same as `POST /v1/text/chat`. Image models are available on Pro and Scale; Free gets `403 MODEL_NOT_ALLOWED_ON_PLAN`. `size`, `quality`, and `outputFormat` apply to OpenAI models; Gemini models ignore them. Images come back base64-encoded; the gateway does not store image bytes. Each requested image reserves 8,000 output tokens against the monthly cap until the provider reports actual usage.",
         security: apiKeyAuth,
         request: {
             body: {

@@ -3,6 +3,7 @@ import prismaClient from "../../platform/prisma.js"
 import { chatProviderRegistry, imageProviderRegistry } from "../../providers/index.js"
 import { getActiveSubscriptionWithPlan } from "../billing/limits.js"
 import { PLAN_NAMES } from "../billing/catalog.js"
+import { isModelEnabledByDefault } from "../billing/quotaHelpers.js"
 
 type DbClient = Prisma.TransactionClient | typeof prismaClient
 
@@ -20,13 +21,16 @@ export function hasModelAdapter(type: AIModelType, providerName: string): boolea
     return false
 }
 
+export type DefaultModelAllow = { modelId: number; enabled: boolean }
+
 /**
- * ACTIVE text and image model ids the org plan may use that also have an adapter.
+ * ACTIVE text and image models the org plan may use that also have an adapter,
+ * with the enabled state a new allow row should start with.
  */
-export async function listPlanAllowedRoutableModelIds(
+export async function listDefaultModelAllows(
     organizationId: string,
     db: DbClient = prismaClient,
-): Promise<number[]> {
+): Promise<DefaultModelAllow[]> {
     const subscription = await getActiveSubscriptionWithPlan(organizationId)
     const planName = subscription.plan.name
 
@@ -35,43 +39,31 @@ export async function listPlanAllowedRoutableModelIds(
             type: { in: ROUTABLE_MODEL_TYPES },
             status: "ACTIVE",
             provider: { status: "ACTIVE" },
-            ...(planName === PLAN_NAMES.free ? { freeEligible: true } : {}),
-        },
+            ...(planName === PLAN_NAMES.free ? { planTier: "ECONOMY", freeEligible: true } : {}),        },
         include: { provider: { select: { name: true } } },
     })
 
     return models
         .filter((model) => hasModelAdapter(model.type, model.provider.name))
-        .map((model) => model.id)
+        .map((model) => ({ modelId: model.id, enabled: isModelEnabledByDefault(model) }))
 }
 
 /**
- * Insert enabled:true allow rows for plan-allowed ACTIVE models that have a
- * registered adapter. Never updates existing rows (owner disabled stays off).
+ * Insert allow rows for plan-allowed ACTIVE models that have a registered adapter
+ * (premium disabled, others enabled). Never updates existing rows.
  */
 export async function backfillProjectModelAllows(
     projectId: string,
     organizationId: string,
     db: DbClient = prismaClient,
 ): Promise<void> {
-    const modelIds = await listPlanAllowedRoutableModelIds(organizationId, db)
-    if (modelIds.length === 0) {
+    const allows = await listDefaultModelAllows(organizationId, db)
+    if (allows.length === 0) {
         return
     }
 
     await db.projectModelAllow.createMany({
-        data: modelIds.map((modelId) => ({
-            projectId,
-            modelId,
-            enabled: true,
-        })),
+        data: allows.map((allow) => ({ projectId, ...allow })),
         skipDuplicates: true,
     })
-}
-
-export function isModelAllowedOnPlan(planName: string, freeEligible: boolean): boolean {
-    if (planName !== PLAN_NAMES.free) {
-        return true
-    }
-    return freeEligible
 }

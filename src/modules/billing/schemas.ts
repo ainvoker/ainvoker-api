@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 export const createCheckoutSessionSchema = z.object({
-    plan: z.literal("pro"),
+    plan: z.enum(["pro", "scale"]),
     returnUrl: z.string().url().optional(),
 })
 
@@ -26,6 +26,14 @@ export const orgSubscriptionResponseSchema = z.object({
     cancelAtPeriodEnd: z.boolean().optional(),
     canceledAt: z.string().nullable().optional(),
     paymentMethod: paymentMethodSchema.optional(),
+    scaleWalletBalanceCentavos: z.number().int().optional(),
+})
+
+export const scaleUpgradePreviewSchema = z.object({
+    hasActivePro: z.boolean(),
+    proCreditPhp: z.number(),
+    advancePhp: z.number(),
+    totalWalletCreditPhp: z.number(),
 })
 
 export const invoiceItemSchema = z.object({

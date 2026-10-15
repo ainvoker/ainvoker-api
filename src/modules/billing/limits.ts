@@ -8,7 +8,15 @@ import {
     startOfUtcMonth,
 } from "../usage/aggregate.js"
 import { ensureBillingCatalog, getPlanByName, PLAN_NAMES, type PlanName } from "./catalog.js"
+import {
+    assertModelAllowedForPlan,
+    getOrganizationOwnerUserId,
+    isModelEnabledByDefault,
+    quotaUnitsForHold,
+} from "./quotaHelpers.js"
 import { isEntitlementUnexpired, quotaPeriodForSubscription } from "./period.js"
+
+export { assertModelAllowedForPlan }
 
 export type QuotaSnapshot = {
     planName: string
@@ -44,6 +52,12 @@ export type ReservePendingTextRequestInput = {
 
 export async function expireLapsedSubscriptions(organizationId: string) {
     const now = new Date()
+    const { closeScaleBillingPeriodIfDue } = await import("./scaleWallet.js")
+    try {
+        await closeScaleBillingPeriodIfDue(organizationId, now)
+    } catch {
+        // Org may lack entitlement during checkout; ignore.
+    }
     await prismaClient.subscription.updateMany({
         where: {
             organizationId,
@@ -130,23 +144,6 @@ export async function assertOrgCanMutateResources(organizationId: string) {
     await getActiveSubscriptionWithPlan(organizationId)
 }
 
-export function assertModelAllowedForPlan(
-    plan: Pick<Plan, "name">,
-    model: Pick<AIModel, "freeEligible" | "name">,
-) {
-    if (plan.name !== PLAN_NAMES.free) {
-        return
-    }
-
-    if (!model.freeEligible) {
-        throw new AppError(
-            403,
-            "MODEL_NOT_ALLOWED_ON_PLAN",
-            `Model "${model.name}" is not available on the Free plan`,
-        )
-    }
-}
-
 /**
  * Enforce monthly quotas for FIXED_MONTHLY plans.
  * For METERED, only enforce when requestLimit/tokenLimit are > 0 (safety ceilings).
@@ -156,10 +153,22 @@ export function assertModelAllowedForPlan(
  */
 function enforcePlanQuota(
     plan: Pick<Plan, "name" | "billingMode" | "requestLimit" | "tokenLimit">,
-    period: { requestsUsed: number; tokensUsed: number; periodStart: Date },
+    period: {
+        requestsUsed: number
+        tokensUsed: number
+        periodStart: Date
+        tokenLimit?: number
+    },
 ): QuotaSnapshot {
-    const enforceRequests = plan.billingMode === "FIXED_MONTHLY" || plan.requestLimit > 0
-    const enforceTokens = plan.billingMode === "FIXED_MONTHLY" || plan.tokenLimit > 0
+    const tokenLimit = period.tokenLimit ?? plan.tokenLimit
+    const enforceRequests =
+        plan.name === PLAN_NAMES.free ||
+        plan.billingMode === "FIXED_MONTHLY" ||
+        plan.requestLimit > 0
+    const enforceTokens =
+        plan.name === PLAN_NAMES.free ||
+        plan.billingMode === "FIXED_MONTHLY" ||
+        plan.tokenLimit > 0
 
     if (enforceRequests && plan.requestLimit > 0 && period.requestsUsed >= plan.requestLimit) {
         throw new AppError(
@@ -169,11 +178,11 @@ function enforcePlanQuota(
         )
     }
 
-    if (enforceTokens && plan.tokenLimit > 0 && period.tokensUsed >= plan.tokenLimit) {
+    if (enforceTokens && tokenLimit > 0 && period.tokensUsed >= tokenLimit) {
         throw new AppError(
             429,
             "RATE_LIMIT_EXCEEDED",
-            `Monthly token limit of ${plan.tokenLimit} exceeded`,
+            `Token limit of ${tokenLimit} exceeded`,
         )
     }
 
@@ -182,7 +191,7 @@ function enforcePlanQuota(
         billingMode: plan.billingMode,
         requestLimit: plan.requestLimit,
         requestsUsed: period.requestsUsed,
-        tokenLimit: plan.tokenLimit,
+        tokenLimit,
         tokensUsed: period.tokensUsed,
         periodStart: period.periodStart,
     }
@@ -234,14 +243,54 @@ async function aggregateOrgQuotaUsage(
             requestStatus: { in: [...QUOTA_STATUSES] },
         },
         _count: { _all: true },
-        _sum: { totalTokens: true },
+        _sum: { totalTokens: true, quotaTokens: true },
     })
 
+    const quotaSum = quotaAgg._sum.quotaTokens ?? 0
+    const legacySum = quotaAgg._sum.totalTokens ?? 0
     return {
         requestsUsed: quotaAgg._count._all,
-        tokensUsed: quotaAgg._sum.totalTokens ?? 0,
+        tokensUsed: quotaSum > 0 ? quotaSum : legacySum,
         periodStart,
     }
+}
+
+async function sumPendingQuotaUnits(db: DbClient, organizationId: string): Promise<number> {
+    const agg = await db.aIRequest.aggregate({
+        where: {
+            project: { organizationId },
+            requestStatus: "PENDING",
+        },
+        _sum: { quotaTokens: true, totalTokens: true },
+    })
+    return agg._sum.quotaTokens ?? agg._sum.totalTokens ?? 0
+}
+
+async function resolveTokenQuotaForPlan(
+    db: DbClient,
+    organizationId: string,
+    plan: Pick<Plan, "name" | "tokenLimit">,
+    periodTokensUsed: number,
+): Promise<{ tokensUsed: number; tokenLimit: number }> {
+    if (plan.name === PLAN_NAMES.free) {
+        const ownerId = await getOrganizationOwnerUserId(organizationId)
+        if (!ownerId) {
+            return { tokensUsed: periodTokensUsed, tokenLimit: plan.tokenLimit }
+        }
+        const user = await db.user.findUnique({
+            where: { id: ownerId },
+            select: { freeQuotaUnitsUsed: true, freeQuotaUnitsLimit: true },
+        })
+        if (!user) {
+            return { tokensUsed: periodTokensUsed, tokenLimit: plan.tokenLimit }
+        }
+        const pending = await sumPendingQuotaUnits(db, organizationId)
+        return {
+            tokensUsed: user.freeQuotaUnitsUsed + pending,
+            tokenLimit: user.freeQuotaUnitsLimit,
+        }
+    }
+    return { tokensUsed: periodTokensUsed, tokenLimit: plan.tokenLimit }
 }
 
 /**
@@ -257,8 +306,11 @@ export async function assertWithinPlanLimits(organizationId: string): Promise<Qu
     return enforcePlanQuota(subscription.plan, period)
 }
 
-function tokenLimitApplies(plan: Pick<Plan, "billingMode" | "tokenLimit">): boolean {
-    return plan.billingMode === "FIXED_MONTHLY" || plan.tokenLimit > 0
+function tokenLimitApplies(plan: Pick<Plan, "name" | "billingMode" | "tokenLimit">, limit: number): boolean {
+    if (plan.name === PLAN_NAMES.scale && plan.billingMode === "METERED" && plan.tokenLimit <= 0) {
+        return false
+    }
+    return limit > 0 && (plan.billingMode === "FIXED_MONTHLY" || plan.tokenLimit > 0 || plan.name === PLAN_NAMES.free)
 }
 
 /**
@@ -267,8 +319,9 @@ function tokenLimitApplies(plan: Pick<Plan, "billingMode" | "tokenLimit">): bool
  * to whatever output budget remains after the input hold.
  */
 function fitTokenHold(
-    plan: Pick<Plan, "billingMode" | "tokenLimit">,
+    plan: Pick<Plan, "name" | "billingMode" | "tokenLimit">,
     tokensUsed: number,
+    tokenLimit: number,
     input: Pick<
         ReservePendingTextRequestInput,
         "reservedInputTokens" | "reservedOutputTokens" | "allowOutputShrink"
@@ -277,11 +330,11 @@ function fitTokenHold(
     const inputTokens = input.reservedInputTokens
     let outputTokens = input.reservedOutputTokens
 
-    if (!tokenLimitApplies(plan) || plan.tokenLimit <= 0) {
+    if (!tokenLimitApplies(plan, tokenLimit)) {
         return { inputTokens, outputTokens }
     }
 
-    const remaining = plan.tokenLimit - tokensUsed
+    const remaining = tokenLimit - tokensUsed
     if (inputTokens + outputTokens <= remaining) {
         return { inputTokens, outputTokens }
     }
@@ -294,8 +347,22 @@ function fitTokenHold(
     throw new AppError(
         429,
         "RATE_LIMIT_EXCEEDED",
-        `Monthly token limit of ${plan.tokenLimit} exceeded`,
+        `Token limit of ${tokenLimit} exceeded`,
     )
+}
+
+/** Increment lifetime free quota when a Personal free-tier request succeeds. */
+export async function recordFreeQuotaUsage(organizationId: string, quotaUnits: number) {
+    const subscription = await getActiveSubscriptionWithPlan(organizationId)
+    if (subscription.plan.name !== PLAN_NAMES.free) {
+        return
+    }
+    const ownerId = await getOrganizationOwnerUserId(organizationId)
+    if (!ownerId) return
+    await prismaClient.user.update({
+        where: { id: ownerId },
+        data: { freeQuotaUnitsUsed: { increment: quotaUnits } },
+    })
 }
 
 /**
@@ -328,9 +395,20 @@ async function reservePendingRequest(
         // Serialize quota check+insert per org across API processes (TOCTOU / multi-instance).
         await tx.$queryRaw`SELECT id FROM "Organization" WHERE id = ${input.organizationId} FOR UPDATE`
 
-        // Default-enabled backfill for this model only; skipDuplicates keeps a disabled row disabled.
+        const model = await tx.aIModel.findUniqueOrThrow({
+            where: { id: input.modelId },
+            select: { inputPrice: true, outputPrice: true, planTier: true },
+        })
+
+        // Backfill this model only; skipDuplicates keeps an existing row's enabled state.
         await tx.projectModelAllow.createMany({
-            data: [{ projectId: input.projectId, modelId: input.modelId, enabled: true }],
+            data: [
+                {
+                    projectId: input.projectId,
+                    modelId: input.modelId,
+                    enabled: isModelEnabledByDefault(model),
+                },
+            ],
             skipDuplicates: true,
         })
 
@@ -352,13 +430,31 @@ async function reservePendingRequest(
         }
 
         const subscription = await loadActiveSubscriptionPlan(tx, input.organizationId)
-        const period = await aggregateOrgQuotaUsage(
+        const periodStart = entitledPeriodStart(subscription)
+        const period = await aggregateOrgQuotaUsage(tx, input.organizationId, periodStart)
+        const tokenQuota = await resolveTokenQuotaForPlan(
             tx,
             input.organizationId,
-            entitledPeriodStart(subscription),
+            subscription.plan,
+            period.tokensUsed,
         )
-        const quota = enforcePlanQuota(subscription.plan, period)
-        const tokenHold = fitTokenHold(subscription.plan, period.tokensUsed, input)
+        const quota = enforcePlanQuota(subscription.plan, {
+            ...period,
+            tokensUsed: tokenQuota.tokensUsed,
+            tokenLimit: tokenQuota.tokenLimit,
+        })
+        const tokenHold = fitTokenHold(
+            subscription.plan,
+            tokenQuota.tokensUsed,
+            tokenQuota.tokenLimit,
+            input,
+        )
+
+        const holdQuotaUnits = await quotaUnitsForHold(
+            model,
+            tokenHold.inputTokens,
+            tokenHold.outputTokens,
+        )
 
         const aiRequest = await tx.aIRequest.create({
             data: {
@@ -371,6 +467,7 @@ async function reservePendingRequest(
                 inputTokens: tokenHold.inputTokens,
                 outputTokens: tokenHold.outputTokens,
                 totalTokens: tokenHold.inputTokens + tokenHold.outputTokens,
+                quotaTokens: holdQuotaUnits,
             },
             select: { id: true },
         })

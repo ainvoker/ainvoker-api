@@ -3,6 +3,7 @@ import request from "supertest"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import app from "../../src/app.js"
 import env from "../../src/config/env.js"
+import { ensureBusinessSettings } from "../../src/modules/business/retail.js"
 import prismaClient from "../../src/platform/prisma.js"
 import { useTestAuthUser } from "../helpers/fixtures.js"
 
@@ -33,21 +34,6 @@ describe("admin catalog endpoints", () => {
         return provider.id
     }
 
-    async function createModel(body: Record<string, unknown>) {
-        const res = await request(app.express)
-            .post("/api/v1/admin/models")
-            .set(authUser.headers())
-            .send(body)
-        if (res.status === 201) {
-            createdModelIds.push(res.body.data.id as number)
-        }
-        return res
-    }
-
-    function uniqueName() {
-        return `vitest-model-${randomUUID().slice(0, 8)}`
-    }
-
     it("returns 401 without Authorization", async () => {
         const res = await request(app.express).get("/api/v1/admin/models")
         expect(res.status).toBe(401)
@@ -67,101 +53,90 @@ describe("admin catalog endpoints", () => {
         expect(openai).toMatchObject({ hasTextAdapter: true, hasImageAdapter: true })
     })
 
-    it("creates a model that routes and appears in new projects", async () => {
-        const name = uniqueName()
-        const res = await createModel({
-            providerId: await openaiProviderId(),
-            name,
-            type: "TEXT",
-            contextWindow: 128000,
-            inputPrice: 0.15,
-            outputPrice: 0.6,
-            freeEligible: true,
-        })
-
-        expect(res.status).toBe(201)
-        expect(res.body.data).toMatchObject({
-            slug: `openai/${name}`,
-            status: "ACTIVE",
-            freeEligible: true,
-            routable: true,
-            inputPrice: "0.15",
-        })
-
-        const projectRes = await request(app.express)
-            .post(`/api/v1/organizations/${authUser.auth.organizationId}/projects`)
-            .set(authUser.headers())
-            .send({ name: `Admin Catalog ${name}`, environment: "DEVELOPMENT" })
-        expect(projectRes.status).toBe(201)
-
-        const listRes = await request(app.express)
-            .get(`/api/v1/projects/${projectRes.body.data.id}/models`)
-            .set(authUser.headers())
-        const row = (listRes.body.data as Array<{ slug: string; enabled: boolean }>).find(
-            (item) => item.slug === `openai/${name}`,
-        )
-        expect(row).toMatchObject({ enabled: true })
-    })
-
-    it("rejects a duplicate provider/name", async () => {
-        const providerId = await openaiProviderId()
-        const body = {
-            providerId,
-            name: uniqueName(),
-            type: "TEXT",
-            contextWindow: 1000,
-            inputPrice: 0,
-            outputPrice: 0,
-        }
-        expect((await createModel(body)).status).toBe(201)
-
-        const res = await createModel(body)
-        expect(res.status).toBe(409)
-        expect(res.body.error.code).toBe("CONFLICT")
-    })
-
-    it("rejects freeEligible image models", async () => {
-        const res = await createModel({
-            providerId: await openaiProviderId(),
-            name: uniqueName(),
-            type: "IMAGE",
-            contextWindow: 32000,
-            inputPrice: 5,
-            outputPrice: 30,
-            freeEligible: true,
-        })
-        expect(res.status).toBe(400)
-        expect(res.body.error.code).toBe("VALIDATION_ERROR")
-    })
-
-    it("updates status and prices and filters by status", async () => {
-        const name = uniqueName()
-        const created = await createModel({
-            providerId: await openaiProviderId(),
-            name,
-            type: "TEXT",
-            contextWindow: 1000,
-            inputPrice: 1,
-            outputPrice: 2,
-        })
-        const modelId = created.body.data.id as number
-
-        const res = await request(app.express)
-            .patch(`/api/v1/admin/models/${modelId}`)
-            .set(authUser.headers())
-            .send({ status: "DEPRECATED", outputPrice: 3 })
+    it("lists seeded models with provider and retail prices", async () => {
+        const res = await request(app.express).get("/api/v1/admin/models").set(authUser.headers())
         expect(res.status).toBe(200)
-        expect(res.body.data).toMatchObject({ status: "DEPRECATED", outputPrice: "3" })
+        const mini = (res.body.data as Array<{ slug: string }>).find(
+            (m) => m.slug === "openai/gpt-4o-mini",
+        )
+        expect(mini).toBeDefined()
+        expect(mini).toMatchObject({
+            providerInputPrice: expect.any(String),
+            inputPrice: expect.any(String),
+            planTier: "ECONOMY",
+        })
+    })
 
-        const getRes = await request(app.express)
-            .get(`/api/v1/admin/models/${modelId}`)
+    it("does not allow creating models via admin API", async () => {
+        const res = await request(app.express)
+            .post("/api/v1/admin/models")
             .set(authUser.headers())
-        expect(getRes.body.data.status).toBe("DEPRECATED")
+            .send({ name: "x" })
+        expect(res.status).toBe(404)
+    })
 
-        const filtered = await request(app.express)
-            .get("/api/v1/admin/models?status=DEPRECATED")
+    it("updates status only", async () => {
+        const mini = await prismaClient.aIModel.findFirstOrThrow({
+            where: { name: "gpt-4o-mini" },
+        })
+        const res = await request(app.express)
+            .patch(`/api/v1/admin/models/${mini.id}`)
             .set(authUser.headers())
-        expect((filtered.body.data as Array<{ id: number }>).some((m) => m.id === modelId)).toBe(true)
+            .send({ status: "INACTIVE" })
+        expect(res.status).toBe(200)
+        expect(res.body.data.status).toBe("INACTIVE")
+        await prismaClient.aIModel.update({
+            where: { id: mini.id },
+            data: { status: "ACTIVE" },
+        })
+    })
+
+    it("updates planTier and freeEligible", async () => {
+        const mini = await prismaClient.aIModel.findFirstOrThrow({
+            where: { name: "gpt-4o-mini" },
+        })
+        try {
+            const notFree = await request(app.express)
+                .patch(`/api/v1/admin/models/${mini.id}`)
+                .set(authUser.headers())
+                .send({ freeEligible: false })
+            expect(notFree.status).toBe(200)
+            expect(notFree.body.data).toMatchObject({ planTier: "ECONOMY", freeEligible: false })
+
+            const premium = await request(app.express)
+                .patch(`/api/v1/admin/models/${mini.id}`)
+                .set(authUser.headers())
+                .send({ planTier: "PREMIUM" })
+            expect(premium.status).toBe(200)
+            expect(premium.body.data).toMatchObject({ planTier: "PREMIUM", freeEligible: false })
+            const settings = await ensureBusinessSettings()
+            expect(premium.body.data.inputPrice).toBe(
+                mini.providerInputPrice.mul(settings.premiumMarkupMultiplier).toString(),
+            )
+
+            const rejected = await request(app.express)
+                .patch(`/api/v1/admin/models/${mini.id}`)
+                .set(authUser.headers())
+                .send({ freeEligible: true })
+            expect(rejected.status).toBe(400)
+            expect(rejected.body.error.code).toBe("VALIDATION_ERROR")
+        } finally {
+            await request(app.express)
+                .patch(`/api/v1/admin/models/${mini.id}`)
+                .set(authUser.headers())
+                .send({ planTier: "ECONOMY", freeEligible: true })
+        }
+    })
+
+    it("rejects an empty update body", async () => {
+        const mini = await prismaClient.aIModel.findFirstOrThrow({
+            where: { name: "gpt-4o-mini" },
+        })
+        const res = await request(app.express)
+            .patch(`/api/v1/admin/models/${mini.id}`)
+            .set(authUser.headers())
+            .send({})
+        expect(res.status).toBe(400)
     })
 
     it("lists non-routable models for admins but hides them from projects", async () => {
@@ -174,17 +149,30 @@ describe("admin catalog endpoints", () => {
         })
         createdProviderIds.push(provider.id)
 
-        const res = await createModel({
-            providerId: provider.id,
-            name: uniqueName(),
-            type: "TEXT",
-            contextWindow: 1000,
-            inputPrice: 0,
-            outputPrice: 0,
-            freeEligible: true,
+        const model = await prismaClient.aIModel.create({
+            data: {
+                providerId: provider.id,
+                name: `vitest-${randomUUID().slice(0, 8)}`,
+                type: "TEXT",
+                contextWindow: 1000,
+                providerInputPrice: 0.1,
+                providerOutputPrice: 0.2,
+                inputPrice: 0.12,
+                outputPrice: 0.24,
+                planTier: "ECONOMY",
+                freeEligible: true,
+                status: "ACTIVE",
+            },
         })
-        expect(res.status).toBe(201)
-        expect(res.body.data.routable).toBe(false)
+        createdModelIds.push(model.id)
+
+        const adminList = await request(app.express)
+            .get("/api/v1/admin/models")
+            .set(authUser.headers())
+        const row = (adminList.body.data as Array<{ id: number; routable: boolean }>).find(
+            (m) => m.id === model.id,
+        )
+        expect(row?.routable).toBe(false)
 
         const projectRes = await request(app.express)
             .post(`/api/v1/organizations/${authUser.auth.organizationId}/projects`)
@@ -194,7 +182,7 @@ describe("admin catalog endpoints", () => {
             .get(`/api/v1/projects/${projectRes.body.data.id}/models`)
             .set(authUser.headers())
         expect(
-            (listRes.body.data as Array<{ id: number }>).some((m) => m.id === res.body.data.id),
+            (listRes.body.data as Array<{ id: number }>).some((m) => m.id === model.id),
         ).toBe(false)
     })
 

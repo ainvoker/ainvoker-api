@@ -22,7 +22,6 @@ export {
 export { projectAnalyticsQuerySchema, usageRangeQuerySchema } from "../modules/usage/schemas.js"
 export {
     adminModelParamsSchema,
-    createAdminModelSchema,
     listAdminModelsQuerySchema,
     updateAdminModelSchema,
 } from "../modules/catalog/schemas.js"

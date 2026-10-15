@@ -1,16 +1,12 @@
 import { Prisma } from "../../generated/prisma/client.js"
-import type { AIModelType } from "../../generated/prisma/client.js"
+import type { AIModelType, ModelPlanTier } from "../../generated/prisma/client.js"
+import { recomputeAllModelRetailPrices } from "../business/retail.js"
 import prismaClient from "../../platform/prisma.js"
 
 /**
- * Bootstrap data for `npm run prisma:seed` and tests. Never called on the request path.
- *
- * Providers are developer-owned: add one here together with its adapter in
- * src/providers/index.ts and its API key in config/env.ts.
- *
- * Models are admin-owned: after the first seed, add or retire them through
- * /api/v1/admin/models. Existing model rows are never overwritten, so re-seeding
- * keeps admin edits (status, prices, freeEligible).
+ * Bootstrap data for `npm run prisma:seed` and migrations. Never called on the request path.
+ * Models are defined in code; admin may change status, planTier, and freeEligible,
+ * so re-seeding only refreshes vendor facts (type, context window, provider prices).
  */
 const PROVIDER_SEEDS = [
     {
@@ -30,20 +26,66 @@ type ModelSeed = {
     name: string
     type: AIModelType
     contextWindow: number
-    /** USD per 1M tokens. */
-    inputPrice: string
-    outputPrice: string
+    /** Provider USD per 1M tokens (Standard tier; image models use the image output rate). */
+    providerInputPrice: string
+    providerOutputPrice: string
+    /** ECONOMY: standard markup. PREMIUM: higher markup, never on Free. Initial value; admin owns it after insert. */
+    planTier: ModelPlanTier
+    /** Economy models offered on Free. Initial value; admin owns it after insert. */
     freeEligible: boolean
 }
 
 const MODEL_SEEDS: ModelSeed[] = [
+    // OpenAI text
     {
         provider: "openai",
         name: "gpt-4o-mini",
         type: "TEXT",
         contextWindow: 128000,
-        inputPrice: "0.000150",
-        outputPrice: "0.000600",
+        providerInputPrice: "0.15",
+        providerOutputPrice: "0.60",
+        planTier: "ECONOMY",
+        freeEligible: true,
+    },
+    {
+        provider: "openai",
+        name: "gpt-6-luna",
+        type: "TEXT",
+        contextWindow: 1050000,
+        providerInputPrice: "0.10",
+        providerOutputPrice: "0.50",
+        planTier: "ECONOMY",
+        freeEligible: false,
+    },
+    {
+        provider: "openai",
+        name: "gpt-6.1-sol",
+        type: "TEXT",
+        contextWindow: 1050000,
+        providerInputPrice: "2",
+        providerOutputPrice: "10",
+        planTier: "PREMIUM",
+        freeEligible: false,
+    },
+    {
+        provider: "openai",
+        name: "gpt-6-astra",
+        type: "TEXT",
+        contextWindow: 1050000,
+        providerInputPrice: "10",
+        providerOutputPrice: "50",
+        planTier: "PREMIUM",
+        freeEligible: false,
+    },
+    // Gemini text
+    {
+        provider: "gemini",
+        name: "gemini-3.5-flash-lite",
+        type: "TEXT",
+        contextWindow: 1048576,
+        providerInputPrice: "0.30",
+        providerOutputPrice: "2.50",
+        planTier: "ECONOMY",
         freeEligible: true,
     },
     {
@@ -51,26 +93,90 @@ const MODEL_SEEDS: ModelSeed[] = [
         name: "gemini-3.6-flash",
         type: "TEXT",
         contextWindow: 1048576,
-        inputPrice: "0",
-        outputPrice: "0",
+        providerInputPrice: "0.75",
+        providerOutputPrice: "3.75",
+        planTier: "ECONOMY",
         freeEligible: true,
     },
     {
         provider: "gemini",
-        name: "gemini-3.5-flash-lite",
+        name: "gemini-3.8-flash",
         type: "TEXT",
         contextWindow: 1048576,
-        inputPrice: "0",
-        outputPrice: "0",
+        providerInputPrice: "0.75",
+        providerOutputPrice: "3.75",
+        planTier: "ECONOMY",
         freeEligible: true,
     },
+    {
+        provider: "gemini",
+        name: "gemini-3.1-pro-preview",
+        type: "TEXT",
+        contextWindow: 1048576,
+        providerInputPrice: "2",
+        providerOutputPrice: "12",
+        planTier: "PREMIUM",
+        freeEligible: false,
+    },
+    {
+        provider: "gemini",
+        name: "gemini-4-argon",
+        type: "TEXT",
+        contextWindow: 1048576,
+        providerInputPrice: "2",
+        providerOutputPrice: "10",
+        planTier: "PREMIUM",
+        freeEligible: false,
+    },
+    // Images are always PREMIUM (never on Free)
     {
         provider: "openai",
         name: "gpt-image-2.5-flare",
         type: "IMAGE",
         contextWindow: 32000,
-        inputPrice: "5",
-        outputPrice: "30",
+        providerInputPrice: "5",
+        providerOutputPrice: "30",
+        planTier: "PREMIUM",
+        freeEligible: false,
+    },
+    {
+        provider: "openai",
+        name: "gpt-image-2.5-sunburst",
+        type: "IMAGE",
+        contextWindow: 32000,
+        providerInputPrice: "5",
+        providerOutputPrice: "30",
+        planTier: "PREMIUM",
+        freeEligible: false,
+    },
+    {
+        provider: "gemini",
+        name: "gemini-3.1-flash-lite-image",
+        type: "IMAGE",
+        contextWindow: 32000,
+        providerInputPrice: "0.25",
+        providerOutputPrice: "30",
+        planTier: "PREMIUM",
+        freeEligible: false,
+    },
+    {
+        provider: "gemini",
+        name: "gemini-nano-banana-2.1",
+        type: "IMAGE",
+        contextWindow: 32000,
+        providerInputPrice: "1.50",
+        providerOutputPrice: "30",
+        planTier: "PREMIUM",
+        freeEligible: false,
+    },
+    {
+        provider: "gemini",
+        name: "gemini-3-pro-image",
+        type: "IMAGE",
+        contextWindow: 32000,
+        providerInputPrice: "2",
+        providerOutputPrice: "120",
+        planTier: "PREMIUM",
         freeEligible: false,
     },
 ]
@@ -101,6 +207,8 @@ async function seedAiCatalog(): Promise<void> {
 
     for (const seed of MODEL_SEEDS) {
         const providerId = providerIds.get(seed.provider)!
+        const providerIn = new Prisma.Decimal(seed.providerInputPrice)
+        const providerOut = new Prisma.Decimal(seed.providerOutputPrice)
         await prismaClient.aIModel.upsert({
             where: { providerId_name: { providerId, name: seed.name } },
             create: {
@@ -108,14 +216,24 @@ async function seedAiCatalog(): Promise<void> {
                 name: seed.name,
                 type: seed.type,
                 contextWindow: seed.contextWindow,
-                inputPrice: new Prisma.Decimal(seed.inputPrice),
-                outputPrice: new Prisma.Decimal(seed.outputPrice),
+                providerInputPrice: providerIn,
+                providerOutputPrice: providerOut,
+                inputPrice: providerIn,
+                outputPrice: providerOut,
                 status: "ACTIVE",
-                freeEligible: seed.freeEligible,
+                planTier: seed.planTier,
+                freeEligible: seed.planTier === "ECONOMY" && seed.freeEligible,
             },
-            update: {},
+            update: {
+                type: seed.type,
+                contextWindow: seed.contextWindow,
+                providerInputPrice: providerIn,
+                providerOutputPrice: providerOut,
+            },
         })
     }
+
+    await recomputeAllModelRetailPrices()
 }
 
 export const textCatalogDefaults = {

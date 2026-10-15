@@ -300,14 +300,6 @@ class OrganizationService {
     ) {
         await this.ensureUserAndPersonalOrg(userId)
 
-        if (input.plan === PLAN_NAMES.scale) {
-            throw new AppError(
-                403,
-                "PLAN_CONTACT_REQUIRED",
-                "Scale plans require contacting sales",
-            )
-        }
-
         const paidPlan = await getPlanByName(input.plan)
 
         const ownerRole = await prismaClient.role.findUniqueOrThrow({
@@ -319,7 +311,8 @@ class OrganizationService {
             ? baseSlug
             : await this.allocateUniqueSlug(baseSlug)
 
-        const subscriptionStatus = input.plan === PLAN_NAMES.pro ? "PENDING" : "ACTIVE"
+        const subscriptionStatus =
+            input.plan === PLAN_NAMES.pro || input.plan === PLAN_NAMES.scale ? "PENDING" : "ACTIVE"
 
         try {
             const organization = await prismaClient.$transaction(async (tx) => {

@@ -20,8 +20,20 @@ export type UserModel = runtime.Types.Result.DefaultSelection<Prisma.$UserPayloa
 
 export type AggregateUser = {
   _count: UserCountAggregateOutputType | null
+  _avg: UserAvgAggregateOutputType | null
+  _sum: UserSumAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
+}
+
+export type UserAvgAggregateOutputType = {
+  freeQuotaUnitsUsed: number | null
+  freeQuotaUnitsLimit: number | null
+}
+
+export type UserSumAggregateOutputType = {
+  freeQuotaUnitsUsed: number | null
+  freeQuotaUnitsLimit: number | null
 }
 
 export type UserMinAggregateOutputType = {
@@ -31,6 +43,8 @@ export type UserMinAggregateOutputType = {
   lastName: string | null
   profilePicture: string | null
   themePreference: $Enums.ThemePreference | null
+  freeQuotaUnitsUsed: number | null
+  freeQuotaUnitsLimit: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -42,6 +56,8 @@ export type UserMaxAggregateOutputType = {
   lastName: string | null
   profilePicture: string | null
   themePreference: $Enums.ThemePreference | null
+  freeQuotaUnitsUsed: number | null
+  freeQuotaUnitsLimit: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -53,11 +69,23 @@ export type UserCountAggregateOutputType = {
   lastName: number
   profilePicture: number
   themePreference: number
+  freeQuotaUnitsUsed: number
+  freeQuotaUnitsLimit: number
   createdAt: number
   updatedAt: number
   _all: number
 }
 
+
+export type UserAvgAggregateInputType = {
+  freeQuotaUnitsUsed?: true
+  freeQuotaUnitsLimit?: true
+}
+
+export type UserSumAggregateInputType = {
+  freeQuotaUnitsUsed?: true
+  freeQuotaUnitsLimit?: true
+}
 
 export type UserMinAggregateInputType = {
   id?: true
@@ -66,6 +94,8 @@ export type UserMinAggregateInputType = {
   lastName?: true
   profilePicture?: true
   themePreference?: true
+  freeQuotaUnitsUsed?: true
+  freeQuotaUnitsLimit?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -77,6 +107,8 @@ export type UserMaxAggregateInputType = {
   lastName?: true
   profilePicture?: true
   themePreference?: true
+  freeQuotaUnitsUsed?: true
+  freeQuotaUnitsLimit?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -88,6 +120,8 @@ export type UserCountAggregateInputType = {
   lastName?: true
   profilePicture?: true
   themePreference?: true
+  freeQuotaUnitsUsed?: true
+  freeQuotaUnitsLimit?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -131,6 +165,18 @@ export type UserAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: UserAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: UserSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: UserMinAggregateInputType
@@ -161,6 +207,8 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   _count?: UserCountAggregateInputType | true
+  _avg?: UserAvgAggregateInputType
+  _sum?: UserSumAggregateInputType
   _min?: UserMinAggregateInputType
   _max?: UserMaxAggregateInputType
 }
@@ -172,9 +220,13 @@ export type UserGroupByOutputType = {
   lastName: string | null
   profilePicture: string | null
   themePreference: $Enums.ThemePreference
+  freeQuotaUnitsUsed: number
+  freeQuotaUnitsLimit: number
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
+  _avg: UserAvgAggregateOutputType | null
+  _sum: UserSumAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
 }
@@ -204,6 +256,8 @@ export type UserWhereInput = {
   lastName?: Prisma.StringNullableFilter<"User"> | string | null
   profilePicture?: Prisma.StringNullableFilter<"User"> | string | null
   themePreference?: Prisma.EnumThemePreferenceFilter<"User"> | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFilter<"User"> | number
+  freeQuotaUnitsLimit?: Prisma.IntFilter<"User"> | number
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   memberships?: Prisma.OrganizationMemberListRelationFilter
@@ -220,6 +274,8 @@ export type UserOrderByWithRelationInput = {
   lastName?: Prisma.SortOrderInput | Prisma.SortOrder
   profilePicture?: Prisma.SortOrderInput | Prisma.SortOrder
   themePreference?: Prisma.SortOrder
+  freeQuotaUnitsUsed?: Prisma.SortOrder
+  freeQuotaUnitsLimit?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   memberships?: Prisma.OrganizationMemberOrderByRelationAggregateInput
@@ -239,6 +295,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   lastName?: Prisma.StringNullableFilter<"User"> | string | null
   profilePicture?: Prisma.StringNullableFilter<"User"> | string | null
   themePreference?: Prisma.EnumThemePreferenceFilter<"User"> | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFilter<"User"> | number
+  freeQuotaUnitsLimit?: Prisma.IntFilter<"User"> | number
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   memberships?: Prisma.OrganizationMemberListRelationFilter
@@ -255,11 +313,15 @@ export type UserOrderByWithAggregationInput = {
   lastName?: Prisma.SortOrderInput | Prisma.SortOrder
   profilePicture?: Prisma.SortOrderInput | Prisma.SortOrder
   themePreference?: Prisma.SortOrder
+  freeQuotaUnitsUsed?: Prisma.SortOrder
+  freeQuotaUnitsLimit?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
+  _avg?: Prisma.UserAvgOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
   _min?: Prisma.UserMinOrderByAggregateInput
+  _sum?: Prisma.UserSumOrderByAggregateInput
 }
 
 export type UserScalarWhereWithAggregatesInput = {
@@ -272,6 +334,8 @@ export type UserScalarWhereWithAggregatesInput = {
   lastName?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   profilePicture?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   themePreference?: Prisma.EnumThemePreferenceWithAggregatesFilter<"User"> | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntWithAggregatesFilter<"User"> | number
+  freeQuotaUnitsLimit?: Prisma.IntWithAggregatesFilter<"User"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -283,6 +347,8 @@ export type UserCreateInput = {
   lastName?: string | null
   profilePicture?: string | null
   themePreference?: $Enums.ThemePreference
+  freeQuotaUnitsUsed?: number
+  freeQuotaUnitsLimit?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
@@ -299,6 +365,8 @@ export type UserUncheckedCreateInput = {
   lastName?: string | null
   profilePicture?: string | null
   themePreference?: $Enums.ThemePreference
+  freeQuotaUnitsUsed?: number
+  freeQuotaUnitsLimit?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
@@ -315,6 +383,8 @@ export type UserUpdateInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
@@ -331,6 +401,8 @@ export type UserUncheckedUpdateInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -347,6 +419,8 @@ export type UserCreateManyInput = {
   lastName?: string | null
   profilePicture?: string | null
   themePreference?: $Enums.ThemePreference
+  freeQuotaUnitsUsed?: number
+  freeQuotaUnitsLimit?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -358,6 +432,8 @@ export type UserUpdateManyMutationInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -369,6 +445,8 @@ export type UserUncheckedUpdateManyInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -380,8 +458,15 @@ export type UserCountOrderByAggregateInput = {
   lastName?: Prisma.SortOrder
   profilePicture?: Prisma.SortOrder
   themePreference?: Prisma.SortOrder
+  freeQuotaUnitsUsed?: Prisma.SortOrder
+  freeQuotaUnitsLimit?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type UserAvgOrderByAggregateInput = {
+  freeQuotaUnitsUsed?: Prisma.SortOrder
+  freeQuotaUnitsLimit?: Prisma.SortOrder
 }
 
 export type UserMaxOrderByAggregateInput = {
@@ -391,6 +476,8 @@ export type UserMaxOrderByAggregateInput = {
   lastName?: Prisma.SortOrder
   profilePicture?: Prisma.SortOrder
   themePreference?: Prisma.SortOrder
+  freeQuotaUnitsUsed?: Prisma.SortOrder
+  freeQuotaUnitsLimit?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -402,8 +489,15 @@ export type UserMinOrderByAggregateInput = {
   lastName?: Prisma.SortOrder
   profilePicture?: Prisma.SortOrder
   themePreference?: Prisma.SortOrder
+  freeQuotaUnitsUsed?: Prisma.SortOrder
+  freeQuotaUnitsLimit?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type UserSumOrderByAggregateInput = {
+  freeQuotaUnitsUsed?: Prisma.SortOrder
+  freeQuotaUnitsLimit?: Prisma.SortOrder
 }
 
 export type UserNullableScalarRelationFilter = {
@@ -426,6 +520,14 @@ export type NullableStringFieldUpdateOperationsInput = {
 
 export type EnumThemePreferenceFieldUpdateOperationsInput = {
   set?: $Enums.ThemePreference
+}
+
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -513,6 +615,8 @@ export type UserCreateWithoutCreatedOrganizationsInput = {
   lastName?: string | null
   profilePicture?: string | null
   themePreference?: $Enums.ThemePreference
+  freeQuotaUnitsUsed?: number
+  freeQuotaUnitsLimit?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
@@ -528,6 +632,8 @@ export type UserUncheckedCreateWithoutCreatedOrganizationsInput = {
   lastName?: string | null
   profilePicture?: string | null
   themePreference?: $Enums.ThemePreference
+  freeQuotaUnitsUsed?: number
+  freeQuotaUnitsLimit?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
@@ -559,6 +665,8 @@ export type UserUpdateWithoutCreatedOrganizationsInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
@@ -574,6 +682,8 @@ export type UserUncheckedUpdateWithoutCreatedOrganizationsInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -589,6 +699,8 @@ export type UserCreateWithoutMembershipsInput = {
   lastName?: string | null
   profilePicture?: string | null
   themePreference?: $Enums.ThemePreference
+  freeQuotaUnitsUsed?: number
+  freeQuotaUnitsLimit?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   createdOrganizations?: Prisma.OrganizationCreateNestedManyWithoutCreatedByInput
@@ -604,6 +716,8 @@ export type UserUncheckedCreateWithoutMembershipsInput = {
   lastName?: string | null
   profilePicture?: string | null
   themePreference?: $Enums.ThemePreference
+  freeQuotaUnitsUsed?: number
+  freeQuotaUnitsLimit?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   createdOrganizations?: Prisma.OrganizationUncheckedCreateNestedManyWithoutCreatedByInput
@@ -635,6 +749,8 @@ export type UserUpdateWithoutMembershipsInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdOrganizations?: Prisma.OrganizationUpdateManyWithoutCreatedByNestedInput
@@ -650,6 +766,8 @@ export type UserUncheckedUpdateWithoutMembershipsInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdOrganizations?: Prisma.OrganizationUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -665,6 +783,8 @@ export type UserCreateWithoutInvitesCreatedInput = {
   lastName?: string | null
   profilePicture?: string | null
   themePreference?: $Enums.ThemePreference
+  freeQuotaUnitsUsed?: number
+  freeQuotaUnitsLimit?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
@@ -680,6 +800,8 @@ export type UserUncheckedCreateWithoutInvitesCreatedInput = {
   lastName?: string | null
   profilePicture?: string | null
   themePreference?: $Enums.ThemePreference
+  freeQuotaUnitsUsed?: number
+  freeQuotaUnitsLimit?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
@@ -700,6 +822,8 @@ export type UserCreateWithoutInvitesAcceptedInput = {
   lastName?: string | null
   profilePicture?: string | null
   themePreference?: $Enums.ThemePreference
+  freeQuotaUnitsUsed?: number
+  freeQuotaUnitsLimit?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
@@ -715,6 +839,8 @@ export type UserUncheckedCreateWithoutInvitesAcceptedInput = {
   lastName?: string | null
   profilePicture?: string | null
   themePreference?: $Enums.ThemePreference
+  freeQuotaUnitsUsed?: number
+  freeQuotaUnitsLimit?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
@@ -746,6 +872,8 @@ export type UserUpdateWithoutInvitesCreatedInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
@@ -761,6 +889,8 @@ export type UserUncheckedUpdateWithoutInvitesCreatedInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -787,6 +917,8 @@ export type UserUpdateWithoutInvitesAcceptedInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
@@ -802,6 +934,8 @@ export type UserUncheckedUpdateWithoutInvitesAcceptedInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -817,6 +951,8 @@ export type UserCreateWithoutActivityLogsInput = {
   lastName?: string | null
   profilePicture?: string | null
   themePreference?: $Enums.ThemePreference
+  freeQuotaUnitsUsed?: number
+  freeQuotaUnitsLimit?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
@@ -832,6 +968,8 @@ export type UserUncheckedCreateWithoutActivityLogsInput = {
   lastName?: string | null
   profilePicture?: string | null
   themePreference?: $Enums.ThemePreference
+  freeQuotaUnitsUsed?: number
+  freeQuotaUnitsLimit?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
@@ -863,6 +1001,8 @@ export type UserUpdateWithoutActivityLogsInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
@@ -878,6 +1018,8 @@ export type UserUncheckedUpdateWithoutActivityLogsInput = {
   lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profilePicture?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   themePreference?: Prisma.EnumThemePreferenceFieldUpdateOperationsInput | $Enums.ThemePreference
+  freeQuotaUnitsUsed?: Prisma.IntFieldUpdateOperationsInput | number
+  freeQuotaUnitsLimit?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -960,6 +1102,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   lastName?: boolean
   profilePicture?: boolean
   themePreference?: boolean
+  freeQuotaUnitsUsed?: boolean
+  freeQuotaUnitsLimit?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   memberships?: boolean | Prisma.User$membershipsArgs<ExtArgs>
@@ -977,6 +1121,8 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   lastName?: boolean
   profilePicture?: boolean
   themePreference?: boolean
+  freeQuotaUnitsUsed?: boolean
+  freeQuotaUnitsLimit?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -988,6 +1134,8 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   lastName?: boolean
   profilePicture?: boolean
   themePreference?: boolean
+  freeQuotaUnitsUsed?: boolean
+  freeQuotaUnitsLimit?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -999,11 +1147,13 @@ export type UserSelectScalar = {
   lastName?: boolean
   profilePicture?: boolean
   themePreference?: boolean
+  freeQuotaUnitsUsed?: boolean
+  freeQuotaUnitsLimit?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "firstName" | "lastName" | "profilePicture" | "themePreference" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "firstName" | "lastName" | "profilePicture" | "themePreference" | "freeQuotaUnitsUsed" | "freeQuotaUnitsLimit" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   memberships?: boolean | Prisma.User$membershipsArgs<ExtArgs>
   createdOrganizations?: boolean | Prisma.User$createdOrganizationsArgs<ExtArgs>
@@ -1031,6 +1181,14 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     lastName: string | null
     profilePicture: string | null
     themePreference: $Enums.ThemePreference
+    /**
+     * Lifetime free-tier quota units consumed (Personal org, while on Free entitlement).
+     */
+    freeQuotaUnitsUsed: number
+    /**
+     * Lifetime cap; not reset monthly.
+     */
+    freeQuotaUnitsLimit: number
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["user"]>
@@ -1467,6 +1625,8 @@ export interface UserFieldRefs {
   readonly lastName: Prisma.FieldRef<"User", 'String'>
   readonly profilePicture: Prisma.FieldRef<"User", 'String'>
   readonly themePreference: Prisma.FieldRef<"User", 'ThemePreference'>
+  readonly freeQuotaUnitsUsed: Prisma.FieldRef<"User", 'Int'>
+  readonly freeQuotaUnitsLimit: Prisma.FieldRef<"User", 'Int'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
 }

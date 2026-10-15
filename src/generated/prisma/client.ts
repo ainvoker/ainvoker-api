@@ -122,6 +122,11 @@ export type UsageAnalytics = Prisma.UsageAnalyticsModel
  */
 export type Webhook = Prisma.WebhookModel
 /**
+ * Model PlatformBusinessSettings
+ * 
+ */
+export type PlatformBusinessSettings = Prisma.PlatformBusinessSettingsModel
+/**
  * Model Plan
  * 
  */

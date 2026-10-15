@@ -6,6 +6,16 @@ export const RECENT_REQUESTS_LIMIT = 10
 /** Statuses that count toward monthly request/token quotas (matches billing limits). */
 export const QUOTA_STATUSES = ["PENDING", "SUCCESS", "FAILED"] as const
 
+/** Prefer weighted quotaTokens when present; fall back to raw totalTokens. */
+export function quotaTokensFromSum(sum: {
+    quotaTokens?: number | null
+    totalTokens?: number | null
+}): number {
+    const weighted = sum.quotaTokens ?? 0
+    if (weighted > 0) return weighted
+    return sum.totalTokens ?? 0
+}
+
 export type PeriodUsage = {
     requestsUsed: number
     tokensUsed: number
@@ -132,7 +142,13 @@ export async function aggregatePeriodUsage(
                 requestStatus: { in: [...QUOTA_STATUSES] },
             },
             _count: { _all: true },
-            _sum: { totalTokens: true, inputTokens: true, outputTokens: true, requestCost: true },
+            _sum: {
+                totalTokens: true,
+                quotaTokens: true,
+                inputTokens: true,
+                outputTokens: true,
+                requestCost: true,
+            },
         }),
         prismaClient.aIRequest.count({
             where: { ...where, requestStatus: "SUCCESS" },
@@ -144,7 +160,7 @@ export async function aggregatePeriodUsage(
 
     return {
         requestsUsed: quotaAgg._count._all,
-        tokensUsed: quotaAgg._sum.totalTokens ?? 0,
+        tokensUsed: quotaTokensFromSum(quotaAgg._sum),
         inputTokens: quotaAgg._sum.inputTokens ?? 0,
         outputTokens: quotaAgg._sum.outputTokens ?? 0,
         totalCost: (quotaAgg._sum.requestCost ?? new Prisma.Decimal(0)).toString(),
@@ -231,13 +247,13 @@ export async function aggregateOrgUsageByProject(
             requestStatus: { in: [...QUOTA_STATUSES] },
         },
         _count: { _all: true },
-        _sum: { totalTokens: true },
+        _sum: { totalTokens: true, quotaTokens: true },
     })
 
     return rows.map((row) => ({
         projectId: row.projectId,
         requestsUsed: row._count._all,
-        tokensUsed: row._sum.totalTokens ?? 0,
+        tokensUsed: quotaTokensFromSum(row._sum),
     }))
 }
 
@@ -281,8 +297,8 @@ export async function aggregateOrgUsageByModel(
             requestStatus: { in: [...QUOTA_STATUSES] },
         },
         _count: { _all: true },
-        _sum: { totalTokens: true },
-        orderBy: { _sum: { totalTokens: "desc" } },
+        _sum: { totalTokens: true, quotaTokens: true },
+        orderBy: { _sum: { quotaTokens: "desc" } },
     })
 
     if (rows.length === 0) {
@@ -295,7 +311,7 @@ export async function aggregateOrgUsageByModel(
         modelId: row.modelId,
         model: modelById.get(row.modelId) ?? `model:${row.modelId}`,
         requestsUsed: row._count._all,
-        tokensUsed: row._sum.totalTokens ?? 0,
+        tokensUsed: quotaTokensFromSum(row._sum),
     }))
 }
 
@@ -313,8 +329,8 @@ export async function aggregateProjectUsageByModel(
             requestStatus: { in: [...QUOTA_STATUSES] },
         },
         _count: { _all: true },
-        _sum: { totalTokens: true },
-        orderBy: { _sum: { totalTokens: "desc" } },
+        _sum: { totalTokens: true, quotaTokens: true },
+        orderBy: { _sum: { quotaTokens: "desc" } },
     })
 
     if (rows.length === 0) {
@@ -327,7 +343,7 @@ export async function aggregateProjectUsageByModel(
         modelId: row.modelId,
         model: modelById.get(row.modelId) ?? `model:${row.modelId}`,
         requestsUsed: row._count._all,
-        tokensUsed: row._sum.totalTokens ?? 0,
+        tokensUsed: quotaTokensFromSum(row._sum),
     }))
 }
 
@@ -353,8 +369,8 @@ export async function aggregateProjectUsageByApiKey(
             requestStatus: { in: [...QUOTA_STATUSES] },
         },
         _count: { _all: true },
-        _sum: { totalTokens: true },
-        orderBy: { _sum: { totalTokens: "desc" } },
+        _sum: { totalTokens: true, quotaTokens: true },
+        orderBy: { _sum: { quotaTokens: "desc" } },
     })
 
     if (rows.length === 0) {
@@ -372,7 +388,7 @@ export async function aggregateProjectUsageByApiKey(
         keyName: keyById.get(row.apiKeyId)?.keyName ?? "Deleted key",
         keyPrefix: keyById.get(row.apiKeyId)?.keyPrefix ?? "",
         requestsUsed: row._count._all,
-        tokensUsed: row._sum.totalTokens ?? 0,
+        tokensUsed: quotaTokensFromSum(row._sum),
     }))
 }
 
@@ -413,9 +429,15 @@ export async function aggregateDailyUsage(
             COUNT(*) FILTER (
                 WHERE r."requestStatus" IN ('PENDING', 'SUCCESS', 'FAILED')
             )::bigint AS requests_used,
-            COALESCE(SUM(r."totalTokens") FILTER (
-                WHERE r."requestStatus" IN ('PENDING', 'SUCCESS', 'FAILED')
-            ), 0)::bigint AS tokens_used,
+            COALESCE(
+                NULLIF(SUM(r."quotaTokens") FILTER (
+                    WHERE r."requestStatus" IN ('PENDING', 'SUCCESS', 'FAILED')
+                ), 0),
+                SUM(r."totalTokens") FILTER (
+                    WHERE r."requestStatus" IN ('PENDING', 'SUCCESS', 'FAILED')
+                ),
+                0
+            )::bigint AS tokens_used,
             COUNT(*) FILTER (WHERE r."requestStatus" = 'SUCCESS')::bigint AS successful_requests,
             COUNT(*) FILTER (
                 WHERE r."requestStatus" IN ('FAILED', 'REJECTED')
@@ -474,7 +496,7 @@ export async function aggregateDailyUsageByProject(
             r."projectId" AS segment_id,
             p.name AS segment_name,
             COUNT(*)::bigint AS requests_used,
-            COALESCE(SUM(r."totalTokens"), 0)::bigint AS tokens_used
+            COALESCE(NULLIF(SUM(r."quotaTokens"), 0), SUM(r."totalTokens"), 0)::bigint AS tokens_used
         FROM "AIRequest" r
         INNER JOIN "Project" p ON p.id = r."projectId"
         WHERE p."organizationId" = ${organizationId}
@@ -520,7 +542,7 @@ export async function aggregateDailyUsageByModel(
             ) AS day,
             r."modelId" AS model_id,
             COUNT(*)::bigint AS requests_used,
-            COALESCE(SUM(r."totalTokens"), 0)::bigint AS tokens_used
+            COALESCE(NULLIF(SUM(r."quotaTokens"), 0), SUM(r."totalTokens"), 0)::bigint AS tokens_used
         FROM "AIRequest" r
         INNER JOIN "Project" p ON p.id = r."projectId"
         WHERE ${scopeFilter}
@@ -562,7 +584,7 @@ export async function aggregateDailyUsageByApiKey(
             r."apiKeyId" AS segment_id,
             k."keyName" AS segment_name,
             COUNT(*)::bigint AS requests_used,
-            COALESCE(SUM(r."totalTokens"), 0)::bigint AS tokens_used
+            COALESCE(NULLIF(SUM(r."quotaTokens"), 0), SUM(r."totalTokens"), 0)::bigint AS tokens_used
         FROM "AIRequest" r
         INNER JOIN "ApiKey" k ON k.id = r."apiKeyId"
         WHERE r."projectId" = ${projectId}

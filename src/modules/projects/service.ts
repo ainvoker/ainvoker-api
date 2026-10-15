@@ -2,7 +2,7 @@ import { Prisma } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
 import { assertOrgCanMutateResources } from "../billing/limits.js"
-import { listPlanAllowedRoutableModelIds } from "../text/allowlist.js"
+import { listDefaultModelAllows } from "../text/allowlist.js"
 import type { z } from "zod"
 import type { createProjectSchema, updateProjectSchema } from "./schemas.js"
 
@@ -77,7 +77,7 @@ class ProjectService {
 
         try {
             // Resolve catalog + plan outside the write transaction (remote DB latency).
-            const modelIds = await listPlanAllowedRoutableModelIds(organizationId)
+            const allows = await listDefaultModelAllows(organizationId)
 
             const project = await prismaClient.$transaction(async (tx) => {
                 const created = await tx.project.create({
@@ -88,13 +88,9 @@ class ProjectService {
                         environment: input.environment,
                     },
                 })
-                if (modelIds.length > 0) {
+                if (allows.length > 0) {
                     await tx.projectModelAllow.createMany({
-                        data: modelIds.map((modelId) => ({
-                            projectId: created.id,
-                            modelId,
-                            enabled: true,
-                        })),
+                        data: allows.map((allow) => ({ projectId: created.id, ...allow })),
                         skipDuplicates: true,
                     })
                 }

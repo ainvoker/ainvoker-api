@@ -243,14 +243,19 @@ describe("POST /api/v1/organizations", () => {
         expect(res.body.error.code).toBe("FORBIDDEN")
     })
 
-    it("rejects Scale org creation (contact sales)", async () => {
+    it("creates a Scale org with PENDING subscription until wallet checkout", async () => {
         const res = await request(app.express)
             .post("/api/v1/organizations")
             .set(authUser.headers())
             .send({ name: "Scale Co", plan: PLAN_NAMES.scale })
 
-        expect(res.status).toBe(403)
-        expect(res.body.error.code).toBe("PLAN_CONTACT_REQUIRED")
+        expect(res.status).toBe(201)
+        const newSub = await prismaClient.subscription.findFirst({
+            where: { organizationId: res.body.data.id as string, plan: { name: PLAN_NAMES.scale } },
+            include: { plan: true },
+        })
+        expect(newSub?.status).toBe("PENDING")
+        expect(newSub?.plan.name).toBe(PLAN_NAMES.scale)
     })
 
     it("rejects a duplicate explicit slug", async () => {

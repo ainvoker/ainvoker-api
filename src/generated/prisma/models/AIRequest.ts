@@ -31,6 +31,7 @@ export type AIRequestAvgAggregateOutputType = {
   inputTokens: number | null
   outputTokens: number | null
   totalTokens: number | null
+  quotaTokens: number | null
   latency: number | null
   requestCost: runtime.Decimal | null
 }
@@ -40,6 +41,7 @@ export type AIRequestSumAggregateOutputType = {
   inputTokens: number | null
   outputTokens: number | null
   totalTokens: number | null
+  quotaTokens: number | null
   latency: number | null
   requestCost: runtime.Decimal | null
 }
@@ -53,6 +55,7 @@ export type AIRequestMinAggregateOutputType = {
   inputTokens: number | null
   outputTokens: number | null
   totalTokens: number | null
+  quotaTokens: number | null
   latency: number | null
   requestCost: runtime.Decimal | null
   requestStatus: $Enums.AIRequestStatus | null
@@ -68,6 +71,7 @@ export type AIRequestMaxAggregateOutputType = {
   inputTokens: number | null
   outputTokens: number | null
   totalTokens: number | null
+  quotaTokens: number | null
   latency: number | null
   requestCost: runtime.Decimal | null
   requestStatus: $Enums.AIRequestStatus | null
@@ -85,6 +89,7 @@ export type AIRequestCountAggregateOutputType = {
   inputTokens: number
   outputTokens: number
   totalTokens: number
+  quotaTokens: number
   latency: number
   requestCost: number
   requestStatus: number
@@ -98,6 +103,7 @@ export type AIRequestAvgAggregateInputType = {
   inputTokens?: true
   outputTokens?: true
   totalTokens?: true
+  quotaTokens?: true
   latency?: true
   requestCost?: true
 }
@@ -107,6 +113,7 @@ export type AIRequestSumAggregateInputType = {
   inputTokens?: true
   outputTokens?: true
   totalTokens?: true
+  quotaTokens?: true
   latency?: true
   requestCost?: true
 }
@@ -120,6 +127,7 @@ export type AIRequestMinAggregateInputType = {
   inputTokens?: true
   outputTokens?: true
   totalTokens?: true
+  quotaTokens?: true
   latency?: true
   requestCost?: true
   requestStatus?: true
@@ -135,6 +143,7 @@ export type AIRequestMaxAggregateInputType = {
   inputTokens?: true
   outputTokens?: true
   totalTokens?: true
+  quotaTokens?: true
   latency?: true
   requestCost?: true
   requestStatus?: true
@@ -152,6 +161,7 @@ export type AIRequestCountAggregateInputType = {
   inputTokens?: true
   outputTokens?: true
   totalTokens?: true
+  quotaTokens?: true
   latency?: true
   requestCost?: true
   requestStatus?: true
@@ -256,6 +266,7 @@ export type AIRequestGroupByOutputType = {
   inputTokens: number | null
   outputTokens: number | null
   totalTokens: number | null
+  quotaTokens: number | null
   latency: number | null
   requestCost: runtime.Decimal | null
   requestStatus: $Enums.AIRequestStatus
@@ -296,6 +307,7 @@ export type AIRequestWhereInput = {
   inputTokens?: Prisma.IntNullableFilter<"AIRequest"> | number | null
   outputTokens?: Prisma.IntNullableFilter<"AIRequest"> | number | null
   totalTokens?: Prisma.IntNullableFilter<"AIRequest"> | number | null
+  quotaTokens?: Prisma.IntNullableFilter<"AIRequest"> | number | null
   latency?: Prisma.IntNullableFilter<"AIRequest"> | number | null
   requestCost?: Prisma.DecimalNullableFilter<"AIRequest"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFilter<"AIRequest"> | $Enums.AIRequestStatus
@@ -317,6 +329,7 @@ export type AIRequestOrderByWithRelationInput = {
   inputTokens?: Prisma.SortOrderInput | Prisma.SortOrder
   outputTokens?: Prisma.SortOrderInput | Prisma.SortOrder
   totalTokens?: Prisma.SortOrderInput | Prisma.SortOrder
+  quotaTokens?: Prisma.SortOrderInput | Prisma.SortOrder
   latency?: Prisma.SortOrderInput | Prisma.SortOrder
   requestCost?: Prisma.SortOrderInput | Prisma.SortOrder
   requestStatus?: Prisma.SortOrder
@@ -341,6 +354,7 @@ export type AIRequestWhereUniqueInput = Prisma.AtLeast<{
   inputTokens?: Prisma.IntNullableFilter<"AIRequest"> | number | null
   outputTokens?: Prisma.IntNullableFilter<"AIRequest"> | number | null
   totalTokens?: Prisma.IntNullableFilter<"AIRequest"> | number | null
+  quotaTokens?: Prisma.IntNullableFilter<"AIRequest"> | number | null
   latency?: Prisma.IntNullableFilter<"AIRequest"> | number | null
   requestCost?: Prisma.DecimalNullableFilter<"AIRequest"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFilter<"AIRequest"> | $Enums.AIRequestStatus
@@ -362,6 +376,7 @@ export type AIRequestOrderByWithAggregationInput = {
   inputTokens?: Prisma.SortOrderInput | Prisma.SortOrder
   outputTokens?: Prisma.SortOrderInput | Prisma.SortOrder
   totalTokens?: Prisma.SortOrderInput | Prisma.SortOrder
+  quotaTokens?: Prisma.SortOrderInput | Prisma.SortOrder
   latency?: Prisma.SortOrderInput | Prisma.SortOrder
   requestCost?: Prisma.SortOrderInput | Prisma.SortOrder
   requestStatus?: Prisma.SortOrder
@@ -387,6 +402,7 @@ export type AIRequestScalarWhereWithAggregatesInput = {
   inputTokens?: Prisma.IntNullableWithAggregatesFilter<"AIRequest"> | number | null
   outputTokens?: Prisma.IntNullableWithAggregatesFilter<"AIRequest"> | number | null
   totalTokens?: Prisma.IntNullableWithAggregatesFilter<"AIRequest"> | number | null
+  quotaTokens?: Prisma.IntNullableWithAggregatesFilter<"AIRequest"> | number | null
   latency?: Prisma.IntNullableWithAggregatesFilter<"AIRequest"> | number | null
   requestCost?: Prisma.DecimalNullableWithAggregatesFilter<"AIRequest"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusWithAggregatesFilter<"AIRequest"> | $Enums.AIRequestStatus
@@ -401,6 +417,7 @@ export type AIRequestCreateInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -422,6 +439,7 @@ export type AIRequestUncheckedCreateInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -437,6 +455,7 @@ export type AIRequestUpdateInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -458,6 +477,7 @@ export type AIRequestUncheckedUpdateInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -476,6 +496,7 @@ export type AIRequestCreateManyInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -490,6 +511,7 @@ export type AIRequestUpdateManyMutationInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -507,6 +529,7 @@ export type AIRequestUncheckedUpdateManyInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -534,6 +557,7 @@ export type AIRequestCountOrderByAggregateInput = {
   inputTokens?: Prisma.SortOrder
   outputTokens?: Prisma.SortOrder
   totalTokens?: Prisma.SortOrder
+  quotaTokens?: Prisma.SortOrder
   latency?: Prisma.SortOrder
   requestCost?: Prisma.SortOrder
   requestStatus?: Prisma.SortOrder
@@ -545,6 +569,7 @@ export type AIRequestAvgOrderByAggregateInput = {
   inputTokens?: Prisma.SortOrder
   outputTokens?: Prisma.SortOrder
   totalTokens?: Prisma.SortOrder
+  quotaTokens?: Prisma.SortOrder
   latency?: Prisma.SortOrder
   requestCost?: Prisma.SortOrder
 }
@@ -558,6 +583,7 @@ export type AIRequestMaxOrderByAggregateInput = {
   inputTokens?: Prisma.SortOrder
   outputTokens?: Prisma.SortOrder
   totalTokens?: Prisma.SortOrder
+  quotaTokens?: Prisma.SortOrder
   latency?: Prisma.SortOrder
   requestCost?: Prisma.SortOrder
   requestStatus?: Prisma.SortOrder
@@ -573,6 +599,7 @@ export type AIRequestMinOrderByAggregateInput = {
   inputTokens?: Prisma.SortOrder
   outputTokens?: Prisma.SortOrder
   totalTokens?: Prisma.SortOrder
+  quotaTokens?: Prisma.SortOrder
   latency?: Prisma.SortOrder
   requestCost?: Prisma.SortOrder
   requestStatus?: Prisma.SortOrder
@@ -584,6 +611,7 @@ export type AIRequestSumOrderByAggregateInput = {
   inputTokens?: Prisma.SortOrder
   outputTokens?: Prisma.SortOrder
   totalTokens?: Prisma.SortOrder
+  quotaTokens?: Prisma.SortOrder
   latency?: Prisma.SortOrder
   requestCost?: Prisma.SortOrder
 }
@@ -765,6 +793,7 @@ export type AIRequestCreateWithoutProjectInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -784,6 +813,7 @@ export type AIRequestUncheckedCreateWithoutProjectInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -831,6 +861,7 @@ export type AIRequestScalarWhereInput = {
   inputTokens?: Prisma.IntNullableFilter<"AIRequest"> | number | null
   outputTokens?: Prisma.IntNullableFilter<"AIRequest"> | number | null
   totalTokens?: Prisma.IntNullableFilter<"AIRequest"> | number | null
+  quotaTokens?: Prisma.IntNullableFilter<"AIRequest"> | number | null
   latency?: Prisma.IntNullableFilter<"AIRequest"> | number | null
   requestCost?: Prisma.DecimalNullableFilter<"AIRequest"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFilter<"AIRequest"> | $Enums.AIRequestStatus
@@ -845,6 +876,7 @@ export type AIRequestCreateWithoutApiKeyInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -864,6 +896,7 @@ export type AIRequestUncheckedCreateWithoutApiKeyInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -905,6 +938,7 @@ export type AIRequestCreateWithoutModelInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -924,6 +958,7 @@ export type AIRequestUncheckedCreateWithoutModelInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -965,6 +1000,7 @@ export type AIRequestCreateWithoutActionInvocationsInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -985,6 +1021,7 @@ export type AIRequestUncheckedCreateWithoutActionInvocationsInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -1015,6 +1052,7 @@ export type AIRequestUpdateWithoutActionInvocationsInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -1035,6 +1073,7 @@ export type AIRequestUncheckedUpdateWithoutActionInvocationsInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -1051,6 +1090,7 @@ export type AIRequestCreateManyProjectInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -1065,6 +1105,7 @@ export type AIRequestUpdateWithoutProjectInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -1084,6 +1125,7 @@ export type AIRequestUncheckedUpdateWithoutProjectInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -1101,6 +1143,7 @@ export type AIRequestUncheckedUpdateManyWithoutProjectInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -1117,6 +1160,7 @@ export type AIRequestCreateManyApiKeyInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -1131,6 +1175,7 @@ export type AIRequestUpdateWithoutApiKeyInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -1150,6 +1195,7 @@ export type AIRequestUncheckedUpdateWithoutApiKeyInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -1167,6 +1213,7 @@ export type AIRequestUncheckedUpdateManyWithoutApiKeyInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -1183,6 +1230,7 @@ export type AIRequestCreateManyModelInput = {
   inputTokens?: number | null
   outputTokens?: number | null
   totalTokens?: number | null
+  quotaTokens?: number | null
   latency?: number | null
   requestCost?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: $Enums.AIRequestStatus
@@ -1197,6 +1245,7 @@ export type AIRequestUpdateWithoutModelInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -1216,6 +1265,7 @@ export type AIRequestUncheckedUpdateWithoutModelInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -1233,6 +1283,7 @@ export type AIRequestUncheckedUpdateManyWithoutModelInput = {
   inputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   outputTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   totalTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  quotaTokens?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   latency?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requestCost?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   requestStatus?: Prisma.EnumAIRequestStatusFieldUpdateOperationsInput | $Enums.AIRequestStatus
@@ -1281,6 +1332,7 @@ export type AIRequestSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   inputTokens?: boolean
   outputTokens?: boolean
   totalTokens?: boolean
+  quotaTokens?: boolean
   latency?: boolean
   requestCost?: boolean
   requestStatus?: boolean
@@ -1303,6 +1355,7 @@ export type AIRequestSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   inputTokens?: boolean
   outputTokens?: boolean
   totalTokens?: boolean
+  quotaTokens?: boolean
   latency?: boolean
   requestCost?: boolean
   requestStatus?: boolean
@@ -1323,6 +1376,7 @@ export type AIRequestSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   inputTokens?: boolean
   outputTokens?: boolean
   totalTokens?: boolean
+  quotaTokens?: boolean
   latency?: boolean
   requestCost?: boolean
   requestStatus?: boolean
@@ -1343,13 +1397,14 @@ export type AIRequestSelectScalar = {
   inputTokens?: boolean
   outputTokens?: boolean
   totalTokens?: boolean
+  quotaTokens?: boolean
   latency?: boolean
   requestCost?: boolean
   requestStatus?: boolean
   createdAt?: boolean
 }
 
-export type AIRequestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "projectId" | "apiKeyId" | "modelId" | "serviceType" | "requestPayload" | "responsePayload" | "inputTokens" | "outputTokens" | "totalTokens" | "latency" | "requestCost" | "requestStatus" | "createdAt", ExtArgs["result"]["aIRequest"]>
+export type AIRequestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "projectId" | "apiKeyId" | "modelId" | "serviceType" | "requestPayload" | "responsePayload" | "inputTokens" | "outputTokens" | "totalTokens" | "quotaTokens" | "latency" | "requestCost" | "requestStatus" | "createdAt", ExtArgs["result"]["aIRequest"]>
 export type AIRequestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
   apiKey?: boolean | Prisma.ApiKeyDefaultArgs<ExtArgs>
@@ -1387,6 +1442,10 @@ export type $AIRequestPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     inputTokens: number | null
     outputTokens: number | null
     totalTokens: number | null
+    /**
+     * Weighted quota units (billing meter).
+     */
+    quotaTokens: number | null
     latency: number | null
     requestCost: runtime.Decimal | null
     requestStatus: $Enums.AIRequestStatus
@@ -1828,6 +1887,7 @@ export interface AIRequestFieldRefs {
   readonly inputTokens: Prisma.FieldRef<"AIRequest", 'Int'>
   readonly outputTokens: Prisma.FieldRef<"AIRequest", 'Int'>
   readonly totalTokens: Prisma.FieldRef<"AIRequest", 'Int'>
+  readonly quotaTokens: Prisma.FieldRef<"AIRequest", 'Int'>
   readonly latency: Prisma.FieldRef<"AIRequest", 'Int'>
   readonly requestCost: Prisma.FieldRef<"AIRequest", 'Decimal'>
   readonly requestStatus: Prisma.FieldRef<"AIRequest", 'AIRequestStatus'>

@@ -57,6 +57,12 @@ enum AIModelType {
   OTHER
 }
 
+/// Economy: standard markup, may be offered on Free. Premium: higher markup, never on Free. Pro and Scale can use both.
+enum ModelPlanTier {
+  ECONOMY
+  PREMIUM
+}
+
 enum AIServiceType {
   TEXT
   IMAGE
@@ -136,6 +142,11 @@ model User {
   invitesCreated        OrganizationInvite[] @relation("InvitesCreated")
   invitesAccepted       OrganizationInvite[] @relation("InvitesAccepted")
 
+  /// Lifetime free-tier quota units consumed (Personal org, while on Free entitlement).
+  freeQuotaUnitsUsed  Int @default(0)
+  /// Lifetime cap; not reset monthly.
+  freeQuotaUnitsLimit Int @default(50000)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -167,6 +178,8 @@ model Organization {
   paymentMethodType       String?
   paymentMethodBrand      String?
   paymentMethodLast4      String?
+  /// Scale prepaid wallet (PHP centavos).
+  scaleWalletBalanceCentavos Int @default(0)
 
   members       OrganizationMember[]
   invites       OrganizationInvite[]
@@ -334,10 +347,15 @@ model AIModel {
   name          String
   type          AIModelType
   contextWindow Int
+  /// Provider list USD per 1M tokens (from code seed).
+  providerInputPrice  Decimal @db.Decimal(12, 6)
+  providerOutputPrice Decimal @db.Decimal(12, 6)
+  /// Customer retail USD per 1M (recomputed from business settings).
   inputPrice    Decimal       @db.Decimal(12, 6)
   outputPrice   Decimal       @db.Decimal(12, 6)
   status        CatalogStatus @default(ACTIVE)
-  /// When true, orgs on the Free plan may call this model.
+  planTier      ModelPlanTier @default(PREMIUM)
+  /// Economy models the Free plan may call; always false on PREMIUM.
   freeEligible  Boolean       @default(false)
 
   provider    AIProvider          @relation(fields: [providerId], references: [id], onDelete: Restrict)
@@ -368,6 +386,8 @@ model AIRequest {
   inputTokens  Int?
   outputTokens Int?
   totalTokens  Int?
+  /// Weighted quota units (billing meter).
+  quotaTokens  Int?
   latency      Int?
   requestCost  Decimal? @db.Decimal(12, 6)
 
@@ -469,6 +489,23 @@ model Webhook {
   updatedAt DateTime @updatedAt
 
   @@index([projectId])
+}
+
+// ── Platform business (singleton id = 1) ────────────────────────────────────
+
+model PlatformBusinessSettings {
+  id Int @id @default(1)
+
+  economyMarkupMultiplier  Decimal @default(1.2) @db.Decimal(8, 4)
+  premiumMarkupMultiplier  Decimal @default(1.35) @db.Decimal(8, 4)
+  imageMarkupMultiplier    Decimal @default(1.4) @db.Decimal(8, 4)
+  usdToPhpRate             Decimal @default(58) @db.Decimal(12, 4)
+  /// AIModel.id used as quota weight reference (1 unit = reference retail).
+  quotaReferenceModelId    Int?
+
+  scaleAdvanceCentavos Int @default(49900)
+
+  updatedAt DateTime @updatedAt
 }
 
 // ── Billing (per Organization) ──────────────────────────────────────────────

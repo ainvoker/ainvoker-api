@@ -1,10 +1,11 @@
 import { Prisma } from "../../generated/prisma/client.js"
 import {
-    assertModelAllowedForPlan,
     getActiveSubscriptionWithPlan,
+    recordFreeQuotaUsage,
     reservePendingImageRequest,
     type QuotaSnapshot,
 } from "../billing/limits.js"
+import { assertModelAllowedForPlan, quotaUnitsForHold } from "../billing/quotaHelpers.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
 import { imageProviderRegistry } from "../../providers/index.js"
@@ -31,6 +32,7 @@ type ResolvedModel = {
     id: number
     name: string
     freeEligible: boolean
+    planTier: import("../../generated/prisma/client.js").ModelPlanTier
     inputPrice: Prisma.Decimal
     outputPrice: Prisma.Decimal
     providerName: string
@@ -70,6 +72,7 @@ class ImageService {
             id: model.id,
             name: model.name,
             freeEligible: model.freeEligible,
+            planTier: model.planTier,
             inputPrice: model.inputPrice,
             outputPrice: model.outputPrice,
             providerName: model.provider.name,
@@ -132,6 +135,9 @@ class ImageService {
             })
 
             const { usage } = result
+            const inputTokens = usage?.inputTokens ?? tokenHold.inputTokens
+            const outputTokens = usage?.outputTokens ?? tokenHold.outputTokens
+            const quotaTokens = await quotaUnitsForHold(model, inputTokens, outputTokens)
             await prismaClient.aIRequest.update({
                 where: { id: aiRequest.id },
                 data: {
@@ -141,14 +147,15 @@ class ImageService {
                         usage,
                         raw: result.raw as Prisma.InputJsonValue,
                     },
-                    // Keep the hold when the provider omits usage so the cap is not released blind.
-                    inputTokens: usage?.inputTokens ?? tokenHold.inputTokens,
-                    outputTokens: usage?.outputTokens ?? tokenHold.outputTokens,
-                    totalTokens: usage?.totalTokens ?? tokenHold.inputTokens + tokenHold.outputTokens,
+                    inputTokens,
+                    outputTokens,
+                    totalTokens: usage?.totalTokens ?? inputTokens + outputTokens,
+                    quotaTokens,
                     latency: Date.now() - started,
                     requestCost: this.computeRequestCost(model, usage),
                 },
             })
+            await recordFreeQuotaUsage(apiKeyContext.organizationId, quotaTokens)
 
             return {
                 id: aiRequest.id,
@@ -170,6 +177,7 @@ class ImageService {
                     inputTokens: null,
                     outputTokens: null,
                     totalTokens: null,
+                    quotaTokens: null,
                 },
             })
             throw err

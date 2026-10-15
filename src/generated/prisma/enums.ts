@@ -74,6 +74,14 @@ export const AIModelType = {
 export type AIModelType = (typeof AIModelType)[keyof typeof AIModelType]
 
 
+export const ModelPlanTier = {
+  ECONOMY: 'ECONOMY',
+  PREMIUM: 'PREMIUM'
+} as const
+
+export type ModelPlanTier = (typeof ModelPlanTier)[keyof typeof ModelPlanTier]
+
+
 export const AIServiceType = {
   TEXT: 'TEXT',
   IMAGE: 'IMAGE',

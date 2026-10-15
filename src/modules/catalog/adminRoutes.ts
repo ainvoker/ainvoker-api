@@ -7,7 +7,6 @@ import http from "../../platform/http.js"
 import adminModelsService from "./adminModelsService.js"
 import {
     adminModelParamsSchema,
-    createAdminModelSchema,
     listAdminModelsQuerySchema,
     updateAdminModelSchema,
 } from "./schemas.js"
@@ -21,7 +20,6 @@ class AdminCatalogRoutes extends BaseRoutes {
         this.router.use(requireSession, requirePlatformAdmin)
         this.router.get("/providers", this.bind(this.listProviders))
         this.router.get("/models", this.bind(this.listModels))
-        this.router.post("/models", this.bind(this.createModel))
         this.router.get("/models/:modelId", this.bind(this.getModel))
         this.router.patch("/models/:modelId", this.bind(this.updateModel))
     }
@@ -41,12 +39,6 @@ class AdminCatalogRoutes extends BaseRoutes {
         const { modelId } = adminModelParamsSchema.parse(req.params)
         const data = await adminModelsService.getModel(modelId)
         http.ok(res, data)
-    }
-
-    private async createModel(req: Request, res: Response) {
-        const body = createAdminModelSchema.parse(req.body)
-        const data = await adminModelsService.createModel(body)
-        http.ok(res, data, 201)
     }
 
     private async updateModel(req: Request, res: Response) {

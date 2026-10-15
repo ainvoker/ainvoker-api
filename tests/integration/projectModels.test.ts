@@ -141,6 +141,8 @@ describe("project models endpoints", () => {
                 name: "gpt-4o",
                 type: "TEXT",
                 contextWindow: 128000,
+                providerInputPrice: 2.5,
+                providerOutputPrice: 10,
                 inputPrice: 2.5,
                 outputPrice: 10,
                 status: "ACTIVE",
@@ -187,7 +189,9 @@ describe("project models endpoints", () => {
         const listRes = await request(app.express)
             .get(`/api/v1/projects/${projectId}/models`)
             .set(authHeader(admin.userId))
-        const modelId = (listRes.body.data as Array<{ id: number }>)[0]?.id
+        const modelId = (listRes.body.data as Array<{ id: number; locked: boolean }>).find(
+            (row) => !row.locked,
+        )?.id
         expect(modelId).toBeTruthy()
 
         const toggleRes = await request(app.express)
@@ -211,7 +215,7 @@ describe("project models endpoints", () => {
 describe("project models on Pro", () => {
     const authUser = useTestAuthUser()
 
-    it("lists plan-locked models as unlocked after upgrading to Pro", async () => {
+    it("unlocks premium text and image models on Pro but starts them disabled", async () => {
         await ensureBillingCatalog()
         const pro = await getPlanByName(PLAN_NAMES.pro)
         await prismaClient.subscription.updateMany({
@@ -239,13 +243,17 @@ describe("project models on Pro", () => {
                 name: "gpt-4o",
                 type: "TEXT",
                 contextWindow: 128000,
+                providerInputPrice: 2.5,
+                providerOutputPrice: 10,
                 inputPrice: 2.5,
                 outputPrice: 10,
                 status: "ACTIVE",
+                planTier: "PREMIUM",
                 freeEligible: false,
             },
             update: {
                 status: "ACTIVE",
+                planTier: "PREMIUM",
                 freeEligible: false,
             },
         })
@@ -266,8 +274,10 @@ describe("project models on Pro", () => {
 
         const rows = listRes.body.data as Array<{ slug: string; enabled: boolean; locked: boolean }>
         const gpt4o = rows.find((row) => row.slug === "openai/gpt-4o")
-        expect(gpt4o).toMatchObject({ enabled: true, locked: false })
+        expect(gpt4o).toMatchObject({ enabled: false, locked: false })
         const image = rows.find((row) => row.slug === imageCatalogDefaults.modelSlug)
-        expect(image).toMatchObject({ type: "IMAGE", enabled: true, locked: false })
+        expect(image).toMatchObject({ type: "IMAGE", enabled: false, locked: false })
+        const economy = rows.find((row) => row.slug === "openai/gpt-4o-mini")
+        expect(economy).toMatchObject({ enabled: true, locked: false })
     })
 })

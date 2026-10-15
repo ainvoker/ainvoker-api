@@ -334,6 +334,8 @@ describe("POST /v1/text/stream", () => {
                 name: "gpt-4o",
                 type: "TEXT",
                 contextWindow: 128000,
+                providerInputPrice: 2.5,
+                providerOutputPrice: 10,
                 inputPrice: 2.5,
                 outputPrice: 10,
                 status: "ACTIVE",

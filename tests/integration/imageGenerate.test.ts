@@ -16,15 +16,26 @@ describe("POST /v1/image/generate", () => {
     let plaintextKey: string
     let fetchSpy: ReturnType<typeof vi.spyOn>
 
-    async function upgradeToPro() {
+    async function subscribeTo(planName: typeof PLAN_NAMES.pro | typeof PLAN_NAMES.scale) {
         await ensureBillingCatalog()
-        const pro = await getPlanByName(PLAN_NAMES.pro)
+        const plan = await getPlanByName(planName)
         await prismaClient.subscription.updateMany({
             where: { organizationId, status: "ACTIVE" },
             data: { status: "CANCELED" },
         })
         await prismaClient.subscription.create({
-            data: { organizationId, planId: pro.id, status: "ACTIVE", startedAt: new Date() },
+            data: { organizationId, planId: plan.id, status: "ACTIVE", startedAt: new Date() },
+        })
+    }
+
+    const upgradeToScale = () => subscribeTo(PLAN_NAMES.scale)
+
+    /** Image models are premium, so projects start with them disabled. */
+    async function enableImageModels() {
+        const models = await prismaClient.aIModel.findMany({ where: { type: "IMAGE" } })
+        await prismaClient.projectModelAllow.createMany({
+            data: models.map((model) => ({ projectId, modelId: model.id, enabled: true })),
+            skipDuplicates: true,
         })
     }
 
@@ -48,6 +59,7 @@ describe("POST /v1/image/generate", () => {
             },
         })
         projectId = project.id
+        await enableImageModels()
 
         const generated = apiKeyHasher.generate()
         plaintextKey = generated.plaintext
@@ -96,7 +108,7 @@ describe("POST /v1/image/generate", () => {
     })
 
     it("returns 404 for a text model", async () => {
-        await upgradeToPro()
+        await upgradeToScale()
         const res = await generate({ model: "openai/gpt-4o-mini", prompt: "A puppy" })
         expect(res.status).toBe(404)
         expect(fetchSpy).not.toHaveBeenCalled()
@@ -109,8 +121,16 @@ describe("POST /v1/image/generate", () => {
         expect(fetchSpy).not.toHaveBeenCalled()
     })
 
-    it("generates an image on Pro and writes an IMAGE AIRequest", async () => {
-        await upgradeToPro()
+    it("generates an image on Pro", async () => {
+        await subscribeTo(PLAN_NAMES.pro)
+        const res = await generate({ model: imageCatalogDefaults.modelSlug, prompt: "A puppy" })
+        expect(res.status).toBe(200)
+        expect(res.body.data.images).toHaveLength(1)
+        expect(fetchSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it("generates an image on Scale and writes an IMAGE AIRequest", async () => {
+        await upgradeToScale()
         const res = await generate({
             model: imageCatalogDefaults.modelSlug,
             prompt: "A puppy",
@@ -141,18 +161,91 @@ describe("POST /v1/image/generate", () => {
         expect(stored.serviceType).toBe("IMAGE")
         expect(stored.requestStatus).toBe("SUCCESS")
         expect(stored.totalTokens).toBe(1012)
-        // 12 * $5/M + 1000 * $30/M
-        expect(stored.requestCost?.toString()).toBe("0.03006")
+        // Retail = provider × image markup (1.4): 12 * $7/M + 1000 * $42/M
+        expect(stored.requestCost?.toString()).toBe("0.042084")
         expect(JSON.stringify(stored.responsePayload)).not.toContain("aGVsbG8=")
     })
 
+    it("generates Gemini images through the Interactions API, one call per image", async () => {
+        await upgradeToScale()
+        fetchSpy.mockImplementation(async () =>
+            new Response(
+                JSON.stringify({
+                    id: "v1_abc",
+                    status: "completed",
+                    usage: { total_input_tokens: 10, total_output_tokens: 1120, total_tokens: 1130 },
+                    steps: [
+                        {
+                            type: "model_output",
+                            content: [
+                                { type: "text", text: "Here you go" },
+                                { type: "image", mime_type: "image/png", data: "Z2VtaW5p" },
+                            ],
+                        },
+                    ],
+                }),
+                { status: 200, headers: { "Content-Type": "application/json" } },
+            ),
+        )
+
+        const res = await generate({
+            model: "gemini/gemini-nano-banana-2.1",
+            prompt: "A puppy",
+            n: 2,
+        })
+
+        expect(res.status).toBe(200)
+        expect(res.body.data).toMatchObject({
+            model: "gemini/gemini-nano-banana-2.1",
+            images: [
+                { base64: "Z2VtaW5p", mimeType: "image/png" },
+                { base64: "Z2VtaW5p", mimeType: "image/png" },
+            ],
+            usage: { inputTokens: 20, outputTokens: 2240, totalTokens: 2260 },
+        })
+
+        expect(fetchSpy).toHaveBeenCalledTimes(2)
+        const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit]
+        expect(url).toMatch(/\/v1beta\/interactions$/)
+        expect((init.headers as Record<string, string>)["x-goog-api-key"]).toBeTruthy()
+        expect(JSON.parse(String(init.body))).toEqual({
+            model: "gemini-nano-banana-2.1",
+            input: "A puppy",
+            store: false,
+        })
+
+        const stored = await prismaClient.aIRequest.findUniqueOrThrow({
+            where: { id: res.body.data.id as string },
+        })
+        expect(stored.requestStatus).toBe("SUCCESS")
+        expect(JSON.stringify(stored.responsePayload)).not.toContain("Z2VtaW5p")
+    })
+
+    it("returns 502 when Gemini responds without an image", async () => {
+        await upgradeToScale()
+        fetchSpy.mockImplementation(async () =>
+            new Response(
+                JSON.stringify({
+                    status: "completed",
+                    steps: [{ type: "model_output", content: [{ type: "text", text: "No." }] }],
+                }),
+                { status: 200, headers: { "Content-Type": "application/json" } },
+            ),
+        )
+
+        const res = await generate({ model: "gemini/gemini-nano-banana-2.1", prompt: "A puppy" })
+        expect(res.status).toBe(502)
+        expect(res.body.error.code).toBe("UPSTREAM_ERROR")
+    })
+
     it("returns 403 MODEL_DISABLED when the project disables the model", async () => {
-        await upgradeToPro()
+        await upgradeToScale()
         const model = await prismaClient.aIModel.findFirstOrThrow({
             where: { name: imageCatalogDefaults.modelName },
         })
-        await prismaClient.projectModelAllow.create({
-            data: { projectId, modelId: model.id, enabled: false },
+        await prismaClient.projectModelAllow.update({
+            where: { projectId_modelId: { projectId, modelId: model.id } },
+            data: { enabled: false },
         })
 
         const res = await generate({ model: imageCatalogDefaults.modelSlug, prompt: "A puppy" })
@@ -161,11 +254,11 @@ describe("POST /v1/image/generate", () => {
         expect(fetchSpy).not.toHaveBeenCalled()
     })
 
-    it("returns 429 when the image token hold does not fit the monthly budget", async () => {
-        await upgradeToPro()
-        const pro = await getPlanByName(PLAN_NAMES.pro)
+    it("returns 429 when the image token hold does not fit the Scale safety ceiling", async () => {
+        await upgradeToScale()
+        const scale = await getPlanByName(PLAN_NAMES.scale)
         await prismaClient.plan.update({
-            where: { id: pro.id },
+            where: { id: scale.id },
             data: { tokenLimit: IMAGE_OUTPUT_TOKEN_HOLD },
         })
 
@@ -176,14 +269,14 @@ describe("POST /v1/image/generate", () => {
             expect(fetchSpy).not.toHaveBeenCalled()
         } finally {
             await prismaClient.plan.update({
-                where: { id: pro.id },
-                data: { tokenLimit: pro.tokenLimit },
+                where: { id: scale.id },
+                data: { tokenLimit: scale.tokenLimit },
             })
         }
     })
 
     it("marks the request FAILED when the provider errors", async () => {
-        await upgradeToPro()
+        await upgradeToScale()
         fetchSpy.mockImplementation(async () =>
             new Response(JSON.stringify({ error: { message: "Prompt rejected" } }), {
                 status: 400,

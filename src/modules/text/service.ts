@@ -1,10 +1,11 @@
 import { Prisma } from "../../generated/prisma/client.js"
 import {
-    assertModelAllowedForPlan,
     getActiveSubscriptionWithPlan,
+    recordFreeQuotaUsage,
     reservePendingTextRequest,
     type QuotaSnapshot,
 } from "../billing/limits.js"
+import { assertModelAllowedForPlan, quotaUnitsForHold } from "../billing/quotaHelpers.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
 import chatProviderRegistry from "../../providers/index.js"
@@ -50,6 +51,7 @@ type ResolvedModel = {
     id: number
     name: string
     freeEligible: boolean
+    planTier: import("../../generated/prisma/client.js").ModelPlanTier
     inputPrice: Prisma.Decimal
     outputPrice: Prisma.Decimal
     providerName: string
@@ -99,6 +101,7 @@ class TextService {
                 id: model.id,
                 name: model.name,
                 freeEligible: model.freeEligible,
+                planTier: model.planTier,
                 inputPrice: model.inputPrice,
                 outputPrice: model.outputPrice,
                 providerName: provider.name,
@@ -135,6 +138,7 @@ class TextService {
             id: model.id,
             name: model.name,
             freeEligible: model.freeEligible,
+            planTier: model.planTier,
             inputPrice: model.inputPrice,
             outputPrice: model.outputPrice,
             providerName: model.provider.name,
@@ -209,8 +213,12 @@ class TextService {
         tokenHold: { inputTokens: number; outputTokens: number }
         model: ResolvedModel
         latency: number
+        organizationId: string
     }) {
         const { usage, tokenHold } = input
+        const inputTokens = usage?.inputTokens ?? tokenHold.inputTokens
+        const outputTokens = usage?.outputTokens ?? tokenHold.outputTokens
+        const quotaTokens = await quotaUnitsForHold(input.model, inputTokens, outputTokens)
         const responsePayload = {
             message: input.message as Prisma.InputJsonObject,
             usage,
@@ -222,14 +230,15 @@ class TextService {
             data: {
                 requestStatus: "SUCCESS",
                 responsePayload,
-                // Keep the hold when the provider omits usage so the cap is not released blind.
-                inputTokens: usage?.inputTokens ?? tokenHold.inputTokens,
-                outputTokens: usage?.outputTokens ?? tokenHold.outputTokens,
-                totalTokens: usage?.totalTokens ?? tokenHold.inputTokens + tokenHold.outputTokens,
+                inputTokens,
+                outputTokens,
+                totalTokens: usage?.totalTokens ?? inputTokens + outputTokens,
+                quotaTokens,
                 latency: input.latency,
                 requestCost: this.computeRequestCost(input.model, usage),
             },
         })
+        await recordFreeQuotaUsage(input.organizationId, quotaTokens)
     }
 
     private async markFailed(input: {
@@ -252,6 +261,7 @@ class TextService {
                 inputTokens: null,
                 outputTokens: null,
                 totalTokens: null,
+                quotaTokens: null,
             },
         })
 
@@ -283,6 +293,7 @@ class TextService {
                 tokenHold,
                 model,
                 latency: Date.now() - started,
+                organizationId: apiKeyContext.organizationId,
             })
 
             return {
@@ -401,6 +412,7 @@ class TextService {
                         tokenHold,
                         model,
                         latency: Date.now() - started,
+                        organizationId: apiKeyContext.organizationId,
                     })
                 }
                 yield { type: "done", message, usage }

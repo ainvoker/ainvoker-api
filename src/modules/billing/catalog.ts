@@ -21,9 +21,9 @@ const PLAN_SEEDS = [
     },
     {
         name: PLAN_NAMES.pro,
-        monthlyPrice: new Prisma.Decimal(19),
-        tokenLimit: 2_000_000,
-        requestLimit: 5_000,
+        monthlyPrice: new Prisma.Decimal(4.99),
+        tokenLimit: 1_000_000,
+        requestLimit: 0,
         billingMode: "FIXED_MONTHLY" as const,
         description: "Fixed monthly plan with included limits; unlimited paid orgs",
     },
@@ -83,4 +83,9 @@ export async function getPlanByName(name: PlanName) {
 /** Pro checkout amount in PHP smallest unit (centavos), from env. */
 export function getProCheckoutAmountPhp(): number {
     return env.XENDIT_PRO_AMOUNT
+}
+
+/** Scale wallet advance / top-up in PHP centavos, from env. */
+export function getScaleCheckoutAmountPhp(): number {
+    return env.XENDIT_SCALE_ADVANCE_AMOUNT
 }

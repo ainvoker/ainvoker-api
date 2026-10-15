@@ -26,6 +26,12 @@ class BillingRoutes extends BaseRoutes {
             requireOrgMember,
             this.bind(this.listInvoices),
         )
+        this.router.get(
+            "/organizations/:orgId/subscription/scale-upgrade-preview",
+            requireSession,
+            requireOrgMember,
+            this.bind(this.getScaleUpgradePreview),
+        )
         this.router.post(
             "/organizations/:orgId/subscription/cancel",
             requireSession,
@@ -54,6 +60,13 @@ class BillingRoutes extends BaseRoutes {
         http.ok(res, data)
     }
 
+    private async getScaleUpgradePreview(req: Request, res: Response) {
+        const orgId = req.params.orgId as string
+        const membership = req.membership!
+        const data = await BillingService.getScaleUpgradePreview(orgId, membership.role.name)
+        http.ok(res, data)
+    }
+
     private async cancelSubscription(req: Request, res: Response) {
         const orgId = req.params.orgId as string
         const membership = req.membership!
@@ -72,13 +85,14 @@ class BillingRoutes extends BaseRoutes {
         const membership = req.membership!
         const returnUrl =
             body.returnUrl ??
-            `${env.getClientOrigin()}/billing/checkout?orgId=${orgId}&plan=pro&resume=1`
+            `${env.getClientOrigin()}/billing/checkout?orgId=${orgId}&plan=${body.plan}&resume=1`
 
-        const data = await BillingService.createProCheckoutSession({
+        const data = await BillingService.createCheckoutSession({
             organizationId: orgId,
             userId: auth.userId,
             roleName: membership.role.name,
             returnUrl,
+            plan: body.plan,
         })
         http.ok(res, data, 201)
     }

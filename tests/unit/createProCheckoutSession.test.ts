@@ -46,7 +46,7 @@ vi.mock("../../src/config/env.js", () => ({
 vi.mock("../../src/modules/billing/catalog.js", () => ({
     ensureBillingCatalog: vi.fn().mockResolvedValue(undefined),
     getPlanByName,
-    getProCheckoutAmountPhp: () => 109900,
+    getProCheckoutAmountPhp: () => 49900,
     PLAN_NAMES: { free: "free", pro: "pro", scale: "scale" },
 }))
 

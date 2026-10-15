@@ -20,8 +20,18 @@ export type OrganizationModel = runtime.Types.Result.DefaultSelection<Prisma.$Or
 
 export type AggregateOrganization = {
   _count: OrganizationCountAggregateOutputType | null
+  _avg: OrganizationAvgAggregateOutputType | null
+  _sum: OrganizationSumAggregateOutputType | null
   _min: OrganizationMinAggregateOutputType | null
   _max: OrganizationMaxAggregateOutputType | null
+}
+
+export type OrganizationAvgAggregateOutputType = {
+  scaleWalletBalanceCentavos: number | null
+}
+
+export type OrganizationSumAggregateOutputType = {
+  scaleWalletBalanceCentavos: number | null
 }
 
 export type OrganizationMinAggregateOutputType = {
@@ -36,6 +46,7 @@ export type OrganizationMinAggregateOutputType = {
   paymentMethodType: string | null
   paymentMethodBrand: string | null
   paymentMethodLast4: string | null
+  scaleWalletBalanceCentavos: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -52,6 +63,7 @@ export type OrganizationMaxAggregateOutputType = {
   paymentMethodType: string | null
   paymentMethodBrand: string | null
   paymentMethodLast4: string | null
+  scaleWalletBalanceCentavos: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -68,11 +80,20 @@ export type OrganizationCountAggregateOutputType = {
   paymentMethodType: number
   paymentMethodBrand: number
   paymentMethodLast4: number
+  scaleWalletBalanceCentavos: number
   createdAt: number
   updatedAt: number
   _all: number
 }
 
+
+export type OrganizationAvgAggregateInputType = {
+  scaleWalletBalanceCentavos?: true
+}
+
+export type OrganizationSumAggregateInputType = {
+  scaleWalletBalanceCentavos?: true
+}
 
 export type OrganizationMinAggregateInputType = {
   id?: true
@@ -86,6 +107,7 @@ export type OrganizationMinAggregateInputType = {
   paymentMethodType?: true
   paymentMethodBrand?: true
   paymentMethodLast4?: true
+  scaleWalletBalanceCentavos?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -102,6 +124,7 @@ export type OrganizationMaxAggregateInputType = {
   paymentMethodType?: true
   paymentMethodBrand?: true
   paymentMethodLast4?: true
+  scaleWalletBalanceCentavos?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -118,6 +141,7 @@ export type OrganizationCountAggregateInputType = {
   paymentMethodType?: true
   paymentMethodBrand?: true
   paymentMethodLast4?: true
+  scaleWalletBalanceCentavos?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -161,6 +185,18 @@ export type OrganizationAggregateArgs<ExtArgs extends runtime.Types.Extensions.I
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: OrganizationAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: OrganizationSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: OrganizationMinAggregateInputType
@@ -191,6 +227,8 @@ export type OrganizationGroupByArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   _count?: OrganizationCountAggregateInputType | true
+  _avg?: OrganizationAvgAggregateInputType
+  _sum?: OrganizationSumAggregateInputType
   _min?: OrganizationMinAggregateInputType
   _max?: OrganizationMaxAggregateInputType
 }
@@ -207,9 +245,12 @@ export type OrganizationGroupByOutputType = {
   paymentMethodType: string | null
   paymentMethodBrand: string | null
   paymentMethodLast4: string | null
+  scaleWalletBalanceCentavos: number
   createdAt: Date
   updatedAt: Date
   _count: OrganizationCountAggregateOutputType | null
+  _avg: OrganizationAvgAggregateOutputType | null
+  _sum: OrganizationSumAggregateOutputType | null
   _min: OrganizationMinAggregateOutputType | null
   _max: OrganizationMaxAggregateOutputType | null
 }
@@ -244,6 +285,7 @@ export type OrganizationWhereInput = {
   paymentMethodType?: Prisma.StringNullableFilter<"Organization"> | string | null
   paymentMethodBrand?: Prisma.StringNullableFilter<"Organization"> | string | null
   paymentMethodLast4?: Prisma.StringNullableFilter<"Organization"> | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFilter<"Organization"> | number
   createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   createdBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -265,6 +307,7 @@ export type OrganizationOrderByWithRelationInput = {
   paymentMethodType?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentMethodBrand?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentMethodLast4?: Prisma.SortOrderInput | Prisma.SortOrder
+  scaleWalletBalanceCentavos?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   createdBy?: Prisma.UserOrderByWithRelationInput
@@ -289,6 +332,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<{
   paymentMethodType?: Prisma.StringNullableFilter<"Organization"> | string | null
   paymentMethodBrand?: Prisma.StringNullableFilter<"Organization"> | string | null
   paymentMethodLast4?: Prisma.StringNullableFilter<"Organization"> | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFilter<"Organization"> | number
   createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   createdBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -310,11 +354,14 @@ export type OrganizationOrderByWithAggregationInput = {
   paymentMethodType?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentMethodBrand?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentMethodLast4?: Prisma.SortOrderInput | Prisma.SortOrder
+  scaleWalletBalanceCentavos?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.OrganizationCountOrderByAggregateInput
+  _avg?: Prisma.OrganizationAvgOrderByAggregateInput
   _max?: Prisma.OrganizationMaxOrderByAggregateInput
   _min?: Prisma.OrganizationMinOrderByAggregateInput
+  _sum?: Prisma.OrganizationSumOrderByAggregateInput
 }
 
 export type OrganizationScalarWhereWithAggregatesInput = {
@@ -332,6 +379,7 @@ export type OrganizationScalarWhereWithAggregatesInput = {
   paymentMethodType?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
   paymentMethodBrand?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
   paymentMethodLast4?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntWithAggregatesFilter<"Organization"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Organization"> | Date | string
 }
@@ -347,6 +395,7 @@ export type OrganizationCreateInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
@@ -368,6 +417,7 @@ export type OrganizationUncheckedCreateInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -387,6 +437,7 @@ export type OrganizationUpdateInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
@@ -408,6 +459,7 @@ export type OrganizationUncheckedUpdateInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -428,6 +480,7 @@ export type OrganizationCreateManyInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -443,6 +496,7 @@ export type OrganizationUpdateManyMutationInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -459,6 +513,7 @@ export type OrganizationUncheckedUpdateManyInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -485,8 +540,13 @@ export type OrganizationCountOrderByAggregateInput = {
   paymentMethodType?: Prisma.SortOrder
   paymentMethodBrand?: Prisma.SortOrder
   paymentMethodLast4?: Prisma.SortOrder
+  scaleWalletBalanceCentavos?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type OrganizationAvgOrderByAggregateInput = {
+  scaleWalletBalanceCentavos?: Prisma.SortOrder
 }
 
 export type OrganizationMaxOrderByAggregateInput = {
@@ -501,6 +561,7 @@ export type OrganizationMaxOrderByAggregateInput = {
   paymentMethodType?: Prisma.SortOrder
   paymentMethodBrand?: Prisma.SortOrder
   paymentMethodLast4?: Prisma.SortOrder
+  scaleWalletBalanceCentavos?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -517,8 +578,13 @@ export type OrganizationMinOrderByAggregateInput = {
   paymentMethodType?: Prisma.SortOrder
   paymentMethodBrand?: Prisma.SortOrder
   paymentMethodLast4?: Prisma.SortOrder
+  scaleWalletBalanceCentavos?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type OrganizationSumOrderByAggregateInput = {
+  scaleWalletBalanceCentavos?: Prisma.SortOrder
 }
 
 export type OrganizationScalarRelationFilter = {
@@ -639,6 +705,7 @@ export type OrganizationCreateWithoutCreatedByInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
@@ -658,6 +725,7 @@ export type OrganizationUncheckedCreateWithoutCreatedByInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -707,6 +775,7 @@ export type OrganizationScalarWhereInput = {
   paymentMethodType?: Prisma.StringNullableFilter<"Organization"> | string | null
   paymentMethodBrand?: Prisma.StringNullableFilter<"Organization"> | string | null
   paymentMethodLast4?: Prisma.StringNullableFilter<"Organization"> | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFilter<"Organization"> | number
   createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
 }
@@ -722,6 +791,7 @@ export type OrganizationCreateWithoutMembersInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
@@ -742,6 +812,7 @@ export type OrganizationUncheckedCreateWithoutMembersInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   invites?: Prisma.OrganizationInviteUncheckedCreateNestedManyWithoutOrganizationInput
@@ -776,6 +847,7 @@ export type OrganizationUpdateWithoutMembersInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
@@ -796,6 +868,7 @@ export type OrganizationUncheckedUpdateWithoutMembersInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   invites?: Prisma.OrganizationInviteUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -814,6 +887,7 @@ export type OrganizationCreateWithoutInvitesInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
@@ -834,6 +908,7 @@ export type OrganizationUncheckedCreateWithoutInvitesInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -868,6 +943,7 @@ export type OrganizationUpdateWithoutInvitesInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
@@ -888,6 +964,7 @@ export type OrganizationUncheckedUpdateWithoutInvitesInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -906,6 +983,7 @@ export type OrganizationCreateWithoutProjectsInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
@@ -926,6 +1004,7 @@ export type OrganizationUncheckedCreateWithoutProjectsInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -960,6 +1039,7 @@ export type OrganizationUpdateWithoutProjectsInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
@@ -980,6 +1060,7 @@ export type OrganizationUncheckedUpdateWithoutProjectsInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -998,6 +1079,7 @@ export type OrganizationCreateWithoutSubscriptionsInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedOrganizationsInput
@@ -1018,6 +1100,7 @@ export type OrganizationUncheckedCreateWithoutSubscriptionsInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   members?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1052,6 +1135,7 @@ export type OrganizationUpdateWithoutSubscriptionsInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdBy?: Prisma.UserUpdateOneWithoutCreatedOrganizationsNestedInput
@@ -1072,6 +1156,7 @@ export type OrganizationUncheckedUpdateWithoutSubscriptionsInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1090,6 +1175,7 @@ export type OrganizationCreateManyCreatedByInput = {
   paymentMethodType?: string | null
   paymentMethodBrand?: string | null
   paymentMethodLast4?: string | null
+  scaleWalletBalanceCentavos?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -1105,6 +1191,7 @@ export type OrganizationUpdateWithoutCreatedByInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
@@ -1124,6 +1211,7 @@ export type OrganizationUncheckedUpdateWithoutCreatedByInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   members?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1143,6 +1231,7 @@ export type OrganizationUncheckedUpdateManyWithoutCreatedByInput = {
   paymentMethodType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodBrand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethodLast4?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  scaleWalletBalanceCentavos?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1217,6 +1306,7 @@ export type OrganizationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   paymentMethodType?: boolean
   paymentMethodBrand?: boolean
   paymentMethodLast4?: boolean
+  scaleWalletBalanceCentavos?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   createdBy?: boolean | Prisma.Organization$createdByArgs<ExtArgs>
@@ -1239,6 +1329,7 @@ export type OrganizationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   paymentMethodType?: boolean
   paymentMethodBrand?: boolean
   paymentMethodLast4?: boolean
+  scaleWalletBalanceCentavos?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   createdBy?: boolean | Prisma.Organization$createdByArgs<ExtArgs>
@@ -1256,6 +1347,7 @@ export type OrganizationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   paymentMethodType?: boolean
   paymentMethodBrand?: boolean
   paymentMethodLast4?: boolean
+  scaleWalletBalanceCentavos?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   createdBy?: boolean | Prisma.Organization$createdByArgs<ExtArgs>
@@ -1273,11 +1365,12 @@ export type OrganizationSelectScalar = {
   paymentMethodType?: boolean
   paymentMethodBrand?: boolean
   paymentMethodLast4?: boolean
+  scaleWalletBalanceCentavos?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type OrganizationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "status" | "createdByUserId" | "xenditCustomerReference" | "xenditCustomerId" | "xenditPaymentTokenId" | "paymentMethodType" | "paymentMethodBrand" | "paymentMethodLast4" | "createdAt" | "updatedAt", ExtArgs["result"]["organization"]>
+export type OrganizationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "status" | "createdByUserId" | "xenditCustomerReference" | "xenditCustomerId" | "xenditPaymentTokenId" | "paymentMethodType" | "paymentMethodBrand" | "paymentMethodLast4" | "scaleWalletBalanceCentavos" | "createdAt" | "updatedAt", ExtArgs["result"]["organization"]>
 export type OrganizationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.Organization$createdByArgs<ExtArgs>
   members?: boolean | Prisma.Organization$membersArgs<ExtArgs>
@@ -1317,6 +1410,10 @@ export type $OrganizationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     paymentMethodType: string | null
     paymentMethodBrand: string | null
     paymentMethodLast4: string | null
+    /**
+     * Scale prepaid wallet (PHP centavos).
+     */
+    scaleWalletBalanceCentavos: number
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["organization"]>
@@ -1758,6 +1855,7 @@ export interface OrganizationFieldRefs {
   readonly paymentMethodType: Prisma.FieldRef<"Organization", 'String'>
   readonly paymentMethodBrand: Prisma.FieldRef<"Organization", 'String'>
   readonly paymentMethodLast4: Prisma.FieldRef<"Organization", 'String'>
+  readonly scaleWalletBalanceCentavos: Prisma.FieldRef<"Organization", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Organization", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Organization", 'DateTime'>
 }

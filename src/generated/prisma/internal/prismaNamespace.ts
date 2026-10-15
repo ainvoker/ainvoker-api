@@ -400,6 +400,7 @@ export const ModelName = {
   ActionInvocation: 'ActionInvocation',
   UsageAnalytics: 'UsageAnalytics',
   Webhook: 'Webhook',
+  PlatformBusinessSettings: 'PlatformBusinessSettings',
   Plan: 'Plan',
   Subscription: 'Subscription',
   Transaction: 'Transaction',
@@ -419,7 +420,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "role" | "organization" | "organizationMember" | "organizationInvite" | "project" | "projectAllowedOrigin" | "projectModelAllow" | "apiKey" | "aIProvider" | "aIModel" | "aIRequest" | "action" | "actionInvocation" | "usageAnalytics" | "webhook" | "plan" | "subscription" | "transaction" | "activityLog"
+    modelProps: "user" | "role" | "organization" | "organizationMember" | "organizationInvite" | "project" | "projectAllowedOrigin" | "projectModelAllow" | "apiKey" | "aIProvider" | "aIModel" | "aIRequest" | "action" | "actionInvocation" | "usageAnalytics" | "webhook" | "platformBusinessSettings" | "plan" | "subscription" | "transaction" | "activityLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1607,6 +1608,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PlatformBusinessSettings: {
+      payload: Prisma.$PlatformBusinessSettingsPayload<ExtArgs>
+      fields: Prisma.PlatformBusinessSettingsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PlatformBusinessSettingsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformBusinessSettingsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PlatformBusinessSettingsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformBusinessSettingsPayload>
+        }
+        findFirst: {
+          args: Prisma.PlatformBusinessSettingsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformBusinessSettingsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PlatformBusinessSettingsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformBusinessSettingsPayload>
+        }
+        findMany: {
+          args: Prisma.PlatformBusinessSettingsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformBusinessSettingsPayload>[]
+        }
+        create: {
+          args: Prisma.PlatformBusinessSettingsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformBusinessSettingsPayload>
+        }
+        createMany: {
+          args: Prisma.PlatformBusinessSettingsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PlatformBusinessSettingsCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformBusinessSettingsPayload>[]
+        }
+        delete: {
+          args: Prisma.PlatformBusinessSettingsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformBusinessSettingsPayload>
+        }
+        update: {
+          args: Prisma.PlatformBusinessSettingsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformBusinessSettingsPayload>
+        }
+        deleteMany: {
+          args: Prisma.PlatformBusinessSettingsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PlatformBusinessSettingsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PlatformBusinessSettingsUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformBusinessSettingsPayload>[]
+        }
+        upsert: {
+          args: Prisma.PlatformBusinessSettingsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformBusinessSettingsPayload>
+        }
+        aggregate: {
+          args: Prisma.PlatformBusinessSettingsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePlatformBusinessSettings>
+        }
+        groupBy: {
+          args: Prisma.PlatformBusinessSettingsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlatformBusinessSettingsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PlatformBusinessSettingsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlatformBusinessSettingsCountAggregateOutputType> | number
+        }
+      }
+    }
     Plan: {
       payload: Prisma.$PlanPayload<ExtArgs>
       fields: Prisma.PlanFieldRefs
@@ -1949,6 +2024,8 @@ export const UserScalarFieldEnum = {
   lastName: 'lastName',
   profilePicture: 'profilePicture',
   themePreference: 'themePreference',
+  freeQuotaUnitsUsed: 'freeQuotaUnitsUsed',
+  freeQuotaUnitsLimit: 'freeQuotaUnitsLimit',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1976,6 +2053,7 @@ export const OrganizationScalarFieldEnum = {
   paymentMethodType: 'paymentMethodType',
   paymentMethodBrand: 'paymentMethodBrand',
   paymentMethodLast4: 'paymentMethodLast4',
+  scaleWalletBalanceCentavos: 'scaleWalletBalanceCentavos',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -2087,9 +2165,12 @@ export const AIModelScalarFieldEnum = {
   name: 'name',
   type: 'type',
   contextWindow: 'contextWindow',
+  providerInputPrice: 'providerInputPrice',
+  providerOutputPrice: 'providerOutputPrice',
   inputPrice: 'inputPrice',
   outputPrice: 'outputPrice',
   status: 'status',
+  planTier: 'planTier',
   freeEligible: 'freeEligible',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -2109,6 +2190,7 @@ export const AIRequestScalarFieldEnum = {
   inputTokens: 'inputTokens',
   outputTokens: 'outputTokens',
   totalTokens: 'totalTokens',
+  quotaTokens: 'quotaTokens',
   latency: 'latency',
   requestCost: 'requestCost',
   requestStatus: 'requestStatus',
@@ -2173,6 +2255,20 @@ export const WebhookScalarFieldEnum = {
 } as const
 
 export type WebhookScalarFieldEnum = (typeof WebhookScalarFieldEnum)[keyof typeof WebhookScalarFieldEnum]
+
+
+export const PlatformBusinessSettingsScalarFieldEnum = {
+  id: 'id',
+  economyMarkupMultiplier: 'economyMarkupMultiplier',
+  premiumMarkupMultiplier: 'premiumMarkupMultiplier',
+  imageMarkupMultiplier: 'imageMarkupMultiplier',
+  usdToPhpRate: 'usdToPhpRate',
+  quotaReferenceModelId: 'quotaReferenceModelId',
+  scaleAdvanceCentavos: 'scaleAdvanceCentavos',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PlatformBusinessSettingsScalarFieldEnum = (typeof PlatformBusinessSettingsScalarFieldEnum)[keyof typeof PlatformBusinessSettingsScalarFieldEnum]
 
 
 export const PlanScalarFieldEnum = {
@@ -2320,20 +2416,6 @@ export type ListEnumThemePreferenceFieldRefInput<$PrismaModel> = FieldRefInputTy
 
 
 /**
- * Reference to a field of type 'DateTime'
- */
-export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
-    
-
-
-/**
- * Reference to a field of type 'DateTime[]'
- */
-export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
-    
-
-
-/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -2344,6 +2426,20 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DateTime'
+ */
+export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
+    
+
+
+/**
+ * Reference to a field of type 'DateTime[]'
+ */
+export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
     
 
 
@@ -2491,6 +2587,20 @@ export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
  * Reference to a field of type 'Decimal[]'
  */
 export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+/**
+ * Reference to a field of type 'ModelPlanTier'
+ */
+export type EnumModelPlanTierFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ModelPlanTier'>
+    
+
+
+/**
+ * Reference to a field of type 'ModelPlanTier[]'
+ */
+export type ListEnumModelPlanTierFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ModelPlanTier[]'>
     
 
 
@@ -2745,6 +2855,7 @@ export type GlobalOmitConfig = {
   actionInvocation?: Prisma.ActionInvocationOmit
   usageAnalytics?: Prisma.UsageAnalyticsOmit
   webhook?: Prisma.WebhookOmit
+  platformBusinessSettings?: Prisma.PlatformBusinessSettingsOmit
   plan?: Prisma.PlanOmit
   subscription?: Prisma.SubscriptionOmit
   transaction?: Prisma.TransactionOmit

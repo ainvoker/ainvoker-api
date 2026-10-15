@@ -299,14 +299,6 @@ export type RoleScalarRelationFilter = {
   isNot?: Prisma.RoleWhereInput
 }
 
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type RoleCreateNestedOneWithoutMembersInput = {
   create?: Prisma.XOR<Prisma.RoleCreateWithoutMembersInput, Prisma.RoleUncheckedCreateWithoutMembersInput>
   connectOrCreate?: Prisma.RoleCreateOrConnectWithoutMembersInput

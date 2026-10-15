@@ -30,6 +30,8 @@ export type AIModelAvgAggregateOutputType = {
   id: number | null
   providerId: number | null
   contextWindow: number | null
+  providerInputPrice: runtime.Decimal | null
+  providerOutputPrice: runtime.Decimal | null
   inputPrice: runtime.Decimal | null
   outputPrice: runtime.Decimal | null
 }
@@ -38,6 +40,8 @@ export type AIModelSumAggregateOutputType = {
   id: number | null
   providerId: number | null
   contextWindow: number | null
+  providerInputPrice: runtime.Decimal | null
+  providerOutputPrice: runtime.Decimal | null
   inputPrice: runtime.Decimal | null
   outputPrice: runtime.Decimal | null
 }
@@ -48,9 +52,12 @@ export type AIModelMinAggregateOutputType = {
   name: string | null
   type: $Enums.AIModelType | null
   contextWindow: number | null
+  providerInputPrice: runtime.Decimal | null
+  providerOutputPrice: runtime.Decimal | null
   inputPrice: runtime.Decimal | null
   outputPrice: runtime.Decimal | null
   status: $Enums.CatalogStatus | null
+  planTier: $Enums.ModelPlanTier | null
   freeEligible: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -62,9 +69,12 @@ export type AIModelMaxAggregateOutputType = {
   name: string | null
   type: $Enums.AIModelType | null
   contextWindow: number | null
+  providerInputPrice: runtime.Decimal | null
+  providerOutputPrice: runtime.Decimal | null
   inputPrice: runtime.Decimal | null
   outputPrice: runtime.Decimal | null
   status: $Enums.CatalogStatus | null
+  planTier: $Enums.ModelPlanTier | null
   freeEligible: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -76,9 +86,12 @@ export type AIModelCountAggregateOutputType = {
   name: number
   type: number
   contextWindow: number
+  providerInputPrice: number
+  providerOutputPrice: number
   inputPrice: number
   outputPrice: number
   status: number
+  planTier: number
   freeEligible: number
   createdAt: number
   updatedAt: number
@@ -90,6 +103,8 @@ export type AIModelAvgAggregateInputType = {
   id?: true
   providerId?: true
   contextWindow?: true
+  providerInputPrice?: true
+  providerOutputPrice?: true
   inputPrice?: true
   outputPrice?: true
 }
@@ -98,6 +113,8 @@ export type AIModelSumAggregateInputType = {
   id?: true
   providerId?: true
   contextWindow?: true
+  providerInputPrice?: true
+  providerOutputPrice?: true
   inputPrice?: true
   outputPrice?: true
 }
@@ -108,9 +125,12 @@ export type AIModelMinAggregateInputType = {
   name?: true
   type?: true
   contextWindow?: true
+  providerInputPrice?: true
+  providerOutputPrice?: true
   inputPrice?: true
   outputPrice?: true
   status?: true
+  planTier?: true
   freeEligible?: true
   createdAt?: true
   updatedAt?: true
@@ -122,9 +142,12 @@ export type AIModelMaxAggregateInputType = {
   name?: true
   type?: true
   contextWindow?: true
+  providerInputPrice?: true
+  providerOutputPrice?: true
   inputPrice?: true
   outputPrice?: true
   status?: true
+  planTier?: true
   freeEligible?: true
   createdAt?: true
   updatedAt?: true
@@ -136,9 +159,12 @@ export type AIModelCountAggregateInputType = {
   name?: true
   type?: true
   contextWindow?: true
+  providerInputPrice?: true
+  providerOutputPrice?: true
   inputPrice?: true
   outputPrice?: true
   status?: true
+  planTier?: true
   freeEligible?: true
   createdAt?: true
   updatedAt?: true
@@ -237,9 +263,12 @@ export type AIModelGroupByOutputType = {
   name: string
   type: $Enums.AIModelType
   contextWindow: number
+  providerInputPrice: runtime.Decimal
+  providerOutputPrice: runtime.Decimal
   inputPrice: runtime.Decimal
   outputPrice: runtime.Decimal
   status: $Enums.CatalogStatus
+  planTier: $Enums.ModelPlanTier
   freeEligible: boolean
   createdAt: Date
   updatedAt: Date
@@ -274,9 +303,12 @@ export type AIModelWhereInput = {
   name?: Prisma.StringFilter<"AIModel"> | string
   type?: Prisma.EnumAIModelTypeFilter<"AIModel"> | $Enums.AIModelType
   contextWindow?: Prisma.IntFilter<"AIModel"> | number
+  providerInputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFilter<"AIModel"> | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFilter<"AIModel"> | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFilter<"AIModel"> | boolean
   createdAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string
@@ -291,9 +323,12 @@ export type AIModelOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   type?: Prisma.SortOrder
   contextWindow?: Prisma.SortOrder
+  providerInputPrice?: Prisma.SortOrder
+  providerOutputPrice?: Prisma.SortOrder
   inputPrice?: Prisma.SortOrder
   outputPrice?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  planTier?: Prisma.SortOrder
   freeEligible?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -312,9 +347,12 @@ export type AIModelWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"AIModel"> | string
   type?: Prisma.EnumAIModelTypeFilter<"AIModel"> | $Enums.AIModelType
   contextWindow?: Prisma.IntFilter<"AIModel"> | number
+  providerInputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFilter<"AIModel"> | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFilter<"AIModel"> | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFilter<"AIModel"> | boolean
   createdAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string
@@ -329,9 +367,12 @@ export type AIModelOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   type?: Prisma.SortOrder
   contextWindow?: Prisma.SortOrder
+  providerInputPrice?: Prisma.SortOrder
+  providerOutputPrice?: Prisma.SortOrder
   inputPrice?: Prisma.SortOrder
   outputPrice?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  planTier?: Prisma.SortOrder
   freeEligible?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -351,9 +392,12 @@ export type AIModelScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"AIModel"> | string
   type?: Prisma.EnumAIModelTypeWithAggregatesFilter<"AIModel"> | $Enums.AIModelType
   contextWindow?: Prisma.IntWithAggregatesFilter<"AIModel"> | number
+  providerInputPrice?: Prisma.DecimalWithAggregatesFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalWithAggregatesFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalWithAggregatesFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalWithAggregatesFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusWithAggregatesFilter<"AIModel"> | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierWithAggregatesFilter<"AIModel"> | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolWithAggregatesFilter<"AIModel"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"AIModel"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"AIModel"> | Date | string
@@ -363,9 +407,12 @@ export type AIModelCreateInput = {
   name: string
   type: $Enums.AIModelType
   contextWindow: number
+  providerInputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: $Enums.CatalogStatus
+  planTier?: $Enums.ModelPlanTier
   freeEligible?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -380,9 +427,12 @@ export type AIModelUncheckedCreateInput = {
   name: string
   type: $Enums.AIModelType
   contextWindow: number
+  providerInputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: $Enums.CatalogStatus
+  planTier?: $Enums.ModelPlanTier
   freeEligible?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -394,9 +444,12 @@ export type AIModelUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumAIModelTypeFieldUpdateOperationsInput | $Enums.AIModelType
   contextWindow?: Prisma.IntFieldUpdateOperationsInput | number
+  providerInputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFieldUpdateOperationsInput | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -411,9 +464,12 @@ export type AIModelUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumAIModelTypeFieldUpdateOperationsInput | $Enums.AIModelType
   contextWindow?: Prisma.IntFieldUpdateOperationsInput | number
+  providerInputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFieldUpdateOperationsInput | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -427,9 +483,12 @@ export type AIModelCreateManyInput = {
   name: string
   type: $Enums.AIModelType
   contextWindow: number
+  providerInputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: $Enums.CatalogStatus
+  planTier?: $Enums.ModelPlanTier
   freeEligible?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -439,9 +498,12 @@ export type AIModelUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumAIModelTypeFieldUpdateOperationsInput | $Enums.AIModelType
   contextWindow?: Prisma.IntFieldUpdateOperationsInput | number
+  providerInputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFieldUpdateOperationsInput | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -453,9 +515,12 @@ export type AIModelUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumAIModelTypeFieldUpdateOperationsInput | $Enums.AIModelType
   contextWindow?: Prisma.IntFieldUpdateOperationsInput | number
+  providerInputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFieldUpdateOperationsInput | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -487,9 +552,12 @@ export type AIModelCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   type?: Prisma.SortOrder
   contextWindow?: Prisma.SortOrder
+  providerInputPrice?: Prisma.SortOrder
+  providerOutputPrice?: Prisma.SortOrder
   inputPrice?: Prisma.SortOrder
   outputPrice?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  planTier?: Prisma.SortOrder
   freeEligible?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -499,6 +567,8 @@ export type AIModelAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   providerId?: Prisma.SortOrder
   contextWindow?: Prisma.SortOrder
+  providerInputPrice?: Prisma.SortOrder
+  providerOutputPrice?: Prisma.SortOrder
   inputPrice?: Prisma.SortOrder
   outputPrice?: Prisma.SortOrder
 }
@@ -509,9 +579,12 @@ export type AIModelMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   type?: Prisma.SortOrder
   contextWindow?: Prisma.SortOrder
+  providerInputPrice?: Prisma.SortOrder
+  providerOutputPrice?: Prisma.SortOrder
   inputPrice?: Prisma.SortOrder
   outputPrice?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  planTier?: Prisma.SortOrder
   freeEligible?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -523,9 +596,12 @@ export type AIModelMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   type?: Prisma.SortOrder
   contextWindow?: Prisma.SortOrder
+  providerInputPrice?: Prisma.SortOrder
+  providerOutputPrice?: Prisma.SortOrder
   inputPrice?: Prisma.SortOrder
   outputPrice?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  planTier?: Prisma.SortOrder
   freeEligible?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -535,6 +611,8 @@ export type AIModelSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   providerId?: Prisma.SortOrder
   contextWindow?: Prisma.SortOrder
+  providerInputPrice?: Prisma.SortOrder
+  providerOutputPrice?: Prisma.SortOrder
   inputPrice?: Prisma.SortOrder
   outputPrice?: Prisma.SortOrder
 }
@@ -607,6 +685,10 @@ export type DecimalFieldUpdateOperationsInput = {
   divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
+export type EnumModelPlanTierFieldUpdateOperationsInput = {
+  set?: $Enums.ModelPlanTier
+}
+
 export type AIModelCreateNestedOneWithoutRequestsInput = {
   create?: Prisma.XOR<Prisma.AIModelCreateWithoutRequestsInput, Prisma.AIModelUncheckedCreateWithoutRequestsInput>
   connectOrCreate?: Prisma.AIModelCreateOrConnectWithoutRequestsInput
@@ -625,9 +707,12 @@ export type AIModelCreateWithoutProjectAllowsInput = {
   name: string
   type: $Enums.AIModelType
   contextWindow: number
+  providerInputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: $Enums.CatalogStatus
+  planTier?: $Enums.ModelPlanTier
   freeEligible?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -641,9 +726,12 @@ export type AIModelUncheckedCreateWithoutProjectAllowsInput = {
   name: string
   type: $Enums.AIModelType
   contextWindow: number
+  providerInputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: $Enums.CatalogStatus
+  planTier?: $Enums.ModelPlanTier
   freeEligible?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -670,9 +758,12 @@ export type AIModelUpdateWithoutProjectAllowsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumAIModelTypeFieldUpdateOperationsInput | $Enums.AIModelType
   contextWindow?: Prisma.IntFieldUpdateOperationsInput | number
+  providerInputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFieldUpdateOperationsInput | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -686,9 +777,12 @@ export type AIModelUncheckedUpdateWithoutProjectAllowsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumAIModelTypeFieldUpdateOperationsInput | $Enums.AIModelType
   contextWindow?: Prisma.IntFieldUpdateOperationsInput | number
+  providerInputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFieldUpdateOperationsInput | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -699,9 +793,12 @@ export type AIModelCreateWithoutProviderInput = {
   name: string
   type: $Enums.AIModelType
   contextWindow: number
+  providerInputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: $Enums.CatalogStatus
+  planTier?: $Enums.ModelPlanTier
   freeEligible?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -714,9 +811,12 @@ export type AIModelUncheckedCreateWithoutProviderInput = {
   name: string
   type: $Enums.AIModelType
   contextWindow: number
+  providerInputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: $Enums.CatalogStatus
+  planTier?: $Enums.ModelPlanTier
   freeEligible?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -759,9 +859,12 @@ export type AIModelScalarWhereInput = {
   name?: Prisma.StringFilter<"AIModel"> | string
   type?: Prisma.EnumAIModelTypeFilter<"AIModel"> | $Enums.AIModelType
   contextWindow?: Prisma.IntFilter<"AIModel"> | number
+  providerInputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFilter<"AIModel"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFilter<"AIModel"> | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFilter<"AIModel"> | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFilter<"AIModel"> | boolean
   createdAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AIModel"> | Date | string
@@ -771,9 +874,12 @@ export type AIModelCreateWithoutRequestsInput = {
   name: string
   type: $Enums.AIModelType
   contextWindow: number
+  providerInputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: $Enums.CatalogStatus
+  planTier?: $Enums.ModelPlanTier
   freeEligible?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -787,9 +893,12 @@ export type AIModelUncheckedCreateWithoutRequestsInput = {
   name: string
   type: $Enums.AIModelType
   contextWindow: number
+  providerInputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: $Enums.CatalogStatus
+  planTier?: $Enums.ModelPlanTier
   freeEligible?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -816,9 +925,12 @@ export type AIModelUpdateWithoutRequestsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumAIModelTypeFieldUpdateOperationsInput | $Enums.AIModelType
   contextWindow?: Prisma.IntFieldUpdateOperationsInput | number
+  providerInputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFieldUpdateOperationsInput | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -832,9 +944,12 @@ export type AIModelUncheckedUpdateWithoutRequestsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumAIModelTypeFieldUpdateOperationsInput | $Enums.AIModelType
   contextWindow?: Prisma.IntFieldUpdateOperationsInput | number
+  providerInputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFieldUpdateOperationsInput | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -846,9 +961,12 @@ export type AIModelCreateManyProviderInput = {
   name: string
   type: $Enums.AIModelType
   contextWindow: number
+  providerInputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: $Enums.CatalogStatus
+  planTier?: $Enums.ModelPlanTier
   freeEligible?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -858,9 +976,12 @@ export type AIModelUpdateWithoutProviderInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumAIModelTypeFieldUpdateOperationsInput | $Enums.AIModelType
   contextWindow?: Prisma.IntFieldUpdateOperationsInput | number
+  providerInputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFieldUpdateOperationsInput | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -873,9 +994,12 @@ export type AIModelUncheckedUpdateWithoutProviderInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumAIModelTypeFieldUpdateOperationsInput | $Enums.AIModelType
   contextWindow?: Prisma.IntFieldUpdateOperationsInput | number
+  providerInputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFieldUpdateOperationsInput | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -888,9 +1012,12 @@ export type AIModelUncheckedUpdateManyWithoutProviderInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumAIModelTypeFieldUpdateOperationsInput | $Enums.AIModelType
   contextWindow?: Prisma.IntFieldUpdateOperationsInput | number
+  providerInputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  providerOutputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   inputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   outputPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   status?: Prisma.EnumCatalogStatusFieldUpdateOperationsInput | $Enums.CatalogStatus
+  planTier?: Prisma.EnumModelPlanTierFieldUpdateOperationsInput | $Enums.ModelPlanTier
   freeEligible?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -942,9 +1069,12 @@ export type AIModelSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   name?: boolean
   type?: boolean
   contextWindow?: boolean
+  providerInputPrice?: boolean
+  providerOutputPrice?: boolean
   inputPrice?: boolean
   outputPrice?: boolean
   status?: boolean
+  planTier?: boolean
   freeEligible?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -960,9 +1090,12 @@ export type AIModelSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   name?: boolean
   type?: boolean
   contextWindow?: boolean
+  providerInputPrice?: boolean
+  providerOutputPrice?: boolean
   inputPrice?: boolean
   outputPrice?: boolean
   status?: boolean
+  planTier?: boolean
   freeEligible?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -975,9 +1108,12 @@ export type AIModelSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   name?: boolean
   type?: boolean
   contextWindow?: boolean
+  providerInputPrice?: boolean
+  providerOutputPrice?: boolean
   inputPrice?: boolean
   outputPrice?: boolean
   status?: boolean
+  planTier?: boolean
   freeEligible?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -990,15 +1126,18 @@ export type AIModelSelectScalar = {
   name?: boolean
   type?: boolean
   contextWindow?: boolean
+  providerInputPrice?: boolean
+  providerOutputPrice?: boolean
   inputPrice?: boolean
   outputPrice?: boolean
   status?: boolean
+  planTier?: boolean
   freeEligible?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type AIModelOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "providerId" | "name" | "type" | "contextWindow" | "inputPrice" | "outputPrice" | "status" | "freeEligible" | "createdAt" | "updatedAt", ExtArgs["result"]["aIModel"]>
+export type AIModelOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "providerId" | "name" | "type" | "contextWindow" | "providerInputPrice" | "providerOutputPrice" | "inputPrice" | "outputPrice" | "status" | "planTier" | "freeEligible" | "createdAt" | "updatedAt", ExtArgs["result"]["aIModel"]>
 export type AIModelInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   provider?: boolean | Prisma.AIProviderDefaultArgs<ExtArgs>
   requests?: boolean | Prisma.AIModel$requestsArgs<ExtArgs>
@@ -1025,11 +1164,20 @@ export type $AIModelPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     name: string
     type: $Enums.AIModelType
     contextWindow: number
+    /**
+     * Provider list USD per 1M tokens (from code seed).
+     */
+    providerInputPrice: runtime.Decimal
+    providerOutputPrice: runtime.Decimal
+    /**
+     * Customer retail USD per 1M (recomputed from business settings).
+     */
     inputPrice: runtime.Decimal
     outputPrice: runtime.Decimal
     status: $Enums.CatalogStatus
+    planTier: $Enums.ModelPlanTier
     /**
-     * When true, orgs on the Free plan may call this model.
+     * Deprecated: mirrors planTier === ECONOMY for API compat.
      */
     freeEligible: boolean
     createdAt: Date
@@ -1465,9 +1613,12 @@ export interface AIModelFieldRefs {
   readonly name: Prisma.FieldRef<"AIModel", 'String'>
   readonly type: Prisma.FieldRef<"AIModel", 'AIModelType'>
   readonly contextWindow: Prisma.FieldRef<"AIModel", 'Int'>
+  readonly providerInputPrice: Prisma.FieldRef<"AIModel", 'Decimal'>
+  readonly providerOutputPrice: Prisma.FieldRef<"AIModel", 'Decimal'>
   readonly inputPrice: Prisma.FieldRef<"AIModel", 'Decimal'>
   readonly outputPrice: Prisma.FieldRef<"AIModel", 'Decimal'>
   readonly status: Prisma.FieldRef<"AIModel", 'CatalogStatus'>
+  readonly planTier: Prisma.FieldRef<"AIModel", 'ModelPlanTier'>
   readonly freeEligible: Prisma.FieldRef<"AIModel", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"AIModel", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"AIModel", 'DateTime'>

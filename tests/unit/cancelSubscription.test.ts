@@ -40,7 +40,7 @@ vi.mock("../../src/config/env.js", () => ({
 vi.mock("../../src/modules/billing/catalog.js", () => ({
     ensureBillingCatalog: vi.fn().mockResolvedValue(undefined),
     getPlanByName,
-    getProCheckoutAmountPhp: () => 109900,
+    getProCheckoutAmountPhp: () => 49900,
     PLAN_NAMES: { free: "free", pro: "pro", scale: "scale" },
 }))
 
@@ -150,7 +150,7 @@ describe("listOrganizationInvoices", () => {
                 createdAt: new Date("2026-08-01T00:00:00.000Z"),
                 description: "AInvoker Pro — first payment",
                 paymentStatus: "SUCCEEDED",
-                amount: { toString: () => "1099" },
+                amount: { toString: () => "499" },
                 receiptUrl: "https://example.com/receipt",
                 referenceNumber: "pay_1",
                 subscription: { plan: { name: "pro" } },
@@ -164,7 +164,7 @@ describe("listOrganizationInvoices", () => {
                 date: "2026-08-01T00:00:00.000Z",
                 description: "AInvoker Pro — first payment",
                 status: "paid",
-                amount: "1099",
+                amount: "499",
                 currency: "PHP",
                 receiptUrl: "https://example.com/receipt",
                 referenceNumber: "pay_1",

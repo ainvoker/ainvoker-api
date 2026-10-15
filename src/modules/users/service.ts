@@ -1,4 +1,5 @@
 import type { z } from "zod"
+import env from "../../config/env.js"
 import prismaClient from "../../platform/prisma.js"
 import organizationsService from "../organizations/service.js"
 import type { ProfileFields, updateProfileSchema } from "./schemas.js"
@@ -53,6 +54,7 @@ class UserService {
                 },
                 createdAt: m.createdAt,
             })),
+            isPlatformAdmin: env.isPlatformAdmin(user.id),
         }
     }
 

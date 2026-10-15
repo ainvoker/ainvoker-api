@@ -49,7 +49,7 @@ describe("activateProSubscription renewal window", () => {
         await activateProSubscription({
             organizationId: "org_1",
             paymentReference: "pay_1",
-            amountPhp: 109900,
+            amountPhp: 49900,
         })
         const after = Date.now()
 
@@ -88,7 +88,7 @@ describe("renewProSubscription", () => {
         await renewProSubscription({
             organizationId: "org_1",
             paymentReference: "cycle_1",
-            amountPhp: 109900,
+            amountPhp: 49900,
             description: "AInvoker Pro — renewal",
         })
 
@@ -114,7 +114,7 @@ describe("renewProSubscription", () => {
         const result = await renewProSubscription({
             organizationId: "org_1",
             paymentReference: "cycle_dup",
-            amountPhp: 109900,
+            amountPhp: 49900,
         })
         expect(result.alreadyProcessed).toBe(true)
         expect(prisma.$transaction).not.toHaveBeenCalled()

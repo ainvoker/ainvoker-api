@@ -1,7 +1,10 @@
 import { Prisma } from "../../generated/prisma/client.js"
 import prismaClient from "../../platform/prisma.js"
 import { ensureBillingCatalog, getPlanByName, PLAN_NAMES } from "./catalog.js"
+import { AppError } from "../../platform/errors.js"
 import { proRenewsAt } from "./period.js"
+import { findEntitledProSubscription, proProrationCreditCentavos } from "./proration.js"
+import { deactivateXenditRecurringPlan } from "./xendit/client.js"
 
 export type ActivateProInput = {
     organizationId: string
@@ -186,4 +189,155 @@ export async function renewProSubscription(input: {
     })
 
     return { renewed: true as const }
+}
+
+export type ActivateScaleInput = {
+    organizationId: string
+    paymentReference: string
+    paymentTokenId?: string
+    amountPhp: number
+    description?: string
+    receiptUrl?: string | null
+    paymentMethodType?: string
+    paymentMethodBrand?: string
+    paymentMethodLast4?: string
+}
+
+/** First Scale payment: activate subscription, credit wallet, save payment method. */
+export async function activateScaleSubscription(input: ActivateScaleInput) {
+    await ensureBillingCatalog()
+    const scalePlan = await getPlanByName(PLAN_NAMES.scale)
+
+    const existingTx = await prismaClient.transaction.findUnique({
+        where: { referenceNumber: input.paymentReference },
+    })
+    if (existingTx) {
+        return { alreadyProcessed: true as const }
+    }
+
+    const hasPendingScale = await prismaClient.subscription.findFirst({
+        where: { organizationId: input.organizationId, planId: scalePlan.id, status: "PENDING" },
+        select: { id: true },
+    })
+    // Stop Pro recurring charges before switching; Xendit HTTP cannot run inside the DB transaction.
+    if (hasPendingScale) {
+        const pro = await findEntitledProSubscription(prismaClient, input.organizationId)
+        if (pro?.xenditRecurringPlanId) {
+            try {
+                await deactivateXenditRecurringPlan(pro.xenditRecurringPlanId)
+            } catch (err) {
+                if (!(err instanceof AppError && err.status === 404)) {
+                    throw err
+                }
+            }
+        }
+    }
+
+    await prismaClient.$transaction(async (tx) => {
+        const pending = await tx.subscription.findFirst({
+            where: {
+                organizationId: input.organizationId,
+                planId: scalePlan.id,
+                status: "PENDING",
+            },
+            orderBy: { createdAt: "desc" },
+        })
+
+        if (!pending) {
+            const activeScale = await tx.subscription.findFirst({
+                where: {
+                    organizationId: input.organizationId,
+                    planId: scalePlan.id,
+                    status: "ACTIVE",
+                },
+            })
+            if (activeScale) {
+                await tx.organization.update({
+                    where: { id: input.organizationId },
+                    data: {
+                        scaleWalletBalanceCentavos: { increment: input.amountPhp },
+                    },
+                })
+                await tx.transaction.create({
+                    data: {
+                        subscriptionId: activeScale.id,
+                        amount: new Prisma.Decimal(input.amountPhp).div(100),
+                        paymentMethod: "xendit",
+                        referenceNumber: input.paymentReference,
+                        paymentStatus: "SUCCEEDED",
+                        description: "AInvoker Scale — wallet top-up",
+                        receiptUrl: input.receiptUrl ?? null,
+                    },
+                })
+            }
+            return
+        }
+
+        const startedAt = new Date()
+        const pro = await findEntitledProSubscription(tx, input.organizationId, startedAt)
+        const proCreditCentavos = pro ? proProrationCreditCentavos(pro, startedAt) : 0
+
+        await tx.subscription.updateMany({
+            where: {
+                organizationId: input.organizationId,
+                status: { in: ["ACTIVE", "PAST_DUE"] },
+                id: { not: pending.id },
+            },
+            data: { status: "CANCELED", canceledAt: startedAt },
+        })
+
+        const expiresAt = proRenewsAt(startedAt)
+        await tx.subscription.update({
+            where: { id: pending.id },
+            data: {
+                status: "ACTIVE",
+                startedAt,
+                expiresAt,
+                cancelAtPeriodEnd: false,
+                canceledAt: null,
+            },
+        })
+
+        await tx.organization.update({
+            where: { id: input.organizationId },
+            data: {
+                scaleWalletBalanceCentavos: { increment: input.amountPhp + proCreditCentavos },
+            },
+        })
+
+        const baseDescription = input.description ?? "AInvoker Scale — wallet advance"
+        await tx.transaction.create({
+            data: {
+                subscriptionId: pending.id,
+                amount: new Prisma.Decimal(input.amountPhp).div(100),
+                paymentMethod: "xendit",
+                referenceNumber: input.paymentReference,
+                paymentStatus: "SUCCEEDED",
+                description:
+                    proCreditCentavos > 0
+                        ? `${baseDescription} (+₱${(proCreditCentavos / 100).toFixed(2)} unused Pro credit)`
+                        : baseDescription,
+                receiptUrl: input.receiptUrl ?? null,
+            },
+        })
+
+        const orgUpdate: {
+            xenditPaymentTokenId?: string
+            paymentMethodType?: string
+            paymentMethodBrand?: string
+            paymentMethodLast4?: string
+        } = {}
+        if (input.paymentTokenId) orgUpdate.xenditPaymentTokenId = input.paymentTokenId
+        if (input.paymentMethodType) orgUpdate.paymentMethodType = input.paymentMethodType
+        if (input.paymentMethodBrand) orgUpdate.paymentMethodBrand = input.paymentMethodBrand
+        if (input.paymentMethodLast4) orgUpdate.paymentMethodLast4 = input.paymentMethodLast4
+        if (Object.keys(orgUpdate).length > 0) {
+            await tx.organization.update({
+                where: { id: input.organizationId },
+                data: orgUpdate,
+            })
+        }
+    })
+
+    return { activated: true as const }
 }

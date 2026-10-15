@@ -448,6 +448,8 @@ describe("POST /v1/text/chat", () => {
                 name: "gpt-4o",
                 type: "TEXT",
                 contextWindow: 128000,
+                providerInputPrice: 2.5,
+                providerOutputPrice: 10,
                 inputPrice: 2.5,
                 outputPrice: 10,
                 status: "ACTIVE",
@@ -472,12 +474,12 @@ describe("POST /v1/text/chat", () => {
         expect(fetchSpy).not.toHaveBeenCalled()
     })
 
-    it("allows Pro plans to call non-eligible models", async () => {
+    it("allows Pro plans to call premium models once the project enables them", async () => {
         await ensureBillingCatalog()
         const openai = await prismaClient.aIProvider.findUniqueOrThrow({
             where: { name: "openai" },
         })
-        await prismaClient.aIModel.upsert({
+        const premium = await prismaClient.aIModel.upsert({
             where: {
                 providerId_name: { providerId: openai.id, name: "gpt-4o" },
             },
@@ -486,13 +488,17 @@ describe("POST /v1/text/chat", () => {
                 name: "gpt-4o",
                 type: "TEXT",
                 contextWindow: 128000,
+                providerInputPrice: 2.5,
+                providerOutputPrice: 10,
                 inputPrice: 2.5,
                 outputPrice: 10,
                 status: "ACTIVE",
+                planTier: "PREMIUM",
                 freeEligible: false,
             },
             update: {
                 status: "ACTIVE",
+                planTier: "PREMIUM",
                 freeEligible: false,
             },
         })
@@ -511,14 +517,27 @@ describe("POST /v1/text/chat", () => {
             },
         })
 
-        const res = await request(app.express)
-            .post("/v1/text/chat")
-            .set({ Authorization: `Bearer ${plaintextKey}` })
-            .send({
-                model: "openai/gpt-4o",
-                messages: [{ role: "user", content: "Hi" }],
-            })
+        const chat = () =>
+            request(app.express)
+                .post("/v1/text/chat")
+                .set({ Authorization: `Bearer ${plaintextKey}` })
+                .send({
+                    model: "openai/gpt-4o",
+                    messages: [{ role: "user", content: "Hi" }],
+                })
 
+        const disabled = await chat()
+        expect(disabled.status).toBe(403)
+        expect(disabled.body.error.code).toBe("MODEL_DISABLED")
+        expect(fetchSpy).not.toHaveBeenCalled()
+
+        await prismaClient.projectModelAllow.upsert({
+            where: { projectId_modelId: { projectId, modelId: premium.id } },
+            create: { projectId, modelId: premium.id, enabled: true },
+            update: { enabled: true },
+        })
+
+        const res = await chat()
         expect(res.status).toBe(200)
         expect(res.body.data.model).toBe("openai/gpt-4o")
         expect(fetchSpy).toHaveBeenCalled()
@@ -665,6 +684,8 @@ describe("POST /v1/text/chat", () => {
                 name: "gpt-4o-mini",
                 type: "TEXT",
                 contextWindow: 128000,
+                providerInputPrice: 0,
+                providerOutputPrice: 0,
                 inputPrice: 0,
                 outputPrice: 0,
                 status: "ACTIVE",

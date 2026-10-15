@@ -15,7 +15,8 @@ const envSchema = z.object({
         .transform((v) => v === "true"),
     XENDIT_SECRET_KEY: z.string().min(1).optional(),
     XENDIT_WEBHOOK_TOKEN: z.string().min(1).optional(),
-    XENDIT_PRO_AMOUNT: z.coerce.number().int().positive().default(109900),
+    XENDIT_PRO_AMOUNT: z.coerce.number().int().positive().default(49900),
+    XENDIT_SCALE_ADVANCE_AMOUNT: z.coerce.number().int().positive().default(49900),
     /**
      * HTTPS origin(s) for Xendit Components (comma-separated).
      * Xendit rejects http:// here. Local SPA may still run on http; use mock SDK or an HTTPS tunnel for real Components.
@@ -56,6 +57,7 @@ class EnvConfig {
     readonly XENDIT_SECRET_KEY: string | undefined
     readonly XENDIT_WEBHOOK_TOKEN: string | undefined
     readonly XENDIT_PRO_AMOUNT: number
+    readonly XENDIT_SCALE_ADVANCE_AMOUNT: number
     readonly XENDIT_COMPONENTS_ORIGIN: string
     readonly INVITE_EMAIL_ENABLED: boolean
     readonly INVITE_RETURN_ACCEPT_URL: boolean
@@ -86,6 +88,7 @@ class EnvConfig {
         this.XENDIT_SECRET_KEY = parsed.data.XENDIT_SECRET_KEY
         this.XENDIT_WEBHOOK_TOKEN = parsed.data.XENDIT_WEBHOOK_TOKEN
         this.XENDIT_PRO_AMOUNT = parsed.data.XENDIT_PRO_AMOUNT
+        this.XENDIT_SCALE_ADVANCE_AMOUNT = parsed.data.XENDIT_SCALE_ADVANCE_AMOUNT
         this.XENDIT_COMPONENTS_ORIGIN = parsed.data.XENDIT_COMPONENTS_ORIGIN
         this.INVITE_EMAIL_ENABLED = parsed.data.INVITE_EMAIL_ENABLED
         this.INVITE_RETURN_ACCEPT_URL = parsed.data.INVITE_RETURN_ACCEPT_URL

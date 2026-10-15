@@ -1,6 +1,7 @@
 import request from "supertest"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import app from "../../src/app.js"
+import env from "../../src/config/env.js"
 import prismaClient from "../../src/platform/prisma.js"
 import { useEphemeralAuthId, useTestAuthUser } from "../helpers/fixtures.js"
 
@@ -178,6 +179,33 @@ describe("users /me with existing auth user", () => {
 
         expect(res.status).toBe(400)
         expect(res.body.error.code).toBe("VALIDATION_ERROR")
+    })
+
+    describe("isPlatformAdmin", () => {
+        afterEach(() => {
+            vi.restoreAllMocks()
+        })
+
+        it("is false for users not in PLATFORM_ADMIN_USER_IDS", async () => {
+            vi.spyOn(env, "isPlatformAdmin").mockReturnValue(false)
+            const res = await request(app.express)
+                .post("/api/v1/me/bootstrap")
+                .set(authUser.headers())
+                .send({})
+
+            expect(res.status).toBe(200)
+            expect(res.body.data.isPlatformAdmin).toBe(false)
+        })
+
+        it("is true for allowlisted platform admins", async () => {
+            vi.spyOn(env, "isPlatformAdmin").mockImplementation(
+                (userId) => userId === authUser.auth.userId,
+            )
+            const res = await request(app.express).get("/api/v1/me").set(authUser.headers())
+
+            expect(res.status).toBe(200)
+            expect(res.body.data.isPlatformAdmin).toBe(true)
+        })
     })
 
     it("GET /api/v1/me returns 401 without Authorization", async () => {
