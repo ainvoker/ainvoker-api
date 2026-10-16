@@ -2,6 +2,9 @@ import type { Prisma } from "../../generated/prisma/client.js"
 import env from "../../config/env.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
+import { AUDIT_ACTIONS } from "../audit/actions.js"
+import { recordAuditEvent } from "../audit/record.js"
+import { isEntitlementUnexpired } from "../billing/period.js"
 import { isPersonalOrganizationSlug } from "../organizations/service.js"
 import type {
     ListAdminOrganizationsQuery,
@@ -98,6 +101,35 @@ async function loadMemberCounts(orgIds: string[]) {
     return new Map(counts.map((c) => [c.organizationId, c._count._all]))
 }
 
+type SubscriptionRow = {
+    id: string
+    organizationId: string
+    status: string
+    expiresAt: Date | null
+    cancelAtPeriodEnd: boolean
+    startedAt: Date
+    plan: { name: string }
+}
+
+/** Match billing UI: entitled plan wins over an in-flight Pro/Scale checkout row. */
+export function pickAdminDisplaySubscription(
+    subscriptions: SubscriptionRow[],
+): SubscriptionRow | undefined {
+    if (subscriptions.length === 0) return undefined
+
+    const unexpiredActive = subscriptions.find(
+        (s) =>
+            (s.status === "ACTIVE" || s.status === "PAST_DUE") &&
+            isEntitlementUnexpired(s.expiresAt),
+    )
+    if (unexpiredActive) return unexpiredActive
+
+    const pending = subscriptions.find((s) => s.status === "PENDING")
+    if (pending) return pending
+
+    return subscriptions[0]
+}
+
 async function loadSubscriptionsByOrgIds(orgIds: string[]) {
     if (orgIds.length === 0) return new Map<string, SubscriptionSnapshot>()
 
@@ -110,10 +142,18 @@ async function loadSubscriptionsByOrgIds(orgIds: string[]) {
         orderBy: { startedAt: "desc" },
     })
 
-    const map = new Map<string, SubscriptionSnapshot>()
+    const byOrg = new Map<string, SubscriptionRow[]>()
     for (const sub of subscriptions) {
-        if (!map.has(sub.organizationId)) {
-            map.set(sub.organizationId, serializeSubscription(sub))
+        const list = byOrg.get(sub.organizationId) ?? []
+        list.push(sub)
+        byOrg.set(sub.organizationId, list)
+    }
+
+    const map = new Map<string, SubscriptionSnapshot>()
+    for (const [orgId, subs] of byOrg) {
+        const picked = pickAdminDisplaySubscription(subs)
+        if (picked) {
+            map.set(orgId, serializeSubscription(picked))
         }
     }
     return map
@@ -295,10 +335,14 @@ class AdminCustomersService {
         }
     }
 
-    async updateOrganization(orgId: string, input: UpdateAdminOrganizationInput) {
+    async updateOrganization(
+        orgId: string,
+        input: UpdateAdminOrganizationInput,
+        actorUserId: string,
+    ) {
         const existing = await prismaClient.organization.findUnique({
             where: { id: orgId },
-            select: { id: true, status: true },
+            select: { id: true, name: true, status: true },
         })
 
         if (!existing) {
@@ -316,6 +360,22 @@ class AdminCustomersService {
         await prismaClient.organization.update({
             where: { id: orgId },
             data: { status: input.status },
+        })
+
+        const suspended = input.status === "SUSPENDED"
+        await recordAuditEvent({
+            actorUserId,
+            actorType: "PLATFORM_ADMIN",
+            action: suspended
+                ? AUDIT_ACTIONS.organizationSuspended
+                : AUDIT_ACTIONS.organizationReinstated,
+            targetType: "organization",
+            targetId: orgId,
+            organizationId: orgId,
+            summary: suspended
+                ? `Workspace "${existing.name}" suspended`
+                : `Workspace "${existing.name}" reinstated`,
+            metadata: { before: existing.status, after: input.status },
         })
 
         return this.getOrganization(orgId)

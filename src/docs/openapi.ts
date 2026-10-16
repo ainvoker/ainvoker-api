@@ -69,6 +69,18 @@ export function buildOpenApiDocument() {
                 name: "Admin Customers",
                 description: "Platform admin organization and user lookup",
             },
+            {
+                name: "Admin Billing",
+                description: "Platform admin subscriptions, transactions, plans, and support adjustments",
+            },
+            {
+                name: "Admin Audit",
+                description: "Platform admin audit trail for lifecycle and admin mutations",
+            },
+            {
+                name: "Admin Usage",
+                description: "Platform-wide traffic, cost, and AI request log",
+            },
         ],
     })
 }

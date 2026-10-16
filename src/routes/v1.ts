@@ -1,7 +1,13 @@
 import { Router } from "express"
+import adminAuditRoutes from "../modules/audit/adminRoutes.js"
 import adminBusinessRoutes from "../modules/business/adminRoutes.js"
 import adminCatalogRoutes from "../modules/catalog/adminRoutes.js"
 import adminCustomersRoutes from "../modules/customers/adminRoutes.js"
+import adminBillingRoutes from "../modules/billing/adminRoutes.js"
+import adminDashboardRoutes from "../modules/dashboard/adminRoutes.js"
+import adminFinanceRoutes from "../modules/finance/adminRoutes.js"
+import adminSafetyRoutes from "../modules/safety/adminRoutes.js"
+import adminUsageRoutes from "../modules/usage/adminRoutes.js"
 import allowedOriginsRoutes from "../modules/allowedOrigins/routes.js"
 import apiKeysRoutes from "../modules/apiKeys/routes.js"
 import aiRequestsRoutes from "../modules/aiRequests/routes.js"
@@ -30,6 +36,12 @@ class ApiV1Routes {
         this.router.use("/admin", adminCatalogRoutes.router)
         this.router.use("/admin", adminBusinessRoutes.router)
         this.router.use("/admin", adminCustomersRoutes.router)
+        this.router.use("/admin", adminBillingRoutes.router)
+        this.router.use("/admin", adminDashboardRoutes.router)
+        this.router.use("/admin", adminFinanceRoutes.router)
+        this.router.use("/admin", adminAuditRoutes.router)
+        this.router.use("/admin", adminUsageRoutes.router)
+        this.router.use("/admin", adminSafetyRoutes.router)
     }
 }
 

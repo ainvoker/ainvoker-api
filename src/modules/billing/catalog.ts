@@ -21,7 +21,8 @@ const PLAN_SEEDS = [
     },
     {
         name: PLAN_NAMES.pro,
-        monthlyPrice: new Prisma.Decimal(4.99),
+        // PHP major units (pesos). Live checkout amount still comes from XENDIT_PRO_AMOUNT (centavos).
+        monthlyPrice: new Prisma.Decimal(499),
         tokenLimit: 1_000_000,
         requestLimit: 0,
         billingMode: "FIXED_MONTHLY" as const,
@@ -29,6 +30,7 @@ const PLAN_SEEDS = [
     },
     {
         name: PLAN_NAMES.scale,
+        // Metered — no fixed monthly; wallet advance is XENDIT_SCALE_ADVANCE_AMOUNT.
         monthlyPrice: new Prisma.Decimal(0),
         tokenLimit: 0,
         requestLimit: 0,

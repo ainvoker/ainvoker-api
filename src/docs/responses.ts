@@ -318,6 +318,430 @@ export const adminUserDetailSchema = z
     })
     .meta({ id: "AdminUserDetail" })
 
+const adminOrgRefSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    slug: z.string(),
+})
+
+export const adminPlanSchema = z
+    .object({
+        id: z.number().int(),
+        name: z.string(),
+        monthlyPrice: z.string(),
+        priceNote: z.string().nullable(),
+        tokenLimit: z.number().int(),
+        requestLimit: z.number().int(),
+        billingMode: z.string(),
+        description: z.string().nullable(),
+    })
+    .meta({ id: "AdminPlan" })
+
+export const adminSubscriptionItemSchema = z
+    .object({
+        id: z.string(),
+        organization: adminOrgRefSchema,
+        planName: z.string(),
+        status: z.string(),
+        startedAt: z.string(),
+        expiresAt: z.string().nullable(),
+        cancelAtPeriodEnd: z.boolean(),
+        xenditRecurringPlanId: z.string().nullable(),
+        updatedAt: z.string(),
+    })
+    .meta({ id: "AdminSubscriptionItem" })
+
+export const adminSubscriptionListSchema = z
+    .object({
+        items: z.array(adminSubscriptionItemSchema),
+        total: z.number().int(),
+        limit: z.number().int(),
+        offset: z.number().int(),
+    })
+    .meta({ id: "AdminSubscriptionList" })
+
+export const adminTransactionItemSchema = z
+    .object({
+        id: z.string(),
+        amount: z.string(),
+        paymentMethod: z.string(),
+        referenceNumber: z.string(),
+        paymentStatus: z.string(),
+        description: z.string().nullable(),
+        receiptUrl: z.string().nullable(),
+        createdAt: z.string(),
+        organization: adminOrgRefSchema,
+        planName: z.string(),
+        subscriptionId: z.string(),
+    })
+    .meta({ id: "AdminTransactionItem" })
+
+export const adminTransactionListSchema = z
+    .object({
+        items: z.array(adminTransactionItemSchema),
+        total: z.number().int(),
+        limit: z.number().int(),
+        offset: z.number().int(),
+    })
+    .meta({ id: "AdminTransactionList" })
+
+export const adminAuditEventItemSchema = z
+    .object({
+        id: z.string(),
+        actorUserId: z.string().nullable(),
+        actorType: z.enum(["USER", "PLATFORM_ADMIN"]),
+        actor: z
+            .object({
+                id: z.string(),
+                email: z.string().nullable(),
+                firstName: z.string().nullable(),
+                lastName: z.string().nullable(),
+            })
+            .nullable(),
+        action: z.string(),
+        targetType: z.string(),
+        targetId: z.string().nullable(),
+        organizationId: z.string().nullable(),
+        summary: z.string(),
+        metadata: z.unknown().nullable(),
+        createdAt: z.string(),
+    })
+    .meta({ id: "AdminAuditEventItem" })
+
+export const adminAuditEventListSchema = z
+    .object({
+        items: z.array(adminAuditEventItemSchema),
+        total: z.number().int(),
+        limit: z.number().int(),
+        offset: z.number().int(),
+    })
+    .meta({ id: "AdminAuditEventList" })
+
+export const adminUsageTotalsSchema = z
+    .object({
+        requests: z.number().int(),
+        successfulRequests: z.number().int(),
+        failedRequests: z.number().int(),
+        tokensUsed: z.number().int(),
+        totalCost: z.string(),
+        errorRate: z.number(),
+        avgLatency: z.number().int().nullable(),
+        p50Latency: z.number().int().nullable(),
+        p95Latency: z.number().int().nullable(),
+    })
+    .meta({ id: "AdminUsageTotals" })
+
+export const adminUsageOrgRowSchema = z
+    .object({
+        organizationId: z.string(),
+        organizationName: z.string(),
+        organizationSlug: z.string(),
+        requestsUsed: z.number().int(),
+        tokensUsed: z.number().int(),
+        totalCost: z.string(),
+    })
+    .meta({ id: "AdminUsageOrgRow" })
+
+export const adminUsageModelRowSchema = z
+    .object({
+        modelId: z.number().int(),
+        model: z.string(),
+        providerName: z.string(),
+        requestsUsed: z.number().int(),
+        tokensUsed: z.number().int(),
+        totalCost: z.string(),
+    })
+    .meta({ id: "AdminUsageModelRow" })
+
+export const adminUsageProviderRowSchema = z
+    .object({
+        providerId: z.number().int(),
+        providerName: z.string(),
+        requestsUsed: z.number().int(),
+        tokensUsed: z.number().int(),
+        totalCost: z.string(),
+    })
+    .meta({ id: "AdminUsageProviderRow" })
+
+export const adminUsageNearLimitRowSchema = z
+    .object({
+        organizationId: z.string(),
+        organizationName: z.string(),
+        organizationSlug: z.string(),
+        planName: z.string(),
+        requestsUsed: z.number().int(),
+        requestLimit: z.number().int(),
+        requestsPct: z.number().nullable(),
+        tokensUsed: z.number().int(),
+        tokenLimit: z.number().int(),
+        tokensPct: z.number().nullable(),
+    })
+    .meta({ id: "AdminUsageNearLimitRow" })
+
+export const adminUsageOverviewSchema = z
+    .object({
+        period: z.string(),
+        periodStart: z.string(),
+        periodEnd: z.string(),
+        totals: adminUsageTotalsSchema,
+        byOrganization: z.array(adminUsageOrgRowSchema),
+        byModel: z.array(adminUsageModelRowSchema),
+        byProvider: z.array(adminUsageProviderRowSchema),
+        nearLimit: z.array(adminUsageNearLimitRowSchema),
+    })
+    .meta({ id: "AdminUsageOverview" })
+
+export const adminAiRequestSummarySchema = z
+    .object({
+        id: z.string(),
+        projectId: z.string(),
+        projectName: z.string(),
+        organizationId: z.string(),
+        organizationName: z.string(),
+        organizationSlug: z.string(),
+        apiKeyId: z.string(),
+        apiKeyName: z.string(),
+        apiKeyPrefix: z.string(),
+        model: z.string(),
+        serviceType: z.string(),
+        requestStatus: z.string(),
+        inputTokens: z.number().int().nullable(),
+        outputTokens: z.number().int().nullable(),
+        totalTokens: z.number().int().nullable(),
+        latency: z.number().int().nullable(),
+        requestCost: z.string().nullable(),
+        createdAt: z.string(),
+    })
+    .meta({ id: "AdminAiRequestSummary" })
+
+export const adminAiRequestListSchema = z
+    .object({
+        items: z.array(adminAiRequestSummarySchema),
+        total: z.number().int(),
+        limit: z.number().int(),
+        offset: z.number().int(),
+    })
+    .meta({ id: "AdminAiRequestList" })
+
+export const adminAiRequestDetailSchema = adminAiRequestSummarySchema
+    .extend({
+        requestPayload: z.unknown(),
+        responsePayload: z.unknown().nullable(),
+    })
+    .meta({ id: "AdminAiRequestDetail" })
+
+export const adminApiKeyItemSchema = z
+    .object({
+        id: z.string(),
+        keyName: z.string(),
+        keyPrefix: z.string(),
+        status: z.string(),
+        clientType: z.string(),
+        lastUsed: z.string().nullable(),
+        createdAt: z.string(),
+        projectId: z.string(),
+        projectName: z.string(),
+        organizationId: z.string(),
+        organizationName: z.string(),
+        organizationSlug: z.string(),
+    })
+    .meta({ id: "AdminApiKeyItem" })
+
+export const adminApiKeyListSchema = z
+    .object({
+        items: z.array(adminApiKeyItemSchema),
+        total: z.number().int(),
+        limit: z.number().int(),
+        offset: z.number().int(),
+    })
+    .meta({ id: "AdminApiKeyList" })
+
+export const adminProjectItemSchema = z
+    .object({
+        id: z.string(),
+        name: z.string(),
+        environment: z.string(),
+        status: z.string(),
+        apiKeyCount: z.number().int(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+        organizationId: z.string(),
+        organizationName: z.string(),
+        organizationSlug: z.string(),
+    })
+    .meta({ id: "AdminProjectItem" })
+
+export const adminProjectListSchema = z
+    .object({
+        items: z.array(adminProjectItemSchema),
+        total: z.number().int(),
+        limit: z.number().int(),
+        offset: z.number().int(),
+    })
+    .meta({ id: "AdminProjectList" })
+
+export const adminFinanceOverviewSchema = z
+    .object({
+        period: z.string(),
+        periodStart: z.string(),
+        periodEnd: z.string(),
+        usdToPhpRate: z.string(),
+        cashCollectedPhp: z.string(),
+        usageRetailUsd: z.string(),
+        usageRetailPhp: z.string(),
+        providerCogsUsd: z.string(),
+        providerCogsPhp: z.string(),
+        expensesPhp: z.string(),
+        grossMarginPhp: z.string(),
+        netProfitPhp: z.string(),
+        requestCount: z.number().int(),
+    })
+    .meta({ id: "AdminFinanceOverview" })
+
+export const adminFinanceMarginByPlanItemSchema = z
+    .object({
+        planName: z.string(),
+        cashCollectedPhp: z.string(),
+        usageRetailUsd: z.string(),
+        usageRetailPhp: z.string(),
+        providerCogsUsd: z.string(),
+        providerCogsPhp: z.string(),
+        grossMarginPhp: z.string(),
+        requestCount: z.number().int(),
+    })
+    .meta({ id: "AdminFinanceMarginByPlanItem" })
+
+export const adminFinanceMarginByPlanSchema = z
+    .object({
+        period: z.string(),
+        usdToPhpRate: z.string(),
+        items: z.array(adminFinanceMarginByPlanItemSchema),
+    })
+    .meta({ id: "AdminFinanceMarginByPlan" })
+
+export const adminDashboardDailyPointSchema = z
+    .object({
+        date: z.string(),
+        requestsUsed: z.number().int(),
+        tokensUsed: z.number().int(),
+        successfulRequests: z.number().int(),
+        failedRequests: z.number().int(),
+        totalCost: z.string(),
+        avgLatency: z.number().int().nullable(),
+        p95Latency: z.number().int().nullable(),
+    })
+    .meta({ id: "AdminDashboardDailyPoint" })
+
+export const adminDashboardMonthlyFinanceSchema = z
+    .object({
+        period: z.string(),
+        cashCollectedPhp: z.string(),
+        providerCogsUsd: z.string(),
+        providerCogsPhp: z.string(),
+        expensesPhp: z.string(),
+        grossMarginPhp: z.string(),
+        netProfitPhp: z.string(),
+        usageRetailUsd: z.string(),
+        usageRetailPhp: z.string(),
+        requestCount: z.number().int(),
+    })
+    .meta({ id: "AdminDashboardMonthlyFinance" })
+
+export const adminDashboardSchema = z
+    .object({
+        period: z.string(),
+        months: z.number().int(),
+        periodStart: z.string(),
+        periodEnd: z.string(),
+        apiStatus: z.literal("ok"),
+        usage: z.object({
+            totals: adminUsageTotalsSchema,
+            daily: z.array(adminDashboardDailyPointSchema),
+            byProvider: z.array(adminUsageProviderRowSchema),
+            nearLimit: z.array(adminUsageNearLimitRowSchema),
+        }),
+        finance: z.object({
+            usdToPhpRate: z.string(),
+            overview: z.object({
+                cashCollectedPhp: z.string(),
+                usageRetailUsd: z.string(),
+                usageRetailPhp: z.string(),
+                providerCogsUsd: z.string(),
+                providerCogsPhp: z.string(),
+                expensesPhp: z.string(),
+                grossMarginPhp: z.string(),
+                netProfitPhp: z.string(),
+                requestCount: z.number().int(),
+            }),
+            monthly: z.array(adminDashboardMonthlyFinanceSchema),
+            marginByPlan: z.array(adminFinanceMarginByPlanItemSchema),
+        }),
+    })
+    .meta({ id: "AdminDashboard" })
+
+export const adminFinanceExpenseSchema = z
+    .object({
+        id: z.string(),
+        category: z.string(),
+        amountPhp: z.string(),
+        period: z.string(),
+        description: z.string(),
+        notes: z.string().nullable(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+    })
+    .meta({ id: "AdminFinanceExpense" })
+
+export const adminFinanceExpenseListSchema = z
+    .object({
+        items: z.array(adminFinanceExpenseSchema),
+    })
+    .meta({ id: "AdminFinanceExpenseList" })
+
+export const adminFinanceReconciliationRunSchema = z
+    .object({
+        id: z.string(),
+        kind: z.string(),
+        period: z.string(),
+        filename: z.string().nullable(),
+        rowCount: z.number().int(),
+        matchedCount: z.number().int(),
+        driftCount: z.number().int(),
+        summary: z.unknown(),
+        createdAt: z.string(),
+    })
+    .meta({ id: "AdminFinanceReconciliationRun" })
+
+export const adminFinanceXenditReconciliationSchema = z
+    .object({
+        period: z.string(),
+        internal: z.object({
+            transactionCount: z.number().int(),
+            totalPhp: z.string(),
+        }),
+        latestRun: adminFinanceReconciliationRunSchema.nullable(),
+    })
+    .meta({ id: "AdminFinanceXenditReconciliation" })
+
+export const adminFinanceProviderReconciliationSchema = z
+    .object({
+        period: z.string(),
+        usdToPhpRate: z.string(),
+        internal: z.object({
+            providers: z.array(
+                z.object({
+                    provider: z.string(),
+                    amountUsd: z.string(),
+                    amountPhp: z.string(),
+                }),
+            ),
+            totalUsd: z.string(),
+            totalPhp: z.string(),
+        }),
+        latestRun: adminFinanceReconciliationRunSchema.nullable(),
+    })
+    .meta({ id: "AdminFinanceProviderReconciliation" })
+
 export const deletedResponseSchema = z
     .object({
         deleted: z.literal(true),

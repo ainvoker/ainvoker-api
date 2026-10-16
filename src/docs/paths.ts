@@ -43,13 +43,53 @@ import {
     listAdminOrganizationsQuerySchema,
     listAdminUsersQuerySchema,
     updateAdminOrganizationSchema,
+    adminSubscriptionParamsSchema,
+    listAdminSubscriptionsQuerySchema,
+    listAdminTransactionsQuerySchema,
+    updateAdminSubscriptionSchema,
+    listAdminAuditEventsQuerySchema,
+    createFinanceExpenseSchema,
+    financeExpenseParamsSchema,
+    financePeriodQuerySchema,
+    financeReconciliationUploadSchema,
+    listFinanceExpensesQuerySchema,
+    updateFinanceExpenseSchema,
+    adminAiRequestParamsSchema,
+    adminUsagePeriodQuerySchema,
+    listAdminAiRequestsQuerySchema,
+    adminDashboardQuerySchema,
+    adminApiKeyParamsSchema,
+    adminProjectParamsSchema,
+    listAdminApiKeysQuerySchema,
+    listAdminProjectsQuerySchema,
+    updateAdminProjectSchema,
 } from "./schemas.js"
 import {
     acceptInviteResponseSchema,
+    adminAiRequestDetailSchema,
+    adminAiRequestListSchema,
+    adminApiKeyItemSchema,
+    adminApiKeyListSchema,
+    adminAuditEventListSchema,
+    adminProjectItemSchema,
+    adminProjectListSchema,
+    adminFinanceExpenseListSchema,
+    adminFinanceExpenseSchema,
+    adminFinanceMarginByPlanSchema,
+    adminFinanceOverviewSchema,
+    adminFinanceProviderReconciliationSchema,
+    adminFinanceReconciliationRunSchema,
+    adminFinanceXenditReconciliationSchema,
+    adminUsageOverviewSchema,
+    adminDashboardSchema,
     adminModelSchema,
     adminOrganizationDetailSchema,
     adminOrganizationListSchema,
+    adminPlanSchema,
     adminProviderSchema,
+    adminSubscriptionItemSchema,
+    adminSubscriptionListSchema,
+    adminTransactionListSchema,
     adminUserDetailSchema,
     adminUserListSchema,
     allowedOriginSchema,
@@ -997,6 +1037,482 @@ export function registerApiPaths(registry: OpenAPIRegistry) {
             200: {
                 description: "User detail",
                 content: { "application/json": { schema: dataEnvelope(adminUserDetailSchema) } },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/plans",
+        tags: ["Admin Billing"],
+        summary: "List billing plans",
+        description:
+            "Platform admin only. Read-only Free / Pro / Scale catalog (limits and billing mode).",
+        security: bearerAuth,
+        responses: {
+            200: {
+                description: "Plan catalog",
+                content: {
+                    "application/json": { schema: dataEnvelope(z.array(adminPlanSchema)) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/subscriptions",
+        tags: ["Admin Billing"],
+        summary: "List subscriptions",
+        description:
+            "Platform admin only. Filter by org search, status, and plan name.",
+        security: bearerAuth,
+        request: {
+            query: listAdminSubscriptionsQuerySchema,
+        },
+        responses: {
+            200: {
+                description: "Paginated subscriptions",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminSubscriptionListSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "patch",
+        path: "/api/v1/admin/subscriptions/{subscriptionId}",
+        tags: ["Admin Billing"],
+        summary: "Support subscription adjustment",
+        description:
+            "Platform admin only. Cancel (at period end or immediately), grant Pro, or extend Pro.",
+        security: bearerAuth,
+        request: {
+            params: adminSubscriptionParamsSchema,
+            body: {
+                required: true,
+                content: { "application/json": { schema: updateAdminSubscriptionSchema } },
+            },
+        },
+        responses: {
+            200: {
+                description: "Updated subscription",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminSubscriptionItemSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/transactions",
+        tags: ["Admin Billing"],
+        summary: "List payment transactions",
+        description:
+            "Platform admin only. Search by reference or org; filter by payment status and date range.",
+        security: bearerAuth,
+        request: {
+            query: listAdminTransactionsQuerySchema,
+        },
+        responses: {
+            200: {
+                description: "Paginated transactions",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminTransactionListSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/audit-events",
+        tags: ["Admin Audit"],
+        summary: "List platform audit events",
+        description:
+            "Platform admin only. Lifecycle and admin-action trail (not AI request logs). Search by summary, actor email, or target id; filter by action, actor type, or organization.",
+        security: bearerAuth,
+        request: {
+            query: listAdminAuditEventsQuerySchema,
+        },
+        responses: {
+            200: {
+                description: "Paginated audit events",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminAuditEventListSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/dashboard",
+        tags: ["Admin Dashboard"],
+        summary: "Operations dashboard",
+        description:
+            "Platform admin only. Daily reliability series for a UTC month, multi-month P&L, provider mix, margin by plan, and near-limit workspaces.",
+        security: bearerAuth,
+        request: { query: adminDashboardQuerySchema },
+        responses: {
+            200: {
+                description: "Operations dashboard payload",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminDashboardSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/usage",
+        tags: ["Admin Usage"],
+        summary: "Platform usage overview",
+        description:
+            "Platform admin only. Totals, breakdowns by workspace/model/provider, and workspaces near plan limits for a UTC calendar month.",
+        security: bearerAuth,
+        request: { query: adminUsagePeriodQuerySchema },
+        responses: {
+            200: {
+                description: "Platform usage overview",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminUsageOverviewSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/ai-requests",
+        tags: ["Admin Usage"],
+        summary: "List AI requests across workspaces",
+        description:
+            "Platform admin only. Searchable cross-workspace request log. Filter by status, organization, or calendar month.",
+        security: bearerAuth,
+        request: { query: listAdminAiRequestsQuerySchema },
+        responses: {
+            200: {
+                description: "Paginated AI requests",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminAiRequestListSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/ai-requests/{requestId}",
+        tags: ["Admin Usage"],
+        summary: "Get AI request detail",
+        description: "Platform admin only. Includes request and response payloads.",
+        security: bearerAuth,
+        request: { params: adminAiRequestParamsSchema },
+        responses: {
+            200: {
+                description: "AI request detail",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminAiRequestDetailSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/api-keys",
+        tags: ["Admin Safety"],
+        summary: "List API keys across workspaces",
+        description:
+            "Platform admin only. Search by key name, prefix, project, or organization; filter by status.",
+        security: bearerAuth,
+        request: { query: listAdminApiKeysQuerySchema },
+        responses: {
+            200: {
+                description: "Paginated API keys",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminApiKeyListSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/admin/api-keys/{keyId}/revoke",
+        tags: ["Admin Safety"],
+        summary: "Force-revoke an API key",
+        description: "Platform admin only. Sets the key to REVOKED so it can no longer authenticate.",
+        security: bearerAuth,
+        request: { params: adminApiKeyParamsSchema },
+        responses: {
+            200: {
+                description: "Revoked API key",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminApiKeyItemSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/projects",
+        tags: ["Admin Safety"],
+        summary: "List projects across workspaces",
+        description:
+            "Platform admin only. Search by project name or organization; filter by status.",
+        security: bearerAuth,
+        request: { query: listAdminProjectsQuerySchema },
+        responses: {
+            200: {
+                description: "Paginated projects",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminProjectListSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "patch",
+        path: "/api/v1/admin/projects/{projectId}",
+        tags: ["Admin Safety"],
+        summary: "Disable or re-enable a project",
+        description:
+            "Platform admin only. DISABLED projects reject API key auth until re-enabled to ACTIVE.",
+        security: bearerAuth,
+        request: {
+            params: adminProjectParamsSchema,
+            body: { content: { "application/json": { schema: updateAdminProjectSchema } } },
+        },
+        responses: {
+            200: {
+                description: "Updated project",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminProjectItemSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/finance/overview",
+        tags: ["Admin Finance"],
+        summary: "Finance P&L overview",
+        description:
+            "Platform admin only. Cash collected, estimated provider COGS, expenses, and net profit for a UTC calendar month.",
+        security: bearerAuth,
+        request: { query: financePeriodQuerySchema },
+        responses: {
+            200: {
+                description: "Period P&L overview",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminFinanceOverviewSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/finance/margin-by-plan",
+        tags: ["Admin Finance"],
+        summary: "Margin breakdown by plan",
+        description:
+            "Platform admin only. Cash and estimated COGS attributed to Free / Pro / Scale for a calendar month.",
+        security: bearerAuth,
+        request: { query: financePeriodQuerySchema },
+        responses: {
+            200: {
+                description: "Margin by plan",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminFinanceMarginByPlanSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/finance/expenses",
+        tags: ["Admin Finance"],
+        summary: "List operating expenses",
+        description: "Platform admin only. Optionally filter by period=YYYY-MM.",
+        security: bearerAuth,
+        request: { query: listFinanceExpensesQuerySchema },
+        responses: {
+            200: {
+                description: "Expense list",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminFinanceExpenseListSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/admin/finance/expenses",
+        tags: ["Admin Finance"],
+        summary: "Create operating expense",
+        security: bearerAuth,
+        request: {
+            body: {
+                required: true,
+                content: { "application/json": { schema: createFinanceExpenseSchema } },
+            },
+        },
+        responses: {
+            200: {
+                description: "Created expense",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminFinanceExpenseSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "patch",
+        path: "/api/v1/admin/finance/expenses/{expenseId}",
+        tags: ["Admin Finance"],
+        summary: "Update operating expense",
+        security: bearerAuth,
+        request: {
+            params: financeExpenseParamsSchema,
+            body: {
+                required: true,
+                content: { "application/json": { schema: updateFinanceExpenseSchema } },
+            },
+        },
+        responses: {
+            200: {
+                description: "Updated expense",
+                content: {
+                    "application/json": { schema: dataEnvelope(adminFinanceExpenseSchema) },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/finance/reconciliation/xendit",
+        tags: ["Admin Finance"],
+        summary: "Xendit reconciliation status",
+        description:
+            "Platform admin only. Internal SUCCEEDED transaction totals and latest CSV reconciliation run for the period.",
+        security: bearerAuth,
+        request: { query: financePeriodQuerySchema },
+        responses: {
+            200: {
+                description: "Xendit reconciliation",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(adminFinanceXenditReconciliationSchema),
+                    },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/admin/finance/reconciliation/xendit",
+        tags: ["Admin Finance"],
+        summary: "Upload Xendit settlement CSV",
+        description:
+            "Platform admin only. Diff CSV rows (reference + amount) against SUCCEEDED Transaction rows for the period.",
+        security: bearerAuth,
+        request: {
+            body: {
+                required: true,
+                content: { "application/json": { schema: financeReconciliationUploadSchema } },
+            },
+        },
+        responses: {
+            200: {
+                description: "Reconciliation run",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(adminFinanceReconciliationRunSchema),
+                    },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "get",
+        path: "/api/v1/admin/finance/reconciliation/providers",
+        tags: ["Admin Finance"],
+        summary: "Provider reconciliation status",
+        description:
+            "Platform admin only. Estimated provider COGS by vendor and latest CSV reconciliation run.",
+        security: bearerAuth,
+        request: { query: financePeriodQuerySchema },
+        responses: {
+            200: {
+                description: "Provider reconciliation",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(adminFinanceProviderReconciliationSchema),
+                    },
+                },
+            },
+            ...errorResponses,
+        },
+    })
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/v1/admin/finance/reconciliation/providers",
+        tags: ["Admin Finance"],
+        summary: "Upload provider invoice CSV",
+        description:
+            "Platform admin only. Diff CSV provider totals against estimated usage COGS for the period.",
+        security: bearerAuth,
+        request: {
+            body: {
+                required: true,
+                content: { "application/json": { schema: financeReconciliationUploadSchema } },
+            },
+        },
+        responses: {
+            200: {
+                description: "Reconciliation run",
+                content: {
+                    "application/json": {
+                        schema: dataEnvelope(adminFinanceReconciliationRunSchema),
+                    },
+                },
             },
             ...errorResponses,
         },

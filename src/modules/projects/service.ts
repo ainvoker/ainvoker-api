@@ -1,6 +1,8 @@
 import { Prisma } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
+import { AUDIT_ACTIONS } from "../audit/actions.js"
+import { recordAuditEvent } from "../audit/record.js"
 import { assertOrgCanMutateResources } from "../billing/limits.js"
 import { listDefaultModelAllows } from "../text/allowlist.js"
 import type { z } from "zod"
@@ -96,6 +98,21 @@ class ProjectService {
                 }
                 return created
             })
+
+            await recordAuditEvent({
+                actorUserId: userId,
+                actorType: "USER",
+                action: AUDIT_ACTIONS.projectCreated,
+                targetType: "project",
+                targetId: project.id,
+                organizationId,
+                summary: `Project "${project.name}" created`,
+                metadata: {
+                    name: project.name,
+                    environment: project.environment,
+                },
+            })
+
             return this.serializeProject(project)
         } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
@@ -119,7 +136,7 @@ class ProjectService {
         userId: string,
         input: z.infer<typeof updateProjectSchema>,
     ) {
-        await this.getProjectForMember(projectId, userId)
+        const before = await this.getProjectForMember(projectId, userId)
 
         try {
             const project = await prismaClient.project.update({
@@ -131,6 +148,31 @@ class ProjectService {
                     ...(input.status !== undefined ? { status: input.status } : {}),
                 },
             })
+
+            await recordAuditEvent({
+                actorUserId: userId,
+                actorType: "USER",
+                action: AUDIT_ACTIONS.projectUpdated,
+                targetType: "project",
+                targetId: projectId,
+                organizationId: project.organizationId,
+                summary: `Project "${project.name}" updated`,
+                metadata: {
+                    before: {
+                        name: before.name,
+                        description: before.description,
+                        environment: before.environment,
+                        status: before.status,
+                    },
+                    after: {
+                        name: project.name,
+                        description: project.description,
+                        environment: project.environment,
+                        status: project.status,
+                    },
+                },
+            })
+
             return this.serializeProject(project)
         } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
@@ -145,7 +187,7 @@ class ProjectService {
     }
 
     async deleteProject(projectId: string, userId: string) {
-        await this.getProjectForMember(projectId, userId)
+        const project = await this.getProjectForMember(projectId, userId)
 
         try {
             await prismaClient.$transaction(async (tx) => {
@@ -181,6 +223,20 @@ class ProjectService {
                 await tx.projectAllowedOrigin.deleteMany({ where: { projectId } })
                 await tx.projectModelAllow.deleteMany({ where: { projectId } })
                 await tx.project.delete({ where: { id: projectId } })
+            })
+
+            await recordAuditEvent({
+                actorUserId: userId,
+                actorType: "USER",
+                action: AUDIT_ACTIONS.projectDeleted,
+                targetType: "project",
+                targetId: projectId,
+                organizationId: project.organizationId,
+                summary: `Project "${project.name}" deleted`,
+                metadata: {
+                    name: project.name,
+                    environment: project.environment,
+                },
             })
         } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2003") {

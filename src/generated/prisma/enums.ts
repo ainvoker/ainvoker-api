@@ -156,6 +156,25 @@ export const PaymentStatus = {
 export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus]
 
 
+export const ExpenseCategory = {
+  INFRA: 'INFRA',
+  PROCESSOR_FEES: 'PROCESSOR_FEES',
+  SOFTWARE: 'SOFTWARE',
+  PEOPLE: 'PEOPLE',
+  OTHER: 'OTHER'
+} as const
+
+export type ExpenseCategory = (typeof ExpenseCategory)[keyof typeof ExpenseCategory]
+
+
+export const ReconciliationKind = {
+  XENDIT: 'XENDIT',
+  PROVIDER: 'PROVIDER'
+} as const
+
+export type ReconciliationKind = (typeof ReconciliationKind)[keyof typeof ReconciliationKind]
+
+
 export const ThemePreference = {
   LIGHT: 'LIGHT',
   DARK: 'DARK',
@@ -163,6 +182,14 @@ export const ThemePreference = {
 } as const
 
 export type ThemePreference = (typeof ThemePreference)[keyof typeof ThemePreference]
+
+
+export const AuditActorType = {
+  USER: 'USER',
+  PLATFORM_ADMIN: 'PLATFORM_ADMIN'
+} as const
+
+export type AuditActorType = (typeof AuditActorType)[keyof typeof AuditActorType]
 
 
 export const OrganizationInviteStatus = {

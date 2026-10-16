@@ -1,6 +1,8 @@
 import type { AIModel, AIProvider } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
+import { AUDIT_ACTIONS } from "../audit/actions.js"
+import { recordAuditEvent } from "../audit/record.js"
 import { ensureBusinessSettings, retailPricesForModel } from "../business/retail.js"
 import { hasModelAdapter } from "../text/allowlist.js"
 import type { ListAdminModelsQuery, UpdateAdminModelInput } from "./schemas.js"
@@ -97,7 +99,11 @@ class AdminModelsService {
         return this.serializeModel(model)
     }
 
-    async updateModel(modelId: number, input: UpdateAdminModelInput): Promise<AdminModelItem> {
+    async updateModel(
+        modelId: number,
+        input: UpdateAdminModelInput,
+        actorUserId: string,
+    ): Promise<AdminModelItem> {
         const existing = await prismaClient.aIModel.findUnique({
             where: { id: modelId },
             include: { provider: { select: { name: true, status: true } } },
@@ -139,6 +145,28 @@ class AdminModelsService {
             },
             include: { provider: { select: { name: true } } },
         })
+
+        await recordAuditEvent({
+            actorUserId,
+            actorType: "PLATFORM_ADMIN",
+            action: AUDIT_ACTIONS.modelUpdated,
+            targetType: "model",
+            targetId: String(modelId),
+            summary: `Model ${existing.provider.name}/${existing.name} updated`,
+            metadata: {
+                before: {
+                    status: existing.status,
+                    planTier: existing.planTier,
+                    freeEligible: existing.freeEligible,
+                },
+                after: {
+                    status: model.status,
+                    planTier: model.planTier,
+                    freeEligible: model.freeEligible,
+                },
+            },
+        })
+
         return this.serializeModel(model)
     }
 }

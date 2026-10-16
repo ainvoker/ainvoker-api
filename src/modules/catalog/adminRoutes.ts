@@ -44,7 +44,8 @@ class AdminCatalogRoutes extends BaseRoutes {
     private async updateModel(req: Request, res: Response) {
         const { modelId } = adminModelParamsSchema.parse(req.params)
         const body = updateAdminModelSchema.parse(req.body)
-        const data = await adminModelsService.updateModel(modelId, body)
+        const auth = this.requireAuth(req)
+        const data = await adminModelsService.updateModel(modelId, body, auth.userId)
         http.ok(res, data)
     }
 }

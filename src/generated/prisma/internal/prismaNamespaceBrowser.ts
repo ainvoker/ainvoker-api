@@ -71,7 +71,10 @@ export const ModelName = {
   Plan: 'Plan',
   Subscription: 'Subscription',
   Transaction: 'Transaction',
-  ActivityLog: 'ActivityLog'
+  Expense: 'Expense',
+  FinanceReconciliationRun: 'FinanceReconciliationRun',
+  ActivityLog: 'ActivityLog',
+  AuditEvent: 'AuditEvent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -393,6 +396,35 @@ export const TransactionScalarFieldEnum = {
 export type TransactionScalarFieldEnum = (typeof TransactionScalarFieldEnum)[keyof typeof TransactionScalarFieldEnum]
 
 
+export const ExpenseScalarFieldEnum = {
+  id: 'id',
+  category: 'category',
+  amountPhp: 'amountPhp',
+  period: 'period',
+  description: 'description',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ExpenseScalarFieldEnum = (typeof ExpenseScalarFieldEnum)[keyof typeof ExpenseScalarFieldEnum]
+
+
+export const FinanceReconciliationRunScalarFieldEnum = {
+  id: 'id',
+  kind: 'kind',
+  period: 'period',
+  filename: 'filename',
+  rowCount: 'rowCount',
+  matchedCount: 'matchedCount',
+  driftCount: 'driftCount',
+  summaryJson: 'summaryJson',
+  createdAt: 'createdAt'
+} as const
+
+export type FinanceReconciliationRunScalarFieldEnum = (typeof FinanceReconciliationRunScalarFieldEnum)[keyof typeof FinanceReconciliationRunScalarFieldEnum]
+
+
 export const ActivityLogScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -404,6 +436,22 @@ export const ActivityLogScalarFieldEnum = {
 } as const
 
 export type ActivityLogScalarFieldEnum = (typeof ActivityLogScalarFieldEnum)[keyof typeof ActivityLogScalarFieldEnum]
+
+
+export const AuditEventScalarFieldEnum = {
+  id: 'id',
+  actorUserId: 'actorUserId',
+  actorType: 'actorType',
+  action: 'action',
+  targetType: 'targetType',
+  targetId: 'targetId',
+  organizationId: 'organizationId',
+  summary: 'summary',
+  metadata: 'metadata',
+  createdAt: 'createdAt'
+} as const
+
+export type AuditEventScalarFieldEnum = (typeof AuditEventScalarFieldEnum)[keyof typeof AuditEventScalarFieldEnum]
 
 
 export const SortOrder = {

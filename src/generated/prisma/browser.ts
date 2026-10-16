@@ -118,7 +118,22 @@ export type Subscription = Prisma.SubscriptionModel
  */
 export type Transaction = Prisma.TransactionModel
 /**
+ * Model Expense
+ * 
+ */
+export type Expense = Prisma.ExpenseModel
+/**
+ * Model FinanceReconciliationRun
+ * 
+ */
+export type FinanceReconciliationRun = Prisma.FinanceReconciliationRunModel
+/**
  * Model ActivityLog
  * 
  */
 export type ActivityLog = Prisma.ActivityLogModel
+/**
+ * Model AuditEvent
+ * 
+ */
+export type AuditEvent = Prisma.AuditEventModel

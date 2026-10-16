@@ -42,7 +42,8 @@ class AdminCustomersRoutes extends BaseRoutes {
     private async updateOrganization(req: Request, res: Response) {
         const { orgId } = adminOrganizationParamsSchema.parse(req.params)
         const body = updateAdminOrganizationSchema.parse(req.body)
-        const data = await adminCustomersService.updateOrganization(orgId, body)
+        const auth = this.requireAuth(req)
+        const data = await adminCustomersService.updateOrganization(orgId, body, auth.userId)
         http.ok(res, data)
     }
 

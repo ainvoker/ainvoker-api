@@ -8,6 +8,8 @@ import http from "../../platform/http.js"
 import prismaClient from "../../platform/prisma.js"
 import { AppError } from "../../platform/errors.js"
 import { z } from "zod"
+import { AUDIT_ACTIONS } from "../audit/actions.js"
+import { recordAuditEvent } from "../audit/record.js"
 import { ensureBusinessSettings, recomputeAllModelRetailPrices } from "./retail.js"
 
 const updateBusinessSettingsSchema = z.object({
@@ -98,6 +100,21 @@ class AdminBusinessRoutes extends BaseRoutes {
             },
         })
         const modelsUpdated = await recomputeAllModelRetailPrices()
+
+        const auth = this.requireAuth(req)
+        await recordAuditEvent({
+            actorUserId: auth.userId,
+            actorType: "PLATFORM_ADMIN",
+            action: AUDIT_ACTIONS.businessSettingsUpdated,
+            targetType: "business_settings",
+            targetId: "1",
+            summary: "Business settings updated",
+            metadata: {
+                changed: body,
+                modelsUpdated,
+            },
+        })
+
         http.ok(res, {
             settings: {
                 economyMarkupMultiplier: settings.economyMarkupMultiplier.toString(),

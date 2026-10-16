@@ -1,6 +1,8 @@
 import { Prisma } from "../../generated/prisma/client.js"
 import { AppError } from "../../platform/errors.js"
 import prismaClient from "../../platform/prisma.js"
+import { AUDIT_ACTIONS } from "../audit/actions.js"
+import { recordAuditEvent } from "../audit/record.js"
 import {
     ensureBillingCatalog,
     getPlanByName,
@@ -60,6 +62,12 @@ class OrganizationService {
         await this.ensureRoles()
         await ensureBillingCatalog()
 
+        const preexisting = await prismaClient.user.findUnique({
+            where: { id: userId },
+            select: { id: true },
+        })
+        const isNewUser = !preexisting
+
         let user = await prismaClient.user.upsert({
             where: { id: userId },
             create: {
@@ -71,6 +79,18 @@ class OrganizationService {
             },
             update: {},
         })
+
+        if (isNewUser) {
+            await recordAuditEvent({
+                actorUserId: userId,
+                actorType: "USER",
+                action: AUDIT_ACTIONS.userCreated,
+                targetType: "user",
+                targetId: userId,
+                summary: `Account created${user.email ? ` (${user.email})` : ""}`,
+                metadata: { email: user.email },
+            })
+        }
 
         // Fill empty profile fields once (e.g. if GET /me created the row before bootstrap).
         if (profile) {
@@ -103,7 +123,19 @@ class OrganizationService {
         })
 
         if (!alreadyMember) {
-            await this.createPersonalOrgIfNeeded(userId)
+            const createdOrgId = await this.createPersonalOrgIfNeeded(userId)
+            if (createdOrgId) {
+                await recordAuditEvent({
+                    actorUserId: userId,
+                    actorType: "USER",
+                    action: AUDIT_ACTIONS.organizationCreated,
+                    targetType: "organization",
+                    targetId: createdOrgId,
+                    organizationId: createdOrgId,
+                    summary: 'Personal workspace created',
+                    metadata: { isPersonal: true },
+                })
+            }
         }
 
         await this.ensureFreeSubscriptionOnPersonalOrg(userId)
@@ -137,8 +169,11 @@ class OrganizationService {
         })
     }
 
-    /** Idempotent under concurrent bootstrap (React Strict Mode, double refresh, etc.). */
-    private async createPersonalOrgIfNeeded(userId: string) {
+    /**
+     * Idempotent under concurrent bootstrap (React Strict Mode, double refresh, etc.).
+     * @returns organization id when this call created the Personal org; otherwise null.
+     */
+    private async createPersonalOrgIfNeeded(userId: string): Promise<string | null> {
         const ownerRole = await prismaClient.role.findUniqueOrThrow({
             where: { name: "owner" },
         })
@@ -146,13 +181,13 @@ class OrganizationService {
         const freePlan = await getPlanByName(PLAN_NAMES.free)
 
         try {
-            await prismaClient.$transaction(async (tx) => {
+            return await prismaClient.$transaction(async (tx) => {
                 const existingMembership = await tx.organizationMember.findFirst({
                     where: { userId },
                     select: { id: true },
                 })
                 if (existingMembership) {
-                    return
+                    return null
                 }
 
                 const existingOrg = await tx.organization.findUnique({
@@ -174,7 +209,7 @@ class OrganizationService {
                         },
                         update: {},
                     })
-                    return
+                    return null
                 }
 
                 const organization = await tx.organization.create({
@@ -201,6 +236,8 @@ class OrganizationService {
                         startedAt: new Date(),
                     },
                 })
+
+                return organization.id
             })
         } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
@@ -210,7 +247,7 @@ class OrganizationService {
                     select: { id: true },
                 })
                 if (membership) {
-                    return
+                    return null
                 }
 
                 const org = await prismaClient.organization.findUnique({ where: { slug } })
@@ -229,7 +266,7 @@ class OrganizationService {
                         },
                         update: {},
                     })
-                    return
+                    return null
                 }
             }
             throw err
@@ -344,6 +381,17 @@ class OrganizationService {
                 return org
             })
 
+            await recordAuditEvent({
+                actorUserId: userId,
+                actorType: "USER",
+                action: AUDIT_ACTIONS.organizationCreated,
+                targetType: "organization",
+                targetId: organization.id,
+                organizationId: organization.id,
+                summary: `Workspace "${organization.name}" created`,
+                metadata: { name: organization.name, slug: organization.slug, plan: input.plan },
+            })
+
             return this.serializeListItem(organization, "owner")
         } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
@@ -425,6 +473,26 @@ class OrganizationService {
                 },
             })
 
+            await recordAuditEvent({
+                actorUserId: userId,
+                actorType: "USER",
+                action: AUDIT_ACTIONS.organizationUpdated,
+                targetType: "organization",
+                targetId: organizationId,
+                organizationId,
+                summary: `Workspace "${organization.name}" updated`,
+                metadata: {
+                    before: {
+                        name: membership.organization.name,
+                        slug: membership.organization.slug,
+                    },
+                    after: {
+                        name: organization.name,
+                        slug: organization.slug,
+                    },
+                },
+            })
+
             return this.serializeListItem(organization, membership.role.name)
         } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
@@ -467,6 +535,8 @@ class OrganizationService {
             )
         }
 
+        const orgName = membership.organization.name
+
         await prismaClient.$transaction(async (tx) => {
             await tx.subscription.updateMany({
                 where: {
@@ -480,6 +550,17 @@ class OrganizationService {
                 where: { id: organizationId },
                 data: { status: "DELETED" },
             })
+        })
+
+        await recordAuditEvent({
+            actorUserId: userId,
+            actorType: "USER",
+            action: AUDIT_ACTIONS.organizationDeleted,
+            targetType: "organization",
+            targetId: organizationId,
+            organizationId,
+            summary: `Workspace "${orgName}" deleted`,
+            metadata: { name: orgName, slug: membership.organization.slug },
         })
 
         return { deleted: true as const }

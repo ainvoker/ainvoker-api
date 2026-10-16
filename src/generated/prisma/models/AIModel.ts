@@ -1177,7 +1177,7 @@ export type $AIModelPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     status: $Enums.CatalogStatus
     planTier: $Enums.ModelPlanTier
     /**
-     * Deprecated: mirrors planTier === ECONOMY for API compat.
+     * Economy models the Free plan may call; always false on PREMIUM.
      */
     freeEligible: boolean
     createdAt: Date
